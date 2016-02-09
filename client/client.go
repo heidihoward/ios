@@ -30,7 +30,7 @@ func main() {
 
 	term_reader := bufio.NewReader(os.Stdin)
 	net_reader := bufio.NewReader(conn)
-	gen := store.Generate(*auto)
+	gen := store.Generate(*auto, 50)
 
 	for {
 		text := ""

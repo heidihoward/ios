@@ -50,7 +50,11 @@ func (s *Store) Process(req string) string {
 	var reply string
 
 	for i := range reqs {
-		reply = reply + "; " + s.execute(reqs[i])
+		if i == 0 {
+			reply = s.execute(reqs[i])
+		} else {
+			reply = reply + "; " + s.execute(reqs[i])
+		}
 	}
 	return reply
 }

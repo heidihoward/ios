@@ -5,11 +5,12 @@ import (
 )
 
 type Generator struct {
-	Ratio int // percentage of read requests
+	Ratio    int // percentage of read requests
+	Conflict int // percentage of requests which target particular area
 }
 
-func Generate(i int) Generator {
-	return Generator{i}
+func Generate(ratio int, conflict int) Generator {
+	return Generator{ratio, conflict}
 }
 
 func (g Generator) Next() string {
