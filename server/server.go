@@ -3,8 +3,8 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/store"
-	"log"
 	"net"
 	"time"
 )
@@ -20,7 +20,7 @@ func handleConnection(cn net.Conn) {
 
 		text, err := reader.ReadString('\n')
 		if err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 		fmt.Printf("Reading\n")
 		fmt.Printf("%s", text)
@@ -30,7 +30,7 @@ func handleConnection(cn net.Conn) {
 		fmt.Printf("%s", reply)
 		n, err := writer.WriteString(reply)
 		if err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 		err = writer.Flush()
 		fmt.Printf("Finished sending %b", n)
@@ -42,12 +42,12 @@ func main() {
 	fmt.Printf("Starting up")
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 		go handleConnection(conn)
 	}
