@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"flag"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/store"
 	"net"
@@ -10,7 +10,8 @@ import (
 )
 
 func handleConnection(cn net.Conn) {
-	fmt.Printf("Incoming Connection\n")
+	glog.Info("Incoming Connection from ",
+		cn.RemoteAddr().String())
 
 	reader := bufio.NewReader(cn)
 	writer := bufio.NewWriter(cn)
@@ -18,32 +19,48 @@ func handleConnection(cn net.Conn) {
 
 	for {
 
+		// read request
+		glog.Info("Reading")
 		text, err := reader.ReadString('\n')
 		if err != nil {
 			glog.Fatal(err)
 		}
-		fmt.Printf("Reading\n")
-		fmt.Printf("%s", text)
+		glog.Info("Received ", text)
 
+		// apply request
 		reply := keyval.Process(text)
+		keyval.Print()
 
-		fmt.Printf("%s", reply)
+		// send reply
+		glog.Info("Sending ", reply)
+		reply = reply + "\n"
 		n, err := writer.WriteString(reply)
 		if err != nil {
 			glog.Fatal(err)
 		}
+
+		// tidy up
 		err = writer.Flush()
-		fmt.Printf("Finished sending %b", n)
+		glog.Info("Finished sending ", n, " bytes")
 
 	}
+
+	cn.Close()
 }
 
 func main() {
-	fmt.Printf("Starting up")
+	// set up logging
+	flag.Parse()
+	defer glog.Flush()
+
+	// set up server
+	glog.Info("Starting up")
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		glog.Fatal(err)
 	}
+
+	// handle for incoming clients
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -51,5 +68,8 @@ func main() {
 		}
 		go handleConnection(conn)
 	}
+
+	// tidy up
 	time.Sleep(30 * time.Second)
+	glog.Info("Shutting down")
 }

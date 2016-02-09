@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"log"
+	"github.com/golang/glog"
 	"net"
 	"os"
 )
@@ -13,28 +13,45 @@ var ip = flag.String("ip", "127.0.0.1", "IP address of server")
 var port = flag.Int("port", 8080, "Listening port of server")
 
 func main() {
+	// set up logging
 	flag.Parse()
+	defer glog.Flush()
 
-	var address = fmt.Sprintf("%s:%d", *ip, *port)
-	fmt.Printf("Talking to %s\n", address)
-
+	// connecting to server
+	address := fmt.Sprintf("%s:%d", *ip, *port)
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
+	glog.Infof("Connected to %s", address)
 
 	term_reader := bufio.NewReader(os.Stdin)
 	net_reader := bufio.NewReader(conn)
 
 	for {
+
+		// reading from terminal
 		fmt.Print("Enter command: ")
-		text, _ := term_reader.ReadString('\n')
+		text, err := term_reader.ReadString('\n')
+		if err != nil {
+			glog.Fatal(err)
+		}
+		glog.Info("User entered", text)
+
+		// send to server
 		_, err = conn.Write([]byte(text))
-		fmt.Print("Sent ")
+		if err != nil {
+			glog.Fatal(err)
+		}
+		glog.Info("Sent")
+
+		// read response
 		reply, err := net_reader.ReadString('\n')
 		if err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
+
+		// write to user
 		fmt.Print(reply)
 
 	}

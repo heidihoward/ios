@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -32,5 +33,11 @@ func (s *Store) Process(req string) string {
 		}
 	default:
 		return "not reconised"
+	}
+}
+
+func (s *Store) Print() {
+	for key, value := range *s {
+		fmt.Println("(", key, value, ")")
 	}
 }
