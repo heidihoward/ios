@@ -5,12 +5,15 @@ import (
 	"flag"
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/heidi-ann/hydra/store"
+	"io"
 	"net"
 	"os"
 )
 
 var ip = flag.String("ip", "127.0.0.1", "IP address of server")
 var port = flag.Int("port", 8080, "Listening port of server")
+var auto = flag.Int("auto", -1, "If workload is automatically generated, percentage of reads")
 
 func main() {
 	// set up logging
@@ -27,23 +30,34 @@ func main() {
 
 	term_reader := bufio.NewReader(os.Stdin)
 	net_reader := bufio.NewReader(conn)
+	gen := store.Generate(*auto)
 
 	for {
+		text := ""
 
-		// reading from terminal
-		fmt.Print("Enter command: ")
-		text, err := term_reader.ReadString('\n')
-		if err != nil {
-			glog.Fatal(err)
+		if *auto == -1 {
+			// reading from terminal
+			fmt.Print("Enter command: ")
+			text, err = term_reader.ReadString('\n')
+			if err != nil {
+				glog.Fatal(err)
+			}
+			glog.Info("User entered", text)
+		} else {
+			// use generator
+			text = gen.Next()
+			glog.Info("Generator produced ", text)
 		}
-		glog.Info("User entered", text)
 
 		// send to server
 		_, err = conn.Write([]byte(text))
 		if err != nil {
+			if err == io.EOF {
+				continue
+			}
 			glog.Fatal(err)
 		}
-		glog.Info("Sent")
+		glog.Info("Sent ", text)
 
 		// read response
 		reply, err := net_reader.ReadString('\n')
