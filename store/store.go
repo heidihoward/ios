@@ -18,8 +18,8 @@ func New() *Store {
 	return &s
 }
 
-func (s *Store) Process(req string) string {
-	request := strings.Split(strings.Trim(req, "\n"), " ")
+func (s *Store) execute(req string) string {
+	request := strings.Split(req, " ")
 
 	switch request[0] {
 	case "update":
@@ -37,6 +37,16 @@ func (s *Store) Process(req string) string {
 	default:
 		return "not reconised"
 	}
+}
+
+func (s *Store) Process(req string) string {
+	reqs := strings.Split(strings.Trim(req, "\n"), ";")
+	var reply string
+
+	for i := range reqs {
+		reply = reply + "; " + s.execute(reqs[i])
+	}
+	return reply
 }
 
 func (s *Store) Print() {
