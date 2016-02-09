@@ -5,6 +5,7 @@ import (
 	"flag"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/store"
+	"io"
 	"net"
 	"time"
 )
@@ -23,6 +24,9 @@ func handleConnection(cn net.Conn) {
 		glog.Info("Reading")
 		text, err := reader.ReadString('\n')
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			glog.Fatal(err)
 		}
 		glog.Info("Received ", text)

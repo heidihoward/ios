@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"github.com/golang/glog"
 	"strings"
 )
 
@@ -18,13 +19,15 @@ func New() *Store {
 }
 
 func (s *Store) Process(req string) string {
-	request := strings.Split(req, " ")
+	request := strings.Split(strings.Trim(req, "\n"), " ")
 
 	switch request[0] {
 	case "update":
+		glog.Infof("Updating %s to %s", request[1], request[2])
 		(*s)[request[1]] = request[2]
 		return "OK"
 	case "get":
+		glog.Infof("Getting %s", request[1])
 		value, ok := (*s)[request[1]]
 		if ok {
 			return value
