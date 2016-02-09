@@ -40,7 +40,7 @@ func (s *Store) execute(req string) string {
 }
 
 func (s *Store) Process(req string) string {
-	reqs := strings.Split(strings.Trim(req, "\n"), ";")
+	reqs := strings.Split(strings.Trim(req, "\n"), "; ")
 	var reply string
 
 	for i := range reqs {
