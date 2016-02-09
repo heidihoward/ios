@@ -1,24 +1,20 @@
 package main
 
 import (
-	"fmt"
-	"net"
-	"log"
-	"time"
 	"bufio"
-	"strings"
+	"fmt"
+	"github.com/heidi-ann/hydra/store"
+	"log"
+	"net"
+	"time"
 )
 
 func handleConnection(cn net.Conn) {
-	fmt.Printf("Incoming Connection")
+	fmt.Printf("Incoming Connection\n")
 
 	reader := bufio.NewReader(cn)
 	writer := bufio.NewWriter(cn)
-	keyval := map[string]string {
-		"A":"0",
-		"B":"0",
-		"C":"0",
-	}
+	keyval := store.New()
 
 	for {
 
@@ -27,26 +23,17 @@ func handleConnection(cn net.Conn) {
 			log.Fatal(err)
 		}
 		fmt.Printf("Reading\n")
-		fmt.Printf("%s",text)
+		fmt.Printf("%s", text)
 
-		request := strings.Split(text," ")
-		var reply string
+		reply := keyval.Process(text)
 
-		switch request[0] {
-		case "update":
-			keyval[request[1]]=request[2]
-			reply = "OK"
-		case "get":
-			reply = keyval[request[1]]
-		default: 
-			reply = "not reconised"
-		}
-		fmt.Printf("%s",reply)
-		_, err = writer.WriteString(reply)
+		fmt.Printf("%s", reply)
+		n, err := writer.WriteString(reply)
 		if err != nil {
 			log.Fatal(err)
 		}
-	err = writer.Flush()
+		err = writer.Flush()
+		fmt.Printf("Finished sending %b", n)
 
 	}
 }
@@ -64,5 +51,5 @@ func main() {
 		}
 		go handleConnection(conn)
 	}
-	time.Sleep(30* time.Second)
+	time.Sleep(30 * time.Second)
 }
