@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"time"
 )
 
 var ip = flag.String("ip", "127.0.0.1", "IP address of server")
@@ -22,11 +23,27 @@ func main() {
 
 	// connecting to server
 	address := fmt.Sprintf("%s:%d", *ip, *port)
-	conn, err := net.Dial("tcp", address)
-	if err != nil {
-		glog.Fatal(err)
+	var conn net.Conn
+	var err error
+	tries := 3
+
+	for {
+		conn, err = net.Dial("tcp", address)
+
+		// if successful
+		if err == nil {
+			glog.Infof("Connected to %s", address)
+			break
+		}
+
+		//if unsuccessful
+		glog.Warning(err)
+		if tries == 0 {
+			glog.Fatal("Could not connect")
+		}
+		tries--
+		time.Sleep(2 * time.Second)
 	}
-	glog.Infof("Connected to %s", address)
 
 	term_reader := bufio.NewReader(os.Stdin)
 	net_reader := bufio.NewReader(conn)
