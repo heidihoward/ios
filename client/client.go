@@ -76,6 +76,7 @@ func main() {
 		}
 
 		// send to server
+		startTime := time.Now()
 		_, err = conn.Write([]byte(text))
 		if err != nil {
 			if err == io.EOF {
@@ -106,7 +107,7 @@ func main() {
 		}
 
 		// write to user
-		fmt.Print(reply)
+		fmt.Print(reply, "request took", time.Since(startTime))
 
 	}
 
