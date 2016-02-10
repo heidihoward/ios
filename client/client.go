@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/heidi-ann/hydra/config"
 	"github.com/heidi-ann/hydra/store"
 	"io"
 	"net"
@@ -12,39 +13,47 @@ import (
 	"time"
 )
 
-var ip = flag.String("ip", "127.0.0.1", "IP address of server")
-var port = flag.Int("port", 8080, "Listening port of server")
+var config_file = flag.String("config", "exampleconfig", "Client configuration file")
 var auto = flag.Int("auto", -1, "If workload is automatically generated, percentage of reads")
+
+func connect(addrs []string, tries int) (net.Conn, error) {
+	var conn net.Conn
+	var err error
+
+	for i := range addrs {
+		for t := tries; t > 0; t-- {
+			conn, err = net.Dial("tcp", addrs[i])
+
+			// if successful
+			if err == nil {
+				glog.Infof("Connected to %s", addrs[i])
+				return conn, err
+			}
+
+			//if unsuccessful
+			glog.Warning(err)
+			time.Sleep(2 * time.Second)
+		}
+	}
+
+	return conn, err
+}
 
 func main() {
 	// set up logging
 	flag.Parse()
 	defer glog.Flush()
 
+	// parse config file
+	conf := config.Parse(*config_file)
+
 	// connecting to server
-	address := fmt.Sprintf("%s:%d", *ip, *port)
-	var conn net.Conn
-	var err error
-	tries := 3
-
-	for {
-		conn, err = net.Dial("tcp", address)
-
-		// if successful
-		if err == nil {
-			glog.Infof("Connected to %s", address)
-			break
-		}
-
-		//if unsuccessful
-		glog.Warning(err)
-		if tries == 0 {
-			glog.Fatal("Could not connect")
-		}
-		tries--
-		time.Sleep(2 * time.Second)
+	conn, err := connect(conf.Addresses.Address, 3)
+	if err != nil {
+		glog.Fatal(err)
 	}
 
+	// mian mian
 	term_reader := bufio.NewReader(os.Stdin)
 	net_reader := bufio.NewReader(conn)
 	gen := store.Generate(*auto, 50)
@@ -72,14 +81,28 @@ func main() {
 			if err == io.EOF {
 				continue
 			}
-			glog.Fatal(err)
+			glog.Warning(err)
+			// reconnecting to server
+			conn, err = connect(conf.Addresses.Address, 3)
+			if err != nil {
+				glog.Fatal(err)
+			}
 		}
+
 		glog.Info("Sent ", text)
 
 		// read response
 		reply, err := net_reader.ReadString('\n')
 		if err != nil {
-			glog.Fatal(err)
+			if err == io.EOF {
+				continue
+			}
+			glog.Warning(err)
+			// reconnecting to server
+			conn, err = connect(conf.Addresses.Address, 3)
+			if err != nil {
+				glog.Fatal(err)
+			}
 		}
 
 		// write to user
