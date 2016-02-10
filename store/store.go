@@ -1,3 +1,4 @@
+// Not safe for concurreny access
 package store
 
 import (

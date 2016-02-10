@@ -7,8 +7,12 @@ import (
 	"github.com/heidi-ann/hydra/store"
 	"io"
 	"net"
+	"os"
 	"time"
 )
+
+var keyval *store.Store
+var disk *bufio.Writer
 
 func handleConnection(cn net.Conn) {
 	glog.Info("Incoming Connection from ",
@@ -16,7 +20,6 @@ func handleConnection(cn net.Conn) {
 
 	reader := bufio.NewReader(cn)
 	writer := bufio.NewWriter(cn)
-	keyval := store.New()
 
 	for {
 
@@ -31,6 +34,14 @@ func handleConnection(cn net.Conn) {
 		}
 		glog.Info("Received ", text)
 
+		// write to persistent storage
+		n, err := disk.WriteString(text)
+		_ = disk.Flush()
+		if err != nil {
+			glog.Fatal(err)
+		}
+		glog.Infof("Written %b bytes to persistent storage", n)
+
 		// apply request
 		reply := keyval.Process(text)
 		keyval.Print()
@@ -38,7 +49,7 @@ func handleConnection(cn net.Conn) {
 		// send reply
 		glog.Info("Sending ", reply)
 		reply = reply + "\n"
-		n, err := writer.WriteString(reply)
+		n, err = writer.WriteString(reply)
 		if err != nil {
 			glog.Fatal(err)
 		}
@@ -53,9 +64,34 @@ func handleConnection(cn net.Conn) {
 }
 
 func main() {
+	filename := "persistent_log.txt"
+
 	// set up logging
 	flag.Parse()
 	defer glog.Flush()
+
+	//set up state machine
+	keyval = store.New()
+
+	// setting up persistent log
+	glog.Info("Opening file: %s", filename)
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	disk = bufio.NewWriter(file)
+	defer disk.Flush()
+
+	// check persistent storage for commands
+	disk_reader := bufio.NewReader(file)
+	for {
+		str, err := disk_reader.ReadString('\n')
+		if err != nil {
+			glog.Info("No more commands in persistent storage")
+			break
+		}
+		_ = keyval.Process(str)
+	}
 
 	// set up server
 	glog.Info("Starting up")
