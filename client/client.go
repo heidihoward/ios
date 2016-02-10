@@ -47,6 +47,16 @@ func main() {
 	// parse config file
 	conf := config.Parse(*config_file)
 
+	// set up stats collection
+	filename := "latency.csv"
+	glog.Info("Opening file: %s", filename)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, 0777)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	stats := bufio.NewWriter(file)
+	defer stats.Flush()
+
 	// connecting to server
 	conn, err := connect(conf.Addresses.Address, 3)
 	if err != nil {
@@ -107,7 +117,8 @@ func main() {
 		}
 
 		// write to user
-		fmt.Print(reply, "request took", time.Since(startTime))
+		_, err = stats.WriteString(fmt.Sprintf("%b,%b", startTime, time.Since(startTime)))
+		fmt.Print(reply, "request took ", time.Since(startTime))
 
 	}
 
