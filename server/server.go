@@ -64,7 +64,7 @@ func handleConnection(cn net.Conn) {
 }
 
 func main() {
-	filename := "persistent_log.txt"
+	filename := "persistent.log"
 
 	// set up logging
 	flag.Parse()

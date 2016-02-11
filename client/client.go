@@ -116,7 +116,7 @@ func main() {
 			}
 		}
 
-		// write to user
+		// write to latency to log
 		str := fmt.Sprintf("%d\n", time.Since(startTime).Nanoseconds())
 		n, err := stats.WriteString(str)
 		if err != nil {
@@ -124,7 +124,11 @@ func main() {
 		}
 		glog.Warningf("Written %d bytes to log", n)
 		_ = stats.Flush()
-		fmt.Print(reply, "request took ", time.Since(startTime))
+
+		// writing result to user
+		if *auto == -1 {
+			fmt.Print(reply, "request took ", time.Since(startTime))
+		}
 
 	}
 
