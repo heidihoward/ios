@@ -74,7 +74,7 @@ func main() {
 	keyval = store.New()
 
 	// setting up persistent log
-	glog.Info("Opening file: %s", filename)
+	glog.Info("Opening file: ", filename)
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		glog.Fatal(err)

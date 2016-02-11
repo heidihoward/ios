@@ -49,8 +49,8 @@ func main() {
 
 	// set up stats collection
 	filename := "latency.csv"
-	glog.Info("Opening file: %s", filename)
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, 0777)
+	glog.Info("Opening file: ", filename)
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -117,7 +117,13 @@ func main() {
 		}
 
 		// write to user
-		_, err = stats.WriteString(fmt.Sprintf("%b,%b", startTime, time.Since(startTime)))
+		str := fmt.Sprintf("%d\n", time.Since(startTime).Nanoseconds())
+		n, err := stats.WriteString(str)
+		if err != nil {
+			glog.Fatal(err)
+		}
+		glog.Warningf("Written %d bytes to log", n)
+		_ = stats.Flush()
 		fmt.Print(reply, "request took ", time.Since(startTime))
 
 	}
