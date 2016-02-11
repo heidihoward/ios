@@ -15,6 +15,7 @@ import (
 
 var config_file = flag.String("config", "example.config", "Client configuration file")
 var auto_file = flag.String("auto", "", "If workload is automatically generated, configure file for workload")
+var stat_file = flag.String("config", "latency.csv", "File to write stats to")
 
 func connect(addrs []string, tries int) (net.Conn, error) {
 	var conn net.Conn
@@ -53,7 +54,7 @@ func main() {
 	}
 
 	// set up stats collection
-	filename := "latency.csv"
+	filename := *stat_file
 	glog.Info("Opening file: ", filename)
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
