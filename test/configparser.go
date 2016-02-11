@@ -10,6 +10,9 @@ type ConfigAuto struct {
 		Reads     int
 		Conflicts int
 	}
+	Termination struct {
+		Requests int
+	}
 }
 
 func ParseAuto(filename string) ConfigAuto {

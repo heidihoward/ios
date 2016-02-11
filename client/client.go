@@ -15,7 +15,7 @@ import (
 
 var config_file = flag.String("config", "example.config", "Client configuration file")
 var auto_file = flag.String("auto", "", "If workload is automatically generated, configure file for workload")
-var stat_file = flag.String("config", "latency.csv", "File to write stats to")
+var stat_file = flag.String("stat", "latency.csv", "File to write stats to")
 
 func connect(addrs []string, tries int) (net.Conn, error) {
 	var conn net.Conn
@@ -48,7 +48,7 @@ func main() {
 	// parse config files
 	conf := config.Parse(*config_file)
 	interactive_mode := (*auto_file == "")
-	var gen test.Generator
+	var gen *test.Generator
 	if !interactive_mode {
 		gen = test.Generate(test.ParseAuto(*auto_file))
 	}
@@ -86,7 +86,11 @@ func main() {
 			glog.Info("User entered", text)
 		} else {
 			// use generator
-			text = gen.Next()
+			var ok bool
+			text, ok = gen.Next()
+			if !ok {
+				glog.Fatal("No more commands")
+			}
 			glog.Info("Generator produced ", text)
 		}
 

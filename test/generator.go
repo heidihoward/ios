@@ -10,13 +10,19 @@ import (
 type Generator struct {
 	Ratio    int // percentage of read requests
 	Conflict int // 1 to 5, degree of requests which target particular area
+	Requests int // terminate after this number of requests
 }
 
-func Generate(conf ConfigAuto) Generator {
-	return Generator{conf.Commands.Reads, conf.Commands.Conflicts}
+func Generate(conf ConfigAuto) *Generator {
+	return &Generator{conf.Commands.Reads, conf.Commands.Conflicts, conf.Termination.Requests}
 }
 
-func (g Generator) Next() string {
+func (g *Generator) Next() (string, bool) {
+
+	if g.Requests == 0 {
+		return "", false
+	}
+	g.Requests--
 
 	key := "A"
 
@@ -33,8 +39,8 @@ func (g Generator) Next() string {
 	}
 
 	if rand.Intn(100) < g.Ratio {
-		return fmt.Sprintf("get %s\n", key)
+		return fmt.Sprintf("get %s\n", key), true
 	} else {
-		return fmt.Sprintf("update %s 7\n", key)
+		return fmt.Sprintf("update %s 7\n", key), true
 	}
 }
