@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"github.com/golang/glog"
 	"math/rand"
 )
 
@@ -19,13 +20,15 @@ func Generate(conf ConfigAuto) *Generator {
 
 func (g *Generator) Next() (string, bool) {
 
+	//handle termination after n requests
 	if g.Requests == 0 {
 		return "", false
 	}
 	g.Requests--
 
-	key := "A"
-
+	// generate key
+	key := "A" // default just in case
+	glog.Info("Starting to generate command")
 	// determine which key to operate on
 	// range 0-9
 	if rand.Intn(5) < g.Conflict-1 {
@@ -37,6 +40,7 @@ func (g *Generator) Next() (string, bool) {
 		// range 0 to (conflict-1)
 		key = string(rand.Intn(g.Conflict))
 	}
+	glog.Info("Key is", key)
 
 	if rand.Intn(100) < g.Ratio {
 		return fmt.Sprintf("get %s\n", key), true
