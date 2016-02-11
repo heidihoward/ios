@@ -1,0 +1,4 @@
+; example workload configuration
+[commands]
+reads = 50
+conflicts = 2
