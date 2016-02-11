@@ -14,7 +14,7 @@ import (
 )
 
 var config_file = flag.String("config", "exampleconfig", "Client configuration file")
-var auto = flag.Int("auto", -1, "If workload is automatically generated, percentage of reads")
+var auto_file = flag.String("auto", "", "If workload is automatically generated, configure file for workload")
 
 func connect(addrs []string, tries int) (net.Conn, error) {
 	var conn net.Conn
@@ -44,8 +44,13 @@ func main() {
 	flag.Parse()
 	defer glog.Flush()
 
-	// parse config file
+	// parse config files
 	conf := config.Parse(*config_file)
+	interactive_mode := (*auto_file == "")
+	var gen store.Generator
+	if !interactive_mode {
+		gen = store.Generate(config.ParseAuto(*auto_file))
+	}
 
 	// set up stats collection
 	filename := "latency.csv"
@@ -66,12 +71,11 @@ func main() {
 	// mian mian
 	term_reader := bufio.NewReader(os.Stdin)
 	net_reader := bufio.NewReader(conn)
-	gen := store.Generate(*auto, 50)
 
 	for {
 		text := ""
 
-		if *auto == -1 {
+		if interactive_mode {
 			// reading from terminal
 			fmt.Print("Enter command: ")
 			text, err = term_reader.ReadString('\n')
@@ -126,7 +130,7 @@ func main() {
 		_ = stats.Flush()
 
 		// writing result to user
-		if *auto == -1 {
+		if interactive_mode {
 			fmt.Print(reply, "request took ", time.Since(startTime))
 		}
 
