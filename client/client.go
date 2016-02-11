@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/config"
-	"github.com/heidi-ann/hydra/store"
+	"github.com/heidi-ann/hydra/test"
 	"io"
 	"net"
 	"os"
 	"time"
 )
 
-var config_file = flag.String("config", "exampleconfig", "Client configuration file")
+var config_file = flag.String("config", "example.config", "Client configuration file")
 var auto_file = flag.String("auto", "", "If workload is automatically generated, configure file for workload")
 
 func connect(addrs []string, tries int) (net.Conn, error) {
@@ -47,9 +47,9 @@ func main() {
 	// parse config files
 	conf := config.Parse(*config_file)
 	interactive_mode := (*auto_file == "")
-	var gen store.Generator
+	var gen test.Generator
 	if !interactive_mode {
-		gen = store.Generate(config.ParseAuto(*auto_file))
+		gen = test.Generate(test.ParseAuto(*auto_file))
 	}
 
 	// set up stats collection

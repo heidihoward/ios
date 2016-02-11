@@ -1,8 +1,7 @@
-package store
+package test
 
 import (
 	"fmt"
-	"github.com/heidi-ann/hydra/config"
 	"math/rand"
 )
 
@@ -13,7 +12,7 @@ type Generator struct {
 	Conflict int // 1 to 5, degree of requests which target particular area
 }
 
-func Generate(conf config.ConfigAuto) Generator {
+func Generate(conf ConfigAuto) Generator {
 	return Generator{conf.Commands.Reads, conf.Commands.Conflicts}
 }
 
