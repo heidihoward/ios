@@ -5,7 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/heidi-ann/hydra/api"
+	"github.com/heidi-ann/hydra/api/interactive"
+	"github.com/heidi-ann/hydra/api/rest"
 	"github.com/heidi-ann/hydra/config"
 	"github.com/heidi-ann/hydra/test"
 	"io"
@@ -22,6 +23,7 @@ type API interface {
 var config_file = flag.String("config", "example.config", "Client configuration file")
 var auto_file = flag.String("auto", "", "If workload is automatically generated, configure file for workload")
 var stat_file = flag.String("stat", "latency.csv", "File to write stats to")
+var mode = flag.String("mode", "interactive", "interactive, rest or test")
 
 func connect(addrs []string, tries int) (net.Conn, error) {
 	var conn net.Conn
@@ -53,7 +55,6 @@ func main() {
 
 	// parse config files
 	conf := config.Parse(*config_file)
-	interactive_mode := (*auto_file == "")
 
 	// set up stats collection
 	filename := *stat_file
@@ -73,10 +74,15 @@ func main() {
 
 	// setup API
 	var ioapi API
-	if interactive_mode {
-		ioapi = api.Create()
-	} else {
+	switch *mode {
+	case "interactive":
+		ioapi = interactive.Create()
+	case "test":
 		ioapi = test.Generate(test.ParseAuto(*auto_file))
+	case "rest":
+		ioapi = rest.Create()
+	default:
+		glog.Fatal("Invalid mode: ", mode)
 	}
 
 	// setup network reader

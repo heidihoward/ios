@@ -1,5 +1,5 @@
 // Interative handles terminal input and feedback
-package api
+package interactive
 
 import (
 	"bufio"
