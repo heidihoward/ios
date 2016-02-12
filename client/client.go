@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/heidi-ann/hydra/api"
 	"github.com/heidi-ann/hydra/config"
 	"github.com/heidi-ann/hydra/test"
 	"io"
@@ -70,20 +71,14 @@ func main() {
 	}
 
 	// mian mian
-	term_reader := bufio.NewReader(os.Stdin)
+	inter := api.Create()
 	net_reader := bufio.NewReader(conn)
 
 	for {
 		text := ""
 
 		if interactive_mode {
-			// reading from terminal
-			fmt.Print("Enter command: ")
-			text, err = term_reader.ReadString('\n')
-			if err != nil {
-				glog.Fatal(err)
-			}
-			glog.Info("User entered", text)
+			text = inter.GetUserInput()
 		} else {
 			// use generator
 			var ok bool
@@ -136,7 +131,7 @@ func main() {
 
 		// writing result to user
 		if interactive_mode {
-			fmt.Print(reply, "request took ", time.Since(startTime))
+			inter.OutputToUser(reply, time.Since(startTime))
 		}
 
 	}

@@ -4,8 +4,8 @@
 # tidy up from previous tests
 cd $GOPATH/src/github.com/heidi-ann/hydra
 
-rm server/persistent.log
-rm client/latency.csv
+rm persistent.log
+rm latency*.csv
 
 # start server
 $GOPATH/bin/server &
@@ -15,8 +15,8 @@ $GOPATH/bin/client -config=client/example.conf -auto=test/workload.conf -stat=la
 $GOPATH/bin/client -config=client/example.conf -auto=test/workload.conf -stat=latency_2.csv &
 $GOPATH/bin/client -config=client/example.conf -auto=test/workload.conf -stat=latency_3.csv &
 
-# stop clients
-
-# stop server
+# stop 
+sleep 20
+kill $(jobs -p)
 
 # produce CDF of latency
