@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"os"
-	"time"
+	//"time"
 )
 
 type Interative bufio.Reader
@@ -16,7 +16,7 @@ func Create() *Interative {
 
 }
 
-func (i *Interative) GetUserInput() string {
+func (i *Interative) Next() (string, bool) {
 	b := (*bufio.Reader)(i)
 	fmt.Print("Enter command: ")
 	text, err := b.ReadString('\n')
@@ -24,9 +24,10 @@ func (i *Interative) GetUserInput() string {
 		glog.Fatal(err)
 	}
 	glog.Info("User entered", text)
-	return text
+	return text, true
 }
 
-func (_ *Interative) OutputToUser(str string, time time.Duration) {
-	fmt.Print(str, "request took ", time)
+func (_ *Interative) Return(str string) {
+	// , time time.Duration  "request took ", time
+	fmt.Print(str)
 }

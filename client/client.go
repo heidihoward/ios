@@ -14,6 +14,11 @@ import (
 	"time"
 )
 
+type API interface {
+	Next() (string, bool)
+	Return(string)
+}
+
 var config_file = flag.String("config", "example.config", "Client configuration file")
 var auto_file = flag.String("auto", "", "If workload is automatically generated, configure file for workload")
 var stat_file = flag.String("stat", "latency.csv", "File to write stats to")
@@ -49,10 +54,6 @@ func main() {
 	// parse config files
 	conf := config.Parse(*config_file)
 	interactive_mode := (*auto_file == "")
-	var gen *test.Generator
-	if !interactive_mode {
-		gen = test.Generate(test.ParseAuto(*auto_file))
-	}
 
 	// set up stats collection
 	filename := *stat_file
@@ -70,24 +71,25 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	// mian mian
-	inter := api.Create()
+	// setup API
+	var ioapi API
+	if interactive_mode {
+		ioapi = api.Create()
+	} else {
+		ioapi = test.Generate(test.ParseAuto(*auto_file))
+	}
+
+	// setup network reader
 	net_reader := bufio.NewReader(conn)
 
 	for {
-		text := ""
 
-		if interactive_mode {
-			text = inter.GetUserInput()
-		} else {
-			// use generator
-			var ok bool
-			text, ok = gen.Next()
-			if !ok {
-				glog.Fatal("No more commands")
-			}
-			glog.Info("Generator produced ", text)
+		// get next command
+		text, ok := ioapi.Next()
+		if !ok {
+			glog.Fatal("No more commands")
 		}
+		glog.Info("API produced ", text)
 
 		// send to server
 		startTime := time.Now()
@@ -130,9 +132,8 @@ func main() {
 		_ = stats.Flush()
 
 		// writing result to user
-		if interactive_mode {
-			inter.OutputToUser(reply, time.Since(startTime))
-		}
+		// time.Since(startTime)
+		ioapi.Return(reply)
 
 	}
 

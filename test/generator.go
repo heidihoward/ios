@@ -50,3 +50,7 @@ func (g *Generator) Next() (string, bool) {
 		return fmt.Sprintf("update %s 7\n", key), true
 	}
 }
+
+func (_ *Generator) Return(_ string) {
+	//STUB
+}
