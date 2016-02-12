@@ -26,7 +26,6 @@ func checkValue(t *testing.T, str string) {
 	}
 }
 
-//
 func checkFormat(t *testing.T, req string) {
 	request := strings.Split(strings.Trim(req, "\n"), " ")
 
@@ -56,8 +55,15 @@ func TestGenerate(t *testing.T) {
 
 	gen := Generate(conf)
 
-	for i := 0; i < 10; i++ {
-		str, _ := gen.Next()
+	for i := 0; i < 100; i++ {
+		str, ok := gen.Next()
+		if !ok {
+			if conf.Termination.Requests != i {
+				t.Errorf("Generator terminated a request %d, should terminate at %d'",
+					i, conf.Termination.Requests)
+			}
+			break
+		}
 		checkFormat(t, str)
 	}
 

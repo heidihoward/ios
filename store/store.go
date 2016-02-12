@@ -24,14 +24,14 @@ func (s *Store) execute(req string) string {
 
 	switch request[0] {
 	case "update":
-		if len(request) < 3 {
+		if len(request) != 3 {
 			return "not reconised"
 		}
 		glog.Infof("Updating %s to %s", request[1], request[2])
 		(*s)[request[1]] = request[2]
 		return "OK"
 	case "get":
-		if len(request) < 2 {
+		if len(request) 1= 2 {
 			return "not reconised"
 		}
 		glog.Infof("Getting %s", request[1])
