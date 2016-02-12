@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"math/rand"
+	"strconv"
 )
 
 // Generator generates workloads for the store
@@ -29,16 +30,17 @@ func (g *Generator) Next() (string, bool) {
 	// generate key
 	key := "A" // default just in case
 	glog.Info("Starting to generate command")
+
 	// determine which key to operate on
 	// range 0-9
 	if rand.Intn(5) < g.Conflict-1 {
 		// non-conflicted region
 		// range conflict to 9
-		key = string(9 - rand.Intn(10-g.Conflict))
+		key = strconv.Itoa(9 - rand.Intn(10-g.Conflict))
 	} else {
 		// conflicted region
 		// range 0 to (conflict-1)
-		key = string(rand.Intn(g.Conflict))
+		key = strconv.Itoa(rand.Intn(g.Conflict))
 	}
 	glog.Info("Key is", key)
 

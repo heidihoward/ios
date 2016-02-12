@@ -5,14 +5,18 @@ import (
 	"gopkg.in/gcfg.v1"
 )
 
+type Commands struct {
+	Reads     int
+	Conflicts int
+}
+
+type Termination struct {
+	Requests int
+}
+
 type ConfigAuto struct {
-	Commands struct {
-		Reads     int
-		Conflicts int
-	}
-	Termination struct {
-		Requests int
-	}
+	Commands    Commands
+	Termination Termination
 }
 
 func ParseAuto(filename string) ConfigAuto {
