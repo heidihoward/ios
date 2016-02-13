@@ -45,6 +45,7 @@ func handleConnection(cn net.Conn) {
 		// apply request
 		reply := keyval.Process(text)
 		keyval.Print()
+		time.Sleep(100 * time.Millisecond)
 
 		// send reply
 		glog.Info("Sending ", reply)

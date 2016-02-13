@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type Rest struct{}
@@ -24,10 +25,12 @@ func versionServer(w http.ResponseWriter, req *http.Request) {
 
 // hello world, the web server
 func requestServer(w http.ResponseWriter, req *http.Request) {
-	glog.Info("Incoming ", req.URL.String())
-	reqs := strings.Trim(req.URL.String(), "/request/")
-	reqs = strings.Replace(reqs, "/", " ", -1)
-	waiting <- RestRequest{reqs + "\n", w}
+	glog.Info("Incoming GET request to", req.URL.String())
+	reqs := strings.Split(req.URL.String(), "/")
+	reqNew := strings.Join(reqs[2:], " ")
+	glog.Info("API request is:", reqNew)
+	waiting <- RestRequest{reqNew + "\n", w}
+	time.Sleep(time.Second)
 }
 
 func Create() *Rest {
@@ -61,7 +64,9 @@ func (r *Rest) Next() (string, bool) {
 }
 
 func (r *Rest) Return(str string) {
+	glog.Info("Response received: ", str)
 	restreq := <-outstanding
 	io.WriteString(restreq.ReplyTo, str)
+	glog.Info("Response sent")
 
 }

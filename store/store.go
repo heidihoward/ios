@@ -31,7 +31,7 @@ func (s *Store) execute(req string) string {
 		(*s)[request[1]] = request[2]
 		return "OK"
 	case "get":
-		if len(request) 1= 2 {
+		if len(request) != 2 {
 			return "not reconised"
 		}
 		glog.Infof("Getting %s", request[1])
