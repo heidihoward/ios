@@ -23,13 +23,21 @@ func versionServer(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "hydra 0.1\n")
 }
 
-// hello world, the web server
+func closeServer(w http.ResponseWriter, req *http.Request) {
+	close(waiting)
+	io.WriteString(w, "Will do\n")
+}
+
+// main request handler
 func requestServer(w http.ResponseWriter, req *http.Request) {
+	// NB: ResponseWriter needs to be used before this function exits
 	glog.Info("Incoming GET request to", req.URL.String())
 	reqs := strings.Split(req.URL.String(), "/")
 	reqNew := strings.Join(reqs[2:], " ")
 	glog.Info("API request is:", reqNew)
 	waiting <- RestRequest{reqNew + "\n", w}
+
+	//wait for response, else give up
 	time.Sleep(time.Second)
 }
 
@@ -39,6 +47,7 @@ func Create() *Rest {
 
 	//setup HTTP server
 	http.HandleFunc("/request/", requestServer)
+	http.HandleFunc("/close", closeServer)
 	http.HandleFunc("/version", versionServer)
 	go func() {
 		err := http.ListenAndServe(port, nil)
@@ -57,7 +66,10 @@ func Create() *Rest {
 
 func (r *Rest) Next() (string, bool) {
 	glog.Info("Waiting for next request")
-	restreq := <-waiting
+	restreq, ok := <-waiting
+	if !ok {
+		return "", false
+	}
 	outstanding <- restreq
 	glog.Info("Next request received: ", restreq.Req)
 	return restreq.Req, true
