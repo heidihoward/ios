@@ -88,6 +88,7 @@ func main() {
 	// setup network reader
 	net_reader := bufio.NewReader(conn)
 
+	glog.Info("Client is ready to process incoming requests")
 	for {
 
 		// get next command
