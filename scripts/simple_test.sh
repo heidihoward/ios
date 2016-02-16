@@ -11,9 +11,9 @@ rm latency*.csv
 $GOPATH/bin/server &
 
 # start clients 
-$GOPATH/bin/client -config=client/example.conf -auto=test/workload.conf -stat=latency_1.csv &
-$GOPATH/bin/client -config=client/example.conf -auto=test/workload.conf -stat=latency_2.csv &
-$GOPATH/bin/client -config=client/example.conf -auto=test/workload.conf -stat=latency_3.csv &
+$GOPATH/bin/client -config=client/example.conf -mode=test -auto=test/workload.conf -stat=latency_1.csv &
+$GOPATH/bin/client -config=client/example.conf -mode=test -auto=test/workload.conf -stat=latency_2.csv &
+$GOPATH/bin/client -config=client/example.conf -mode=test -auto=test/workload.conf -stat=latency_3.csv &
 
 # stop 
 sleep 20
