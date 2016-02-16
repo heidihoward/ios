@@ -50,6 +50,29 @@ func connect(addrs []string, tries int) (net.Conn, error) {
 	return conn, err
 }
 
+// send bytes and wait for reply, return bytes returned if succussful or error otherwise
+func dispatcher(b []byte, conn net.Conn, r *bufio.Reader) ([]byte, error) {
+	// send request
+	_, err := conn.Write(b)
+	_, err = conn.Write([]byte("\n"))
+	if err != nil && err != io.EOF {
+		glog.Warning(err)
+		return nil, err
+	}
+
+	glog.Info("Sent")
+
+	// read response
+	reply, err := r.ReadBytes('\n')
+	if err != nil && err != io.EOF {
+		glog.Warning(err)
+		return nil, err
+	}
+
+	// success, return reply
+	return reply, nil
+}
+
 func main() {
 	// set up logging
 	flag.Parse()
@@ -84,6 +107,7 @@ func main() {
 	if err != nil {
 		glog.Fatal(err)
 	}
+	rd := bufio.NewReader(conn)
 
 	// setup API
 	var ioapi API
@@ -97,9 +121,6 @@ func main() {
 	default:
 		glog.Fatal("Invalid mode: ", mode)
 	}
-
-	// setup network reader
-	net_reader := bufio.NewReader(conn)
 
 	glog.Info("Client is ready to process incoming requests")
 	for {
@@ -121,39 +142,26 @@ func main() {
 		}
 		glog.Info(string(b))
 
-		// send to server
 		startTime := time.Now()
-		_, err = conn.Write(b)
-		_, err = conn.Write([]byte("\n"))
-		if err != nil {
-			if err == io.EOF {
-				continue
+
+		// dispatch request until successfull
+		var replyBytes []byte
+		for {
+			replyBytes, err = dispatcher(b, conn, rd)
+			if err == nil {
+				break
 			}
-			glog.Warning(err)
-			// reconnecting to server
 			conn, err = connect(conf.Addresses.Address, 3)
 			if err != nil {
 				glog.Fatal(err)
 			}
+			rd = bufio.NewReader(conn)
+
 		}
 
-		glog.Info("Sent ", text)
-
-		// read response
-		r, err := net_reader.ReadBytes('\n')
-		if err != nil {
-			if err == io.EOF {
-				continue
-			}
-			glog.Warning(err)
-			// reconnecting to server
-			conn, err = connect(conf.Addresses.Address, 3)
-			if err != nil {
-				glog.Fatal(err)
-			}
-		}
+		//handle reply
 		reply := new(msgs.ClientResponse)
-		msgs.Unmarshal(r, reply)
+		msgs.Unmarshal(replyBytes, reply)
 
 		// write to latency to log
 		str := fmt.Sprintf("%d\n", time.Since(startTime).Nanoseconds())
