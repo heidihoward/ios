@@ -8,11 +8,14 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
 	"time"
 )
 
 var keyval *store.Store
 var disk *bufio.Writer
+
+var port = flag.Int("port", 8080, "port to listen on")
 
 func handleConnection(cn net.Conn) {
 	glog.Info("Incoming Connection from ",
@@ -96,7 +99,8 @@ func main() {
 
 	// set up server
 	glog.Info("Starting up")
-	ln, err := net.Listen("tcp", ":8080")
+	listeningPort := ":" + strconv.Itoa(*port)
+	ln, err := net.Listen("tcp", listeningPort)
 	if err != nil {
 		glog.Fatal(err)
 	}
