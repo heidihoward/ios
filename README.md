@@ -35,6 +35,7 @@ The (mode independent) client state is stored in the example.conf file. The clie
 * Test - a workload is auotmatically generated for hydra. This workload is configuated using a workload.conf file. An example of this is given in test/workload.conf.
 * Interactive - requests are entered from the terminal. Requests takes the form of get A or update A B. There can be multiple commands in a single request, seperated by semi-colons
 * REST API - a http server on port 12345
+Each client needs a unique id.
 
 #### Logging 
 

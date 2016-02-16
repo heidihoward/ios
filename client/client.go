@@ -8,6 +8,7 @@ import (
 	"github.com/heidi-ann/hydra/api/interactive"
 	"github.com/heidi-ann/hydra/api/rest"
 	"github.com/heidi-ann/hydra/config"
+	"github.com/heidi-ann/hydra/msgs"
 	"github.com/heidi-ann/hydra/test"
 	"io"
 	"net"
@@ -21,9 +22,10 @@ type API interface {
 }
 
 var config_file = flag.String("config", "example.conf", "Client configuration file")
-var auto_file = flag.String("auto", "", "If workload is automatically generated, configure file for workload")
+var auto_file = flag.String("auto", "../test/workload.conf", "If workload is automatically generated, configure file for workload")
 var stat_file = flag.String("stat", "latency.csv", "File to write stats to")
 var mode = flag.String("mode", "interactive", "interactive, rest or test")
+var id = flag.Int("id", -1, "ID of client (must be unique)")
 
 func connect(addrs []string, tries int) (net.Conn, error) {
 	var conn net.Conn
@@ -55,6 +57,13 @@ func main() {
 
 	// parse config files
 	conf := config.Parse(*config_file)
+	// TODO: find a better way to handle required flags
+	if *id == -1 {
+		glog.Fatal("ID must be provided")
+	}
+
+	glog.Info("Starting up client ", *id)
+	defer glog.Info("Shutting down client ", *id)
 
 	// set up stats collection
 	filename := *stat_file
@@ -65,6 +74,10 @@ func main() {
 	}
 	stats := bufio.NewWriter(file)
 	defer stats.Flush()
+
+	// set up request id
+	// TODO: write this value to disk
+	requestID := 0
 
 	// connecting to server
 	conn, err := connect(conf.Addresses.Address, 3)
@@ -98,9 +111,20 @@ func main() {
 		}
 		glog.Info("API produced ", text)
 
+		// encode as request
+		req := msgs.ClientRequest{
+			*id, requestID, text}
+		requestID++
+		b, err := msgs.Marshal(req)
+		if err != nil {
+			glog.Fatal(err)
+		}
+		glog.Info(string(b))
+
 		// send to server
 		startTime := time.Now()
-		_, err = conn.Write([]byte(text))
+		_, err = conn.Write(b)
+		_, err = conn.Write([]byte("\n"))
 		if err != nil {
 			if err == io.EOF {
 				continue
@@ -116,7 +140,7 @@ func main() {
 		glog.Info("Sent ", text)
 
 		// read response
-		reply, err := net_reader.ReadString('\n')
+		r, err := net_reader.ReadBytes('\n')
 		if err != nil {
 			if err == io.EOF {
 				continue
@@ -128,6 +152,8 @@ func main() {
 				glog.Fatal(err)
 			}
 		}
+		reply := new(msgs.ClientResponse)
+		msgs.Unmarshal(r, reply)
 
 		// write to latency to log
 		str := fmt.Sprintf("%d\n", time.Since(startTime).Nanoseconds())
@@ -140,7 +166,7 @@ func main() {
 
 		// writing result to user
 		// time.Since(startTime)
-		ioapi.Return(reply)
+		ioapi.Return(reply.Response)
 
 	}
 

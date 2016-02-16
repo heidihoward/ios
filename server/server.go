@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"github.com/golang/glog"
+	"github.com/heidi-ann/hydra/msgs"
 	"github.com/heidi-ann/hydra/store"
 	"io"
 	"net"
@@ -28,17 +29,20 @@ func handleConnection(cn net.Conn) {
 
 		// read request
 		glog.Info("Reading")
-		text, err := reader.ReadString('\n')
+		text, err := reader.ReadBytes(byte('\n'))
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
 			glog.Fatal(err)
 		}
-		glog.Info("Received ", text)
+		glog.Info(string(text))
+		req := new(msgs.ClientRequest)
+		msgs.Unmarshal(text, req)
+		glog.Info("Received ", req.Request)
 
 		// write to persistent storage
-		n, err := disk.WriteString(text)
+		n, err := disk.WriteString(req.Request)
 		_ = disk.Flush()
 		if err != nil {
 			glog.Fatal(err)
@@ -46,14 +50,23 @@ func handleConnection(cn net.Conn) {
 		glog.Infof("Written %b bytes to persistent storage", n)
 
 		// apply request
-		reply := keyval.Process(text)
+		output := keyval.Process(req.Request)
 		keyval.Print()
 		time.Sleep(100 * time.Millisecond)
 
+		// construct reply
+		reply := msgs.ClientResponse{
+			req.ClientID, req.RequestID, output}
+		b, err := msgs.Marshal(reply)
+		if err != nil {
+			glog.Fatal("error:", err)
+		}
+		glog.Info(string(b))
+
 		// send reply
-		glog.Info("Sending ", reply)
-		reply = reply + "\n"
-		n, err = writer.WriteString(reply)
+		glog.Info("Sending ", b)
+		n, err = writer.Write(b)
+		_, err = writer.Write([]byte("\n"))
 		if err != nil {
 			glog.Fatal(err)
 		}
