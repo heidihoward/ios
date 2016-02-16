@@ -9,6 +9,10 @@ type Config struct {
 	Addresses struct {
 		Address []string
 	}
+	Parameters struct {
+		Retries int
+		Timeout int
+	}
 }
 
 func Parse(filename string) Config {

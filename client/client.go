@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/golang/glog"
@@ -51,26 +52,42 @@ func connect(addrs []string, tries int) (net.Conn, error) {
 }
 
 // send bytes and wait for reply, return bytes returned if succussful or error otherwise
-func dispatcher(b []byte, conn net.Conn, r *bufio.Reader) ([]byte, error) {
-	// send request
-	_, err := conn.Write(b)
-	_, err = conn.Write([]byte("\n"))
-	if err != nil && err != io.EOF {
-		glog.Warning(err)
+func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration) ([]byte, error) {
+	// setup channels for timeout implementation
+	errCh := make(chan error, 1)
+	replyCh := make(chan []byte, 1)
+
+	go func() {
+		// send request
+		_, err := conn.Write(b)
+		_, err = conn.Write([]byte("\n"))
+		if err != nil && err != io.EOF {
+			glog.Warning(err)
+			errCh <- err
+		}
+
+		glog.Info("Sent")
+
+		// read response
+		reply, err := r.ReadBytes('\n')
+		if err != nil && err != io.EOF {
+			glog.Warning(err)
+			errCh <- err
+		}
+
+		// success, return reply
+		replyCh <- reply
+	}()
+
+	//handling outcomes
+	select {
+	case reply := <-replyCh:
+		return reply, nil
+	case err := <-errCh:
 		return nil, err
+	case <-time.After(timeout):
+		return nil, errors.New("Timeout")
 	}
-
-	glog.Info("Sent")
-
-	// read response
-	reply, err := r.ReadBytes('\n')
-	if err != nil && err != io.EOF {
-		glog.Warning(err)
-		return nil, err
-	}
-
-	// success, return reply
-	return reply, nil
 }
 
 func main() {
@@ -80,6 +97,7 @@ func main() {
 
 	// parse config files
 	conf := config.Parse(*config_file)
+	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	// TODO: find a better way to handle required flags
 	if *id == -1 {
 		glog.Fatal("ID must be provided")
@@ -147,11 +165,11 @@ func main() {
 		// dispatch request until successfull
 		var replyBytes []byte
 		for {
-			replyBytes, err = dispatcher(b, conn, rd)
+			replyBytes, err = dispatcher(b, conn, rd, timeout)
 			if err == nil {
 				break
 			}
-			conn, err = connect(conf.Addresses.Address, 3)
+			conn, err = connect(conf.Addresses.Address, conf.Parameters.Retries)
 			if err != nil {
 				glog.Fatal(err)
 			}
