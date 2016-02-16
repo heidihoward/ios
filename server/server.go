@@ -5,6 +5,7 @@ import (
 	"flag"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/cache"
+	"github.com/heidi-ann/hydra/config"
 	"github.com/heidi-ann/hydra/msgs"
 	"github.com/heidi-ann/hydra/store"
 	"io"
@@ -19,6 +20,8 @@ var disk *bufio.Writer
 var c *cache.Cache
 
 var port = flag.Int("port", 8080, "port to listen on")
+var id = flag.Int("id", -1, "server ID")
+var config_file = flag.String("config", "example.conf", "Server configuration file")
 
 func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	glog.Info("Handling ", req.Request)
@@ -26,7 +29,7 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	// check if already applied
 	found, res := c.Check(req)
 	if found {
-		glog.Info{"Request found in cache"}
+		glog.Info("Request found in cache")
 		return res // FAST PASS
 	}
 
@@ -44,7 +47,7 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	// check if request already applied
 	found, res = c.Check(req)
 	if found {
-		glog.Info{"Request found in cache and thus cannot be applied"}
+		glog.Info("Request found in cache and thus cannot be applied")
 		return res
 	}
 
@@ -58,6 +61,13 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 
 	c.Add(reply)
 	return reply
+}
+
+func handlePeer(cn net.Conn) {
+	glog.Info("Incoming Connection from ",
+		cn.RemoteAddr().String())
+
+	cn.Close()
 }
 
 func handleConnection(cn net.Conn) {
@@ -114,6 +124,11 @@ func main() {
 	flag.Parse()
 	defer glog.Flush()
 
+	_ = config.ParseServerConfig(*config_file)
+	if *id == -1 {
+		glog.Fatal("ID is required")
+	}
+
 	//set up state machine
 	keyval = store.New()
 	c = cache.Create()
@@ -138,8 +153,8 @@ func main() {
 		_ = keyval.Process(str)
 	}
 
-	// set up server
-	glog.Info("Starting up")
+	// set up client server
+	glog.Info("Starting up client server")
 	listeningPort := ":" + strconv.Itoa(*port)
 	ln, err := net.Listen("tcp", listeningPort)
 	if err != nil {
@@ -153,6 +168,23 @@ func main() {
 			glog.Fatal(err)
 		}
 		go handleConnection(conn)
+	}
+
+	//set up peer server
+	glog.Info("Starting up peer server")
+	listeningPort = ":" + strconv.Itoa(*port+1)
+	lnPeers, err := net.Listen("tcp", listeningPort)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
+	// handle for incoming peers
+	for {
+		conn, err := lnPeers.Accept()
+		if err != nil {
+			glog.Fatal(err)
+		}
+		go handlePeer(conn)
 	}
 
 	// tidy up

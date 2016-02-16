@@ -5,18 +5,14 @@ import (
 	"gopkg.in/gcfg.v1"
 )
 
-type Config struct {
-	Addresses struct {
+type ServerConfig struct {
+	Peers struct {
 		Address []string
-	}
-	Parameters struct {
-		Retries int
-		Timeout int
 	}
 }
 
-func Parse(filename string) Config {
-	var config Config
+func ParseServerConfig(filename string) ServerConfig {
+	var config ServerConfig
 	err := gcfg.ReadFileInto(&config, filename)
 	if err != nil {
 		glog.Fatalf("Failed to parse gcfg data: %s", err)
