@@ -96,7 +96,7 @@ func main() {
 	defer glog.Flush()
 
 	// parse config files
-	conf := config.Parse(*config_file)
+	conf := config.ParseClientConfig(*config_file)
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	// TODO: find a better way to handle required flags
 	if *id == -1 {
