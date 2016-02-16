@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"github.com/golang/glog"
+	"github.com/heidi-ann/hydra/cache"
 	"github.com/heidi-ann/hydra/msgs"
 	"github.com/heidi-ann/hydra/store"
 	"io"
@@ -15,8 +16,49 @@ import (
 
 var keyval *store.Store
 var disk *bufio.Writer
+var c *cache.Cache
 
 var port = flag.Int("port", 8080, "port to listen on")
+
+func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
+	glog.Info("Handling ", req.Request)
+
+	// check if already applied
+	found, res := c.Check(req)
+	if found {
+		glog.Info{"Request found in cache"}
+		return res // FAST PASS
+	}
+
+	// write to persistent storage
+	n, err := disk.WriteString(req.Request)
+	_ = disk.Flush()
+	if err != nil {
+		glog.Fatal(err)
+	}
+	glog.Infof("Written %b bytes to persistent storage", n)
+
+	// TODO: CONSENESUS ALGORITHM HERE
+	time.Sleep(100 * time.Millisecond)
+
+	// check if request already applied
+	found, res = c.Check(req)
+	if found {
+		glog.Info{"Request found in cache and thus cannot be applied"}
+		return res
+	}
+
+	// apply request
+	output := keyval.Process(req.Request)
+	keyval.Print()
+
+	// write response to request cache
+	reply := msgs.ClientResponse{
+		req.ClientID, req.RequestID, output}
+
+	c.Add(reply)
+	return reply
+}
 
 func handleConnection(cn net.Conn) {
 	glog.Info("Incoming Connection from ",
@@ -39,24 +81,9 @@ func handleConnection(cn net.Conn) {
 		glog.Info(string(text))
 		req := new(msgs.ClientRequest)
 		msgs.Unmarshal(text, req)
-		glog.Info("Received ", req.Request)
-
-		// write to persistent storage
-		n, err := disk.WriteString(req.Request)
-		_ = disk.Flush()
-		if err != nil {
-			glog.Fatal(err)
-		}
-		glog.Infof("Written %b bytes to persistent storage", n)
-
-		// apply request
-		output := keyval.Process(req.Request)
-		keyval.Print()
-		time.Sleep(100 * time.Millisecond)
 
 		// construct reply
-		reply := msgs.ClientResponse{
-			req.ClientID, req.RequestID, output}
+		reply := handleRequest(*req)
 		b, err := msgs.Marshal(reply)
 		if err != nil {
 			glog.Fatal("error:", err)
@@ -65,7 +92,7 @@ func handleConnection(cn net.Conn) {
 
 		// send reply
 		glog.Info("Sending ", b)
-		n, err = writer.Write(b)
+		n, err := writer.Write(b)
 		_, err = writer.Write([]byte("\n"))
 		if err != nil {
 			glog.Fatal(err)
@@ -89,6 +116,7 @@ func main() {
 
 	//set up state machine
 	keyval = store.New()
+	c = cache.Create()
 
 	// setting up persistent log
 	glog.Info("Opening file: ", filename)
