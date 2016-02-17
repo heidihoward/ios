@@ -118,7 +118,7 @@ func main() {
 
 	// set up request id
 	// TODO: write this value to disk
-	requestID := 0
+	requestID := 1
 
 	// connecting to server
 	conn, err := connect(conf.Addresses.Address, 3)

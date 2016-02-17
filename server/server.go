@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -19,9 +20,27 @@ var keyval *store.Store
 var disk *bufio.Writer
 var c *cache.Cache
 
-var port = flag.Int("port", 8080, "port to listen on")
+type Peer struct {
+	id       int
+	address  string
+	handled  bool // TOOD: replace with Mutex
+	outgoing chan []byte
+	incoming chan []byte
+}
+
+var peers []Peer
+
+var client_port = flag.Int("client-port", 8080, "port to listen on for clients")
+var peer_port = flag.Int("peer-port", 8090, "port to listen on for peers")
 var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
+
+func broadcast(b []byte) {
+	glog.Info("Broadcasting to peers ", string(b))
+	for i := range peers {
+		peers[i].outgoing <- b
+	}
+}
 
 func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	glog.Info("Handling ", req.Request)
@@ -43,6 +62,7 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 
 	// TODO: CONSENESUS ALGORITHM HERE
 	time.Sleep(100 * time.Millisecond)
+	broadcast([]byte("hello"))
 
 	// check if request already applied
 	found, res = c.Check(req)
@@ -63,15 +83,89 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	return reply
 }
 
-func handlePeer(cn net.Conn) {
-	glog.Info("Incoming Connection from ",
-		cn.RemoteAddr().String())
+// iterative through peers and check there is a handler for each
+// try to create one if not
+func checkPeer() {
+	for i := range peers {
+		if !peers[i].handled {
+			glog.Info("Peer ", i, " is not currently connected")
+			cn, err := net.Dial("tcp", peers[i].address)
 
+			if err != nil {
+				glog.Warning(err)
+				break
+			}
+
+			handlePeer(cn, true)
+		}
+	}
+}
+
+func handlePeer(cn net.Conn, _ bool) {
+	addr := cn.RemoteAddr().String()
+	glog.Info("Incoming peer connection from ", addr)
+
+	// handle requests
+	reader := bufio.NewReader(cn)
+	writer := bufio.NewWriter(cn)
+
+	// exchange peer ID's
+	_, _ = writer.WriteString(strconv.Itoa(*id) + "\n")
+	_ = writer.Flush()
+	text, _ := reader.ReadString('\n')
+	glog.Info("Received ", text)
+	peer_id, err := strconv.Atoi(strings.Trim(text, "\n"))
+	if err != nil {
+		glog.Warning(err)
+		return
+	}
+
+	glog.Infof("Ready to handle traffic from peer %d at %s ", peer_id, addr)
+
+	peers[peer_id].handled = true
+
+	close_err := make(chan error)
+	go func() {
+		for {
+			// read request
+			glog.Info("Reading from peer ", peer_id)
+			text, err := reader.ReadBytes(byte('\n'))
+			if err != nil && err != io.EOF {
+				close_err <- err
+				break
+			}
+			glog.Info(string(text))
+			peers[peer_id].incoming <- text
+		}
+	}()
+
+	go func() {
+		for {
+			// send reply
+			b := <-peers[peer_id].outgoing
+			glog.Info("Sending ", string(b))
+			_, err := writer.Write(b)
+			_, err = writer.Write([]byte("\n"))
+			if err != nil {
+				close_err <- err
+				break
+			}
+			err = writer.Flush()
+		}
+	}()
+
+	// block until connection fails
+	err = <-close_err
+	glog.Warning(err)
+
+	// tidy up
+	glog.Infof("No longer about to handle traffic from peer %d at %s ", id, addr)
+	peers[peer_id].handled = false
 	cn.Close()
 }
 
 func handleConnection(cn net.Conn) {
-	glog.Info("Incoming Connection from ",
+	glog.Info("Incoming client connection from ",
 		cn.RemoteAddr().String())
 
 	reader := bufio.NewReader(cn)
@@ -101,7 +195,7 @@ func handleConnection(cn net.Conn) {
 		glog.Info(string(b))
 
 		// send reply
-		glog.Info("Sending ", b)
+		glog.Info("Sending ", string(b))
 		n, err := writer.Write(b)
 		_, err = writer.Write([]byte("\n"))
 		if err != nil {
@@ -118,22 +212,23 @@ func handleConnection(cn net.Conn) {
 }
 
 func main() {
-	filename := "persistent.log"
-
 	// set up logging
 	flag.Parse()
 	defer glog.Flush()
 
-	_ = config.ParseServerConfig(*config_file)
+	conf := config.ParseServerConfig(*config_file)
 	if *id == -1 {
 		glog.Fatal("ID is required")
 	}
+
+	glog.Info("Starting server ", *id)
 
 	//set up state machine
 	keyval = store.New()
 	c = cache.Create()
 
 	// setting up persistent log
+	filename := "persistent_" + strconv.Itoa(*id) + ".log"
 	glog.Info("Opening file: ", filename)
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
@@ -155,28 +250,48 @@ func main() {
 
 	// set up client server
 	glog.Info("Starting up client server")
-	listeningPort := ":" + strconv.Itoa(*port)
+	listeningPort := ":" + strconv.Itoa(*client_port)
 	ln, err := net.Listen("tcp", listeningPort)
 	if err != nil {
 		glog.Fatal(err)
 	}
 
 	// handle for incoming clients
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			glog.Fatal(err)
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				glog.Fatal(err)
+			}
+			go handleConnection(conn)
 		}
-		go handleConnection(conn)
+	}()
+
+	//set up peer state
+	peers = make([]Peer, len(conf.Peers.Address))
+	for i := range conf.Peers.Address {
+		peers[i] = Peer{
+			i, conf.Peers.Address[i], false, make(chan []byte, 10), make(chan []byte, 10)}
 	}
 
 	//set up peer server
 	glog.Info("Starting up peer server")
-	listeningPort = ":" + strconv.Itoa(*port+1)
+	listeningPort = ":" + strconv.Itoa(*peer_port)
 	lnPeers, err := net.Listen("tcp", listeningPort)
 	if err != nil {
 		glog.Fatal(err)
 	}
+
+	// mark local peer as handled
+	peers[*id].handled = true
+
+	// regularly check if all peers are connected and reply if not
+	go func() {
+		for {
+			checkPeer()
+			time.Sleep(10 * time.Second)
+		}
+	}()
 
 	// handle for incoming peers
 	for {
@@ -184,7 +299,7 @@ func main() {
 		if err != nil {
 			glog.Fatal(err)
 		}
-		go handlePeer(conn)
+		go handlePeer(conn, false)
 	}
 
 	// tidy up

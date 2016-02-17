@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"os"
+	"strings"
 	//"time"
 )
 
@@ -23,6 +24,7 @@ func (i *Interative) Next() (string, bool) {
 	if err != nil {
 		glog.Fatal(err)
 	}
+	text = strings.Trim(text, "\n")
 	glog.Info("User entered", text)
 	return text, true
 }
