@@ -6,6 +6,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/cache"
 	"github.com/heidi-ann/hydra/config"
+	"github.com/heidi-ann/hydra/consensus"
 	"github.com/heidi-ann/hydra/msgs"
 	"github.com/heidi-ann/hydra/store"
 	"io"
@@ -19,6 +20,7 @@ import (
 var keyval *store.Store
 var disk *bufio.Writer
 var c *cache.Cache
+var cons_io *consensus.Io
 
 type Peer struct {
 	id       int
@@ -34,13 +36,6 @@ var client_port = flag.Int("client-port", 8080, "port to listen on for clients")
 var peer_port = flag.Int("peer-port", 8090, "port to listen on for peers")
 var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
-
-func broadcast(b []byte) {
-	glog.Info("Broadcasting to peers ", string(b))
-	for i := range peers {
-		peers[i].outgoing <- b
-	}
-}
 
 func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	glog.Info("Handling ", req.Request)
@@ -61,8 +56,10 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	glog.Infof("Written %b bytes to persistent storage", n)
 
 	// TODO: CONSENESUS ALGORITHM HERE
-	time.Sleep(100 * time.Millisecond)
-	broadcast([]byte("hello"))
+	glog.Info("Passing request to consensus algorithm")
+	(*cons_io).Incoming_requests <- req
+	_ = <-(*cons_io).Outgoing_requests
+	glog.Info("Request has been safely replicated by consensus algorithm")
 
 	// check if request already applied
 	found, res = c.Check(req)
@@ -294,13 +291,27 @@ func main() {
 	}()
 
 	// handle for incoming peers
-	for {
-		conn, err := lnPeers.Accept()
-		if err != nil {
-			glog.Fatal(err)
+	go func() {
+		for {
+			conn, err := lnPeers.Accept()
+			if err != nil {
+				glog.Fatal(err)
+			}
+			go handlePeer(conn, false)
 		}
-		go handlePeer(conn, false)
+	}()
+
+	// setting up the consensus algorithm
+	cons_io = &consensus.Io{
+		Incoming_requests: make(chan msgs.ClientRequest, 10),
+		Outgoing_requests: make(chan msgs.ClientRequest, 10),
+		Incoming_peers:    make(map[int](chan []byte)),
+		Outgoing_peers:    make(map[int](chan []byte))}
+	for pid := range peers {
+		cons_io.Incoming_peers[pid] = peers[pid].incoming
+		cons_io.Outgoing_peers[pid] = peers[pid].outgoing
 	}
+	consensus.Init(cons_io)
 
 	// tidy up
 	time.Sleep(30 * time.Second)
