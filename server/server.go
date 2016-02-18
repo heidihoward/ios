@@ -7,7 +7,6 @@ import (
 	"github.com/heidi-ann/hydra/cache"
 	"github.com/heidi-ann/hydra/config"
 	"github.com/heidi-ann/hydra/consensus"
-	"github.com/heidi-ann/hydra/msgs"
 	"github.com/heidi-ann/hydra/store"
 	"io"
 	"net"
@@ -131,15 +130,18 @@ func handlePeer(cn net.Conn, _ bool) {
 				close_err <- err
 				break
 			}
-			glog.Info(string(text))
-			peers[peer_id].incoming <- text
+
+			(*cons_io).Incoming.BytestoMsgChans(text)
+
 		}
 	}()
 
 	go func() {
 		for {
 			// send reply
-			b := <-peers[peer_id].outgoing
+			watch = (*cons_io).OutgoingUnicast[peer_id]
+
+			b := cons_io.MsgChanToBytes()
 			glog.Info("Sending ", string(b))
 			_, err := writer.Write(b)
 			_, err = writer.Write([]byte("\n"))
@@ -305,12 +307,14 @@ func main() {
 	cons_io = &consensus.Io{
 		Incoming_requests: make(chan msgs.ClientRequest, 10),
 		Outgoing_requests: make(chan msgs.ClientRequest, 10),
-		Incoming_peers:    make(map[int](chan []byte)),
-		Outgoing_peers:    make(map[int](chan []byte))}
+		Incoming:          MakeMsgChans(),
+		OutgoingBroadcast: MakeMsgChans(),
+		OutgoingUnicast:   make(map[int]MsgChans),
+		Config:            Config{*id, len(conf.Peers.Address)}}
 	for pid := range peers {
-		cons_io.Incoming_peers[pid] = peers[pid].incoming
-		cons_io.Outgoing_peers[pid] = peers[pid].outgoing
+		cons_io.OutgoingUnicast[pid] = MakeMsgChans()
 	}
+	go cons_io.broadcaster()
 	consensus.Init(cons_io)
 
 	// tidy up
