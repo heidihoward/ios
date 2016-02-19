@@ -310,12 +310,12 @@ func main() {
 		Incoming:          MakeMsgChans(),
 		OutgoingBroadcast: MakeMsgChans(),
 		OutgoingUnicast:   make(map[int]MsgChans),
-		Config:            Config{*id, len(conf.Peers.Address)}}
 	for pid := range peers {
 		cons_io.OutgoingUnicast[pid] = MakeMsgChans()
 	}
+	cons_config = consensus.Config{*id, len(conf.Peers.Address)}
 	go cons_io.broadcaster()
-	consensus.Init(cons_io)
+	consensus.Init(cons_io,cons_config)
 
 	// tidy up
 	time.Sleep(30 * time.Second)

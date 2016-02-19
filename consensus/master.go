@@ -1,17 +1,13 @@
 package consensus
 
 import (
-	"github.com/heidi-ann/hydra/msgs"
 	"github.com/golang/glog"
+	"github.com/heidi-ann/hydra/msgs"
 )
-
-var io_handler *Io
-var state *State
-
 
 // PROTOCOL BODY
 
-func RunMaster (view int, id int, inital_index int, majority int) {
+func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
 	// setup
 	glog.Info("Starting up master")
 	index := inital_index
@@ -20,30 +16,29 @@ func RunMaster (view int, id int, inital_index int, majority int) {
 	for {
 
 		// wait for request
-		req := <-(*io_handler).Incoming_requests
+		req := <-(*io).IncomingRequests
 		glog.Info("Request received")
 
-		entry = {
-			View: view,
+		entry := msgs.Entry{
+			View:      view,
 			Committed: false,
-			Request:req
-		}
+			Request:   req}
 
 		// phase 1: prepare
-		(*io).OutgoingBroadcast.Requests.Prepare <-
-				PrepareRequest{id, view, index, entry}
+		(*io).OutgoingBroadcast.Requests.Prepare <- msgs.PrepareRequest{id, view, index, entry}
 		index++
 
 		// collect responses
-		for i := 0; i<majority {
-			res := <-(*io_handler).Incoming.Responses.Promise 
-			if res.success {i++}
+		for i := 0; i < majority; {
+			res := <-(*io).Incoming.Responses.Prepare
+			if res.Success {
+				i++
+			}
 		}
 
 		//phase 2: commit
-		entry.Committed=true
-		(*io).OutgoingBroadcast.Requests.Commit <-
-			CommitRequest{id, view, index, entry}
+		entry.Committed = true
+		(*io).OutgoingBroadcast.Requests.Commit <- msgs.CommitRequest{id, view, index, entry}
 
 	}
 

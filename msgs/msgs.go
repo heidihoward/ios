@@ -1,4 +1,4 @@
-package consensus
+package msgs
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 // MESSAGE FORMATS
 
 type ClientRequest struct {
-	SenderID  int
 	ClientID  int
 	RequestID int
 	Request   string
@@ -77,7 +76,7 @@ type Io struct {
 }
 
 // TODO: find a more generic method
-func (io *Io) broadcaster() {
+func (io *Io) Broadcaster() {
 	for {
 		select {
 
@@ -118,6 +117,20 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 	return ProtoMsgs{
 		Requests{make(chan PrepareRequest, buf), make(chan CommitRequest, buf)},
 		Responses{make(chan PrepareResponse, buf), make(chan CommitResponse, buf)}}
+}
+
+func MakeIo(buf int, n int) *Io {
+	io := Io{
+		IncomingRequests:  make(chan ClientRequest, buf),
+		OutgoingRequests:  make(chan ClientRequest, buf),
+		Incoming:          MakeProtoMsgs(buf),
+		OutgoingBroadcast: MakeProtoMsgs(buf),
+		OutgoingUnicast:   make(map[int]ProtoMsgs)}
+
+	for id := 0; id < n; id++ {
+		io.OutgoingUnicast[id] = MakeProtoMsgs(buf)
+	}
+	return &io
 }
 
 func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
