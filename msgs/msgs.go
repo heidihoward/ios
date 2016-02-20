@@ -149,6 +149,8 @@ func MakeIo(buf int, n int) *Io {
 	for id := 0; id < n; id++ {
 		io.OutgoingUnicast[id] = MakeProtoMsgs(buf)
 	}
+
+	go io.Broadcaster()
 	return &io
 }
 

@@ -310,7 +310,6 @@ func main() {
 
 	// setting up the consensus algorithm
 	cons_config := consensus.Config{*id, len(conf.Peers.Address)}
-	go cons_io.Broadcaster()
 	consensus.Init(cons_io,cons_config)
 
 	// tidy up
