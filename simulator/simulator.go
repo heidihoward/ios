@@ -17,13 +17,13 @@ func RunSimulator(nodes int) ([]*msgs.Io) {
 	}
 
 	// forward traffic
-	for to := range ios {
-		for from := range ios {
-			// TODO: URGENT FIX REQUIRED
-			out := ios[from].OutgoingUnicast[to]
-			out.Forward(&(ios[to].Incoming))
+	go func() {
+		for to := range ios {
+			for from := range ios {
+				ios[to].Incoming.Forward(ios[from].OutgoingUnicast[to])
+			}
 		}
-	}
+	}()
 
 	return ios
 }

@@ -285,9 +285,7 @@ func main() {
 	// handle local peer (without sending network traffic)
 	peers[*id].handled = true
 	from := &((*cons_io).Incoming)
-	// TODO: URGENT FIX NEEDED
-	to := (*cons_io).OutgoingUnicast[*id]
-	go from.Forward(&to)
+	go from.Forward((*cons_io).OutgoingUnicast[*id])
 
 	// regularly check if all peers are connected and reply if not
 	go func() {

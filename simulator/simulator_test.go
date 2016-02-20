@@ -5,6 +5,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/msgs"
 	"testing"
+	"time"
 )
 
 func TestSimulator(t *testing.T) {
@@ -16,19 +17,16 @@ func TestSimulator(t *testing.T) {
 		RequestID: 0,
 		Request:   "update A 3"}
 
-	entry1 := msgs.Entry{
-		View:      0,
-		Committed: false,
-		Request:   request1}
-
-	prepare1 := msgs.PrepareRequest{
-		SenderID: 0,
-		View:     0,
-		Index:    0,
-		Entry:    entry1}
-
-
 	// create a system of 3 nodes
 	ios := RunSimulator(3)
-	ios[0].Incoming.Requests.Prepare <- prepare1
+	ios[0].IncomingRequests <- request1
+
+	select {
+	case reply := <-(*ios[0]).OutgoingRequests:
+		if reply != request1 {
+			t.Error(reply)
+		}
+	case <-time.After(time.Second):
+		t.Error("Participant not responding")
+	}
 }

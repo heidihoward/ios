@@ -31,14 +31,14 @@ func RunParticipant(state State, io *msgs.Io) {
 			// check sender is master
 			if req.SenderID != masterID {
 				glog.Warning("Sender is not master")
-				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.PrepareResponse{state.ID, true}
+				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Prepare <- msgs.PrepareResponse{state.ID, true}
 				break
 			}
 
 			// add entry & reply
 			state.Log[req.Index] = req.Entry
 			reply := msgs.PrepareResponse{state.ID, true}
-			(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- reply
+			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Prepare <- reply
 			glog.Info("Response dispatched: ", reply)
 
 		case req := <-(*io).Incoming.Requests.Commit:
@@ -60,11 +60,11 @@ func RunParticipant(state State, io *msgs.Io) {
 				(*io).OutgoingRequests <- req.Entry.Request
 				state.CommitIndex++
 
-				(*io).OutgoingUnicast[req.SenderID].Responses.Commit <- msgs.CommitResponse{state.ID, true, state.CommitIndex}
+				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{state.ID, true, state.CommitIndex}
 
 			} else {
 
-				(*io).OutgoingUnicast[req.SenderID].Responses.Commit <- msgs.CommitResponse{state.ID, false, state.CommitIndex}
+				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{state.ID, false, state.CommitIndex}
 
 			}
 			glog.Info("Response dispatched")

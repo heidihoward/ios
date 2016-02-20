@@ -2,6 +2,7 @@ package msgs
 
 import (
 	"encoding/json"
+	"github.com/golang/glog"
 )
 
 // MESSAGE FORMATS
@@ -71,27 +72,32 @@ type Io struct {
 	OutgoingRequests  chan ClientRequest
 	Incoming          ProtoMsgs
 	OutgoingBroadcast ProtoMsgs
-	OutgoingUnicast   map[int]ProtoMsgs
+	OutgoingUnicast   map[int]*ProtoMsgs
 }
 
 // TODO: find a more generic method
 func (io *Io) Broadcaster() {
+	glog.Info("Setting up broadcaster for ", len((*io).OutgoingUnicast)," nodes")
 	for {
 		select {
 
 		case r := <-(*io).OutgoingBroadcast.Requests.Prepare:
+			glog.Info("Broadcasting ",r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.Prepare <- r
 			}
 		case r := <-(*io).OutgoingBroadcast.Requests.Commit:
+			glog.Info("Broadcasting ",r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.Commit <- r
 			}
 		case r := <-(*io).OutgoingBroadcast.Responses.Prepare:
+			glog.Info("Broadcasting ",r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Responses.Prepare <- r
 			}
 		case r := <-(*io).OutgoingBroadcast.Requests.Commit:
+			glog.Info("Broadcasting ",r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.Commit <- r
 			}
@@ -108,13 +114,17 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 		select {
 
 		case r := <-(*from).Requests.Prepare:
-				(*to).Requests.Prepare <- r
+			glog.Info("Forwarding ", r)
+			(*to).Requests.Prepare <- r
 		case r := <-(*from).Requests.Commit:
-				(*to).Requests.Commit <- r
+			glog.Info("Forwarding", r)
+			(*to).Requests.Commit <- r
 		case r := <-(*from).Responses.Prepare:
-				(*to).Responses.Prepare <- r
+			glog.Info("Forwarding", r)
+			(*to).Responses.Prepare <- r
 		case r := <-(*from).Requests.Commit:
-				(*to).Requests.Commit <- r
+			glog.Info("Forwarding", r)
+			(*to).Requests.Commit <- r
 
 		}
 
@@ -144,10 +154,11 @@ func MakeIo(buf int, n int) *Io {
 		OutgoingRequests:  make(chan ClientRequest, buf),
 		Incoming:          MakeProtoMsgs(buf),
 		OutgoingBroadcast: MakeProtoMsgs(buf),
-		OutgoingUnicast:   make(map[int]ProtoMsgs)}
+		OutgoingUnicast:   make(map[int]*ProtoMsgs)}
 
 	for id := 0; id < n; id++ {
-		io.OutgoingUnicast[id] = MakeProtoMsgs(buf)
+		protomsgs := MakeProtoMsgs(buf)
+		io.OutgoingUnicast[id] = &protomsgs
 	}
 
 	go io.Broadcaster()

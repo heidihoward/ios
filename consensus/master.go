@@ -17,7 +17,7 @@ func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
 
 		// wait for request
 		req := <-(*io).IncomingRequests
-		glog.Info("Request received")
+		glog.Info("Request received ", req)
 
 		entry := msgs.Entry{
 			View:      view,
@@ -25,10 +25,13 @@ func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
 			Request:   req}
 
 		// phase 1: prepare
-		(*io).OutgoingBroadcast.Requests.Prepare <- msgs.PrepareRequest{id, view, index, entry}
+		prepare := msgs.PrepareRequest{id, view, index, entry}
+		glog.Info("Starting prepare phase", prepare)
+		(*io).OutgoingBroadcast.Requests.Prepare <- prepare
 		index++
 
 		// collect responses
+		glog.Info("Waiting for prepare responses")
 		for i := 0; i < majority; {
 			res := <-(*io).Incoming.Responses.Prepare
 			if !res.Success {
