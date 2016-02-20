@@ -8,6 +8,7 @@ import (
 	"github.com/heidi-ann/hydra/config"
 	"github.com/heidi-ann/hydra/consensus"
 	"github.com/heidi-ann/hydra/store"
+	"github.com/heidi-ann/hydra/msgs"
 	"io"
 	"net"
 	"os"
@@ -19,14 +20,12 @@ import (
 var keyval *store.Store
 var disk *bufio.Writer
 var c *cache.Cache
-var cons_io *consensus.Io
+var cons_io *msgs.Io
 
 type Peer struct {
 	id       int
 	address  string
 	handled  bool // TOOD: replace with Mutex
-	outgoing chan []byte
-	incoming chan []byte
 }
 
 var peers []Peer
@@ -54,10 +53,10 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	}
 	glog.Infof("Written %b bytes to persistent storage", n)
 
-	// TODO: CONSENESUS ALGORITHM HERE
+	// CONSENESUS ALGORITHM HERE
 	glog.Info("Passing request to consensus algorithm")
-	(*cons_io).Incoming_requests <- req
-	_ = <-(*cons_io).Outgoing_requests
+	(*cons_io).IncomingRequests <- req
+	_ = <-(*cons_io).OutgoingRequests
 	glog.Info("Request has been safely replicated by consensus algorithm")
 
 	// check if request already applied
@@ -99,7 +98,7 @@ func checkPeer() {
 
 func handlePeer(cn net.Conn, _ bool) {
 	addr := cn.RemoteAddr().String()
-	glog.Info("Incoming peer connection from ", addr)
+	glog.Info("Peer connection from ", addr)
 
 	// handle requests
 	reader := bufio.NewReader(cn)
@@ -131,7 +130,7 @@ func handlePeer(cn net.Conn, _ bool) {
 				break
 			}
 
-			(*cons_io).Incoming.BytestoMsgChans(text)
+			(*cons_io).Incoming.BytesToProtoMsg(text)
 
 		}
 	}()
@@ -139,9 +138,9 @@ func handlePeer(cn net.Conn, _ bool) {
 	go func() {
 		for {
 			// send reply
-			watch = (*cons_io).OutgoingUnicast[peer_id]
-
-			b := cons_io.MsgChanToBytes()
+			// TODO: URGENT FIX NEEDED
+			proto_msg := (*cons_io).OutgoingUnicast[peer_id]
+			b, _ := proto_msg.ProtoMsgToBytes()
 			glog.Info("Sending ", string(b))
 			_, err := writer.Write(b)
 			_, err = writer.Write([]byte("\n"))
@@ -194,6 +193,7 @@ func handleConnection(cn net.Conn) {
 		glog.Info(string(b))
 
 		// send reply
+		// TODO: FIX currently all server send back replies
 		glog.Info("Sending ", string(b))
 		n, err := writer.Write(b)
 		_, err = writer.Write([]byte("\n"))
@@ -270,8 +270,9 @@ func main() {
 	peers = make([]Peer, len(conf.Peers.Address))
 	for i := range conf.Peers.Address {
 		peers[i] = Peer{
-			i, conf.Peers.Address[i], false, make(chan []byte, 10), make(chan []byte, 10)}
+			i, conf.Peers.Address[i], false}
 	}
+	cons_io = msgs.MakeIo(10,len(conf.Peers.Address))
 
 	//set up peer server
 	glog.Info("Starting up peer server")
@@ -281,8 +282,12 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	// mark local peer as handled
+	// handle local peer (without sending network traffic)
 	peers[*id].handled = true
+	from := &((*cons_io).Incoming)
+	// TODO: URGENT FIX NEEDED
+	to := (*cons_io).OutgoingUnicast[*id]
+	go from.Forward(&to)
 
 	// regularly check if all peers are connected and reply if not
 	go func() {
@@ -304,17 +309,8 @@ func main() {
 	}()
 
 	// setting up the consensus algorithm
-	cons_io = &consensus.Io{
-		Incoming_requests: make(chan msgs.ClientRequest, 10),
-		Outgoing_requests: make(chan msgs.ClientRequest, 10),
-		Incoming:          MakeMsgChans(),
-		OutgoingBroadcast: MakeMsgChans(),
-		OutgoingUnicast:   make(map[int]MsgChans),
-	for pid := range peers {
-		cons_io.OutgoingUnicast[pid] = MakeMsgChans()
-	}
-	cons_config = consensus.Config{*id, len(conf.Peers.Address)}
-	go cons_io.broadcaster()
+	cons_config := consensus.Config{*id, len(conf.Peers.Address)}
+	go cons_io.Broadcaster()
 	consensus.Init(cons_io,cons_config)
 
 	// tidy up

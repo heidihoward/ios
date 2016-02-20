@@ -13,7 +13,6 @@ type ClientRequest struct {
 }
 
 type ClientResponse struct {
-	SenderID  int
 	ClientID  int
 	RequestID int
 	Response  string
@@ -96,6 +95,26 @@ func (io *Io) Broadcaster() {
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.Commit <- r
 			}
+
+		}
+
+	}
+
+}
+
+// Forward mesaages from one ProtoMsgs to another
+func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
+	for {
+		select {
+
+		case r := <-(*from).Requests.Prepare:
+				(*to).Requests.Prepare <- r
+		case r := <-(*from).Requests.Commit:
+				(*to).Requests.Commit <- r
+		case r := <-(*from).Responses.Prepare:
+				(*to).Responses.Prepare <- r
+		case r := <-(*from).Requests.Commit:
+				(*to).Requests.Commit <- r
 
 		}
 

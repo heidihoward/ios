@@ -15,6 +15,7 @@ type Config struct {
 	N  int
 }
 
+// Start consensus protocol
 func Init(io *msgs.Io, config Config) {
 
 	// setup
