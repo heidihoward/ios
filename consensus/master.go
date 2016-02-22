@@ -7,10 +7,11 @@ import (
 
 // PROTOCOL BODY
 
-func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
+func RunMaster(view int, id int, inital_index int, nodes int, io *msgs.Io) {
 	// setup
 	glog.Info("Starting up master")
 	index := inital_index
+	majority := 1 + (nodes / 2)
 
 	// handle client requests (1 at a time)
 	for {
