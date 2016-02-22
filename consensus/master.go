@@ -5,8 +5,7 @@ import (
 	"github.com/heidi-ann/hydra/msgs"
 )
 
-// PROTOCOL BODY
-
+// RunMaster implements the Master mode
 func RunMaster(view int, inital_index int, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master")
