@@ -64,4 +64,5 @@ func (s *Store) Print() {
 	for key, value := range *s {
 		fmt.Println("(", key, value, ")")
 	}
+	fmt.Println("\n")
 }
