@@ -8,8 +8,6 @@ import (
 
 type State struct {
 	View        int // local view number
-	ID          int // node ID
-	ClusterSize int // size of cluster, nodes are numbered 0 - (n-1)
 	Log         []msgs.Entry
 	CommitIndex int
 	MasterID    int
@@ -26,12 +24,12 @@ func MonitorMaster(s *State, io *msgs.Io) {
 		failed := <-io.Failure
 		if failed == (*s).MasterID {
 			glog.Warning("Master failed :(")
-			nextMaster := calcMaster((*s).View+1, (*s).ClusterSize)
-			if nextMaster == (*s).ID {
-				glog.Info("Starting new master at ", (*s).ID)
+			nextMaster := calcMaster((*s).View+1, config.N)
+			if nextMaster == config.ID {
+				glog.Info("Starting new master at ", config.ID)
 				(*s).View++
 				(*s).MasterID = nextMaster
-				go RunMaster((*s).View, (*s).ID, 3, (*s).ClusterSize, io)
+				go RunMaster((*s).View, 3, io)
 			}
 		}
 
@@ -48,11 +46,11 @@ func RunParticipant(state State, io *msgs.Io) {
 		select {
 
 		case req := <-(*io).Incoming.Requests.Prepare:
-			glog.Info("Prepare requests recieved at ", state.ID, ": ", req)
+			glog.Info("Prepare requests recieved at ", config.ID, ": ", req)
 			// check view
 			if req.View < state.View {
 				glog.Warning("Sender is behind")
-				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.PrepareResponse{state.ID, false}
+				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.PrepareResponse{config.ID, false}
 				break
 
 			}
@@ -60,24 +58,24 @@ func RunParticipant(state State, io *msgs.Io) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				state.MasterID = calcMaster(state.View, state.ClusterSize)
+				state.MasterID = calcMaster(state.View, config.N)
 			}
 
 			// check sender is master
 			if req.SenderID != state.MasterID {
 				glog.Warningf("Sender (ID %d) is the not master (ID %d)", req.SenderID, state.MasterID)
-				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.PrepareResponse{state.ID, false}
+				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.PrepareResponse{config.ID, false}
 				break
 			}
 
 			// add entry & reply
 			state.Log[req.Index] = req.Entry
-			reply := msgs.PrepareResponse{state.ID, true}
+			reply := msgs.PrepareResponse{config.ID, true}
 			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Prepare <- reply
 			glog.Info("Response dispatched: ", reply)
 
 		case req := <-(*io).Incoming.Requests.Commit:
-			glog.Info("Commit requests recieved at ", state.ID)
+			glog.Info("Commit requests recieved at ", config.ID)
 			// check view
 			if req.View < state.View {
 				glog.Warning("Sender is behind")
@@ -88,7 +86,7 @@ func RunParticipant(state State, io *msgs.Io) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				state.MasterID = calcMaster(state.View, state.ClusterSize)
+				state.MasterID = calcMaster(state.View, config.N)
 			}
 
 			// check sender is master
@@ -106,11 +104,11 @@ func RunParticipant(state State, io *msgs.Io) {
 				(*io).OutgoingRequests <- req.Entry.Request
 				state.CommitIndex++
 
-				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{state.ID, true, state.CommitIndex}
+				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{config.ID, true, state.CommitIndex}
 				glog.Info("Entry Committed")
 			} else {
 
-				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{state.ID, false, state.CommitIndex}
+				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{config.ID, false, state.CommitIndex}
 				glog.Info("Entry not yet committed")
 			}
 			glog.Info("Response dispatched")

@@ -7,7 +7,7 @@ import (
 
 // PROTOCOL BODY
 
-func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
+func RunMaster(view int, inital_index int, io *msgs.Io) {
 	// setup
 	glog.Info("Starting up master")
 	index := inital_index
@@ -25,12 +25,13 @@ func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
 			Request:   req}
 
 		// phase 1: prepare
-		prepare := msgs.PrepareRequest{id, view, index, entry}
+		prepare := msgs.PrepareRequest{config.ID, view, index, entry}
 		glog.Info("Starting prepare phase", prepare)
 		(*io).OutgoingBroadcast.Requests.Prepare <- prepare
 
 		// collect responses
 		glog.Info("Waiting for prepare responses")
+		majority := (config.N+1)/2
 		for i := 0; i < majority; {
 			res := <-(*io).Incoming.Responses.Prepare
 			glog.Info("Received ", res)
@@ -44,7 +45,7 @@ func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
 
 		//phase 2: commit
 		entry.Committed = true
-		commit := msgs.CommitRequest{id, view, index, entry}
+		commit := msgs.CommitRequest{config.ID, view, index, entry}
 		glog.Info("Starting commit phase", commit)
 		(*io).OutgoingBroadcast.Requests.Commit <- commit
 

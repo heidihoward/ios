@@ -11,27 +11,28 @@ import (
 )
 
 type Config struct {
-	ID int
-	N  int
+	ID int // id of node
+	N  int // size of cluster (nodes numbered 0 to N-1)
 }
 
+var config Config
+
 // Start consensus protocol
-func Init(io *msgs.Io, config Config) {
+func Init(io *msgs.Io, conf Config) {
+	config = conf
 
 	// setup
 	glog.Infof("Starting node %d of %d", config.ID, config.N)
 	state := State{
 		View:        0,
-		ID:          config.ID,
-		ClusterSize: config.N,
 		Log:         make([]msgs.Entry, 100), //TODO: Fix this
 		CommitIndex: -1,
 		MasterID:    0}
 
 	// if master, start master goroutine
-	if state.MasterID == state.ID {
+	if state.MasterID == config.ID {
 		glog.Info("Starting leader module")
-		go RunMaster(0, config.ID, 0, config.N, io)
+		go RunMaster(0, 0, io)
 	}
 
 	// start master if required in future
