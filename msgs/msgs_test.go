@@ -73,7 +73,7 @@ func TestMakeIo(t *testing.T) {
 	for id := 0; id < nodes; id++ {
 		// check each receives it
 		select {
-		case reply := <-(*(*io).OutgoingUnicast[id]).Responses.Prepare:
+		case reply := <-(*io).OutgoingUnicast[id].Responses.Prepare:
 			if reply != prepare_res {
 				t.Error(reply)
 			}

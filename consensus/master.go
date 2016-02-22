@@ -28,7 +28,6 @@ func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
 		prepare := msgs.PrepareRequest{id, view, index, entry}
 		glog.Info("Starting prepare phase", prepare)
 		(*io).OutgoingBroadcast.Requests.Prepare <- prepare
-		index++
 
 		// collect responses
 		glog.Info("Waiting for prepare responses")
@@ -39,11 +38,16 @@ func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
 				return
 			}
 			i++
+			glog.Info("Successful response received, waiting for ", majority-i, " more")
 		}
 
 		//phase 2: commit
 		entry.Committed = true
-		(*io).OutgoingBroadcast.Requests.Commit <- msgs.CommitRequest{id, view, index, entry}
+		commit := msgs.CommitRequest{id, view, index, entry}
+		glog.Info("Starting commit phase", commit)
+		(*io).OutgoingBroadcast.Requests.Commit <- commit
+
+		index++
 
 	}
 

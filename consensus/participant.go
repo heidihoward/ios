@@ -21,11 +21,11 @@ func RunParticipant(state State, io *msgs.Io) {
 	for {
 
 		// get request
-		glog.Info("Waiting for requests")
+		glog.Info("Ready for requests")
 		select {
 
 		case req := <-(*io).Incoming.Requests.Prepare:
-			glog.Info("Prepare requests recieved: ", req)
+			glog.Info("Prepare requests recieved at ", state.ID, ": ", req)
 			// TODO: check view
 
 			// check sender is master
@@ -42,7 +42,7 @@ func RunParticipant(state State, io *msgs.Io) {
 			glog.Info("Response dispatched: ", reply)
 
 		case req := <-(*io).Incoming.Requests.Commit:
-			glog.Info("Commit requests recieved")
+			glog.Info("Commit requests recieved at ", state.ID)
 			// TODO: check view
 
 			// check sender is master
@@ -61,11 +61,11 @@ func RunParticipant(state State, io *msgs.Io) {
 				state.CommitIndex++
 
 				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{state.ID, true, state.CommitIndex}
-
+				glog.Info("Entry Committed")
 			} else {
 
 				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{state.ID, false, state.CommitIndex}
-
+				glog.Info("Entry not yet committed")
 			}
 			glog.Info("Response dispatched")
 

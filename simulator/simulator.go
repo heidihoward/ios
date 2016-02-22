@@ -1,15 +1,15 @@
 package simulator
 
 import (
-	"github.com/heidi-ann/hydra/msgs"
 	"github.com/heidi-ann/hydra/consensus"
+	"github.com/heidi-ann/hydra/msgs"
 )
 
-func RunSimulator(nodes int) ([]*msgs.Io) {
+func RunSimulator(nodes int) []*msgs.Io {
 	ios := make([]*msgs.Io, nodes)
 
 	// setup state
-	for id := 0; id<nodes; id++ {
+	for id := 0; id < nodes; id++ {
 		io := msgs.MakeIo(10, nodes)
 		conf := consensus.Config{id, nodes}
 		go consensus.Init(io, conf)
@@ -17,13 +17,11 @@ func RunSimulator(nodes int) ([]*msgs.Io) {
 	}
 
 	// forward traffic
-	go func() {
-		for to := range ios {
-			for from := range ios {
-				ios[to].Incoming.Forward(ios[from].OutgoingUnicast[to])
-			}
+	for to := range ios {
+		for from := range ios {
+			go ios[to].Incoming.Forward(ios[from].OutgoingUnicast[to])
 		}
-	}()
+	}
 
 	return ios
 }
