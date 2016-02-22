@@ -77,27 +77,27 @@ type Io struct {
 
 // TODO: find a more generic method
 func (io *Io) Broadcaster() {
-	glog.Info("Setting up broadcaster for ", len((*io).OutgoingUnicast)," nodes")
+	glog.Info("Setting up broadcaster for ", len((*io).OutgoingUnicast), " nodes")
 	for {
 		select {
 
 		case r := <-(*io).OutgoingBroadcast.Requests.Prepare:
-			glog.Info("Broadcasting ",r)
+			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.Prepare <- r
 			}
 		case r := <-(*io).OutgoingBroadcast.Requests.Commit:
-			glog.Info("Broadcasting ",r)
+			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.Commit <- r
 			}
 		case r := <-(*io).OutgoingBroadcast.Responses.Prepare:
-			glog.Info("Broadcasting ",r)
+			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Responses.Prepare <- r
 			}
 		case r := <-(*io).OutgoingBroadcast.Requests.Commit:
-			glog.Info("Broadcasting ",r)
+			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.Commit <- r
 			}
@@ -166,22 +166,39 @@ func MakeIo(buf int, n int) *Io {
 }
 
 func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
+	glog.Info("Received ", string(b))
 	switch int(b[0]) {
 	case 1:
-		msg := *new(PrepareRequest)
-		Unmarshal(b[1:], msg)
+		var msg PrepareRequest
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
 		(*msgch).Requests.Prepare <- msg
 	case 2:
-		msg := *new(CommitRequest)
-		Unmarshal(b[1:], msg)
+		var msg CommitRequest
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
 		(*msgch).Requests.Commit <- msg
 	case 3:
-		msg := *new(PrepareResponse)
-		Unmarshal(b[1:], msg)
+		var msg PrepareResponse
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
 		(*msgch).Responses.Prepare <- msg
 	case 4:
-		msg := *new(CommitResponse)
-		Unmarshal(b[1:], msg)
+		var msg CommitResponse
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
 		(*msgch).Responses.Commit <- msg
 	}
 }
@@ -200,20 +217,32 @@ func appendr(x byte, xs []byte) []byte {
 func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 	select {
 	case msg := <-(*msgch).Requests.Prepare:
+		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
-		return appendr(byte(1), b), err
+		snd := appendr(byte(1), b)
+		glog.Info("Sending ", snd)
+		return snd, err
 
 	case msg := <-(*msgch).Requests.Commit:
+		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
-		return appendr(byte(2), b), err
+		snd := appendr(byte(2), b)
+		glog.Info("Sending ", snd)
+		return snd, err
 
 	case msg := <-(*msgch).Responses.Prepare:
+		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
-		return appendr(byte(3), b), err
+		snd := appendr(byte(3), b)
+		glog.Info("Sending ", snd)
+		return snd, err
 
 	case msg := <-(*msgch).Responses.Commit:
+		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
-		return appendr(byte(4), b), err
+		snd := appendr(byte(4), b)
+		glog.Info("Sending ", snd)
+		return snd, err
 
 	}
 }

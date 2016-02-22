@@ -7,8 +7,8 @@ import (
 	"github.com/heidi-ann/hydra/cache"
 	"github.com/heidi-ann/hydra/config"
 	"github.com/heidi-ann/hydra/consensus"
-	"github.com/heidi-ann/hydra/store"
 	"github.com/heidi-ann/hydra/msgs"
+	"github.com/heidi-ann/hydra/store"
 	"io"
 	"net"
 	"os"
@@ -23,9 +23,9 @@ var c *cache.Cache
 var cons_io *msgs.Io
 
 type Peer struct {
-	id       int
-	address  string
-	handled  bool // TOOD: replace with Mutex
+	id      int
+	address string
+	handled bool // TOOD: replace with Mutex
 }
 
 var peers []Peer
@@ -123,8 +123,9 @@ func handlePeer(cn net.Conn, _ bool) {
 	go func() {
 		for {
 			// read request
-			glog.Info("Reading from peer ", peer_id)
 			text, err := reader.ReadBytes(byte('\n'))
+			glog.Info(string(text))
+			glog.Info("Reading from peer ", peer_id)
 			if err != nil && err != io.EOF {
 				close_err <- err
 				break
@@ -138,11 +139,12 @@ func handlePeer(cn net.Conn, _ bool) {
 	go func() {
 		for {
 			// send reply
-			// TODO: URGENT FIX NEEDED
-			proto_msg := (*cons_io).OutgoingUnicast[peer_id]
-			b, _ := proto_msg.ProtoMsgToBytes()
+			b, err := (*cons_io).OutgoingUnicast[peer_id].ProtoMsgToBytes()
+			if err != nil {
+				glog.Fatal("Could not marshal message")
+			}
 			glog.Info("Sending ", string(b))
-			_, err := writer.Write(b)
+			_, err = writer.Write(b)
 			_, err = writer.Write([]byte("\n"))
 			if err != nil {
 				close_err <- err
@@ -272,7 +274,7 @@ func main() {
 		peers[i] = Peer{
 			i, conf.Peers.Address[i], false}
 	}
-	cons_io = msgs.MakeIo(10,len(conf.Peers.Address))
+	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
 
 	//set up peer server
 	glog.Info("Starting up peer server")
@@ -308,7 +310,7 @@ func main() {
 
 	// setting up the consensus algorithm
 	cons_config := consensus.Config{*id, len(conf.Peers.Address)}
-	consensus.Init(cons_io,cons_config)
+	consensus.Init(cons_io, cons_config)
 
 	// tidy up
 	time.Sleep(30 * time.Second)

@@ -33,8 +33,9 @@ func RunMaster(view int, id int, inital_index int, majority int, io *msgs.Io) {
 		glog.Info("Waiting for prepare responses")
 		for i := 0; i < majority; {
 			res := <-(*io).Incoming.Responses.Prepare
+			glog.Info("Received ", res)
 			if !res.Success {
-				glog.Info("Master is stepping down")
+				glog.Warning("Master is stepping down")
 				return
 			}
 			i++
