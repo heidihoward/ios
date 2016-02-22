@@ -166,6 +166,11 @@ func MakeIo(buf int, n int) *Io {
 }
 
 func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
+	if len(b) == 0 {
+		glog.Warning("Empty message received")
+		return
+	}
+
 	glog.Info("Received ", string(b))
 	switch int(b[0]) {
 	case 1:
