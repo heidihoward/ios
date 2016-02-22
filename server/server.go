@@ -126,7 +126,7 @@ func handlePeer(cn net.Conn, _ bool) {
 			text, err := reader.ReadBytes(byte('\n'))
 			glog.Info(string(text))
 			glog.Info("Reading from peer ", peer_id)
-			if err != nil && err != io.EOF {
+			if err != nil {
 				close_err <- err
 				break
 			}
