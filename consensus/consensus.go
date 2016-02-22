@@ -15,11 +15,8 @@ type Config struct {
 	N  int // size of cluster (nodes numbered 0 to N-1)
 }
 
-var config Config
-
 // Start consensus protocol
-func Init(io *msgs.Io, conf Config) {
-	config = conf
+func Init(io *msgs.Io, config Config) {
 
 	// setup
 	glog.Infof("Starting node %d of %d", config.ID, config.N)
@@ -30,15 +27,15 @@ func Init(io *msgs.Io, conf Config) {
 		MasterID:    0}
 
 	// if master, start master goroutine
-	if state.MasterID == config.ID {
+	if config.ID == 0 {
 		glog.Info("Starting leader module")
-		go RunMaster(0, 0, io)
+		go RunMaster(0, 0, io, config)
 	}
 
 	// start master if required in future
 
 	// operator as normal node
-	glog.Info("Starting participant module")
-	RunParticipant(state, io)
+	glog.Info("Starting participant module, ID ", config.ID)
+	RunParticipant(state, io, config)
 
 }

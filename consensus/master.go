@@ -7,11 +7,10 @@ import (
 
 // PROTOCOL BODY
 
-func RunMaster(view int, inital_index int, io *msgs.Io) {
+func RunMaster(view int, inital_index int, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master")
 	index := inital_index
-	majority := 1 + (nodes / 2)
 
 	// handle client requests (1 at a time)
 	for {
@@ -31,8 +30,8 @@ func RunMaster(view int, inital_index int, io *msgs.Io) {
 		(*io).OutgoingBroadcast.Requests.Prepare <- prepare
 
 		// collect responses
-		glog.Info("Waiting for prepare responses")
-		majority := (config.N+1)/2
+		majority := (config.N + 1) / 2
+		glog.Info("Waiting for ", majority, " prepare responses")
 		for i := 0; i < majority; {
 			res := <-(*io).Incoming.Responses.Prepare
 			glog.Info("Received ", res)

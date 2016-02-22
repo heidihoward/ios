@@ -3,7 +3,6 @@ package consensus
 import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/msgs"
-	"math"
 )
 
 type State struct {
@@ -13,31 +12,36 @@ type State struct {
 	MasterID    int
 }
 
-func calcMaster(v int, n int) int {
-	return int(math.Mod(float64(v), float64(n)))
+func mod(x int, y int) int {
+	dif := x - y
+	if dif < y {
+		return x
+	} else {
+		return mod(dif, y)
+	}
 }
 
 // PROTOCOL BODY
 
-func MonitorMaster(s *State, io *msgs.Io) {
+func MonitorMaster(s *State, io *msgs.Io, config Config) {
 	for {
 		failed := <-io.Failure
 		if failed == (*s).MasterID {
-			glog.Warning("Master failed :(")
-			nextMaster := calcMaster((*s).View+1, config.N)
+			nextMaster := mod((*s).View+1, config.N)
+			glog.Warningf("Master (ID:%d) failed, next up is ID:%d", (*s).MasterID, nextMaster)
 			if nextMaster == config.ID {
 				glog.Info("Starting new master at ", config.ID)
 				(*s).View++
 				(*s).MasterID = nextMaster
-				go RunMaster((*s).View, 3, io)
+				go RunMaster((*s).View, 3, io, config)
 			}
 		}
 
 	}
 }
 
-func RunParticipant(state State, io *msgs.Io) {
-	go MonitorMaster(&state, io)
+func RunParticipant(state State, io *msgs.Io, config Config) {
+	go MonitorMaster(&state, io, config)
 
 	glog.Info("Ready for requests")
 	for {
@@ -58,7 +62,7 @@ func RunParticipant(state State, io *msgs.Io) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				state.MasterID = calcMaster(state.View, config.N)
+				state.MasterID = mod(state.View, config.N)
 			}
 
 			// check sender is master
@@ -86,7 +90,7 @@ func RunParticipant(state State, io *msgs.Io) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				state.MasterID = calcMaster(state.View, config.N)
+				state.MasterID = mod(state.View, config.N)
 			}
 
 			// check sender is master

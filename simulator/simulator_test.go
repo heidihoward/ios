@@ -62,8 +62,8 @@ func TestSimulator(t *testing.T) {
 
 	request4 := msgs.ClientRequest{
 		ClientID:  4,
-		RequestID: 0,
-		Request:   "get C"}
+		RequestID: 1,
+		Request:   "get B"}
 
 	checkRequest(t, request4, ios, 1)
 
