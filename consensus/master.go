@@ -11,6 +11,7 @@ func RunMaster(view int, inital_index int, io *msgs.Io) {
 	// setup
 	glog.Info("Starting up master")
 	index := inital_index
+	majority := 1 + (nodes / 2)
 
 	// handle client requests (1 at a time)
 	for {
