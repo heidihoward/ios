@@ -161,6 +161,7 @@ func handlePeer(cn net.Conn, _ bool) {
 	// tidy up
 	glog.Infof("No longer about to handle traffic from peer %d at %s ", id, addr)
 	peers[peer_id].handled = false
+	(*cons_io).Failure <- peer_id
 	cn.Close()
 }
 

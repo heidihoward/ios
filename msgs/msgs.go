@@ -73,6 +73,7 @@ type Io struct {
 	Incoming          ProtoMsgs
 	OutgoingBroadcast ProtoMsgs
 	OutgoingUnicast   map[int]*ProtoMsgs
+	Failure           chan int
 }
 
 // TODO: find a more generic method
@@ -154,7 +155,8 @@ func MakeIo(buf int, n int) *Io {
 		OutgoingRequests:  make(chan ClientRequest, buf),
 		Incoming:          MakeProtoMsgs(buf),
 		OutgoingBroadcast: MakeProtoMsgs(buf),
-		OutgoingUnicast:   make(map[int]*ProtoMsgs)}
+		OutgoingUnicast:   make(map[int]*ProtoMsgs),
+		Failure:           make(chan int, buf)}
 
 	for id := 0; id < n; id++ {
 		protomsgs := MakeProtoMsgs(buf)

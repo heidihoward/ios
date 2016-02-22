@@ -3,6 +3,7 @@ package consensus
 import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/msgs"
+	"math"
 )
 
 type State struct {
@@ -11,27 +12,61 @@ type State struct {
 	ClusterSize int // size of cluster, nodes are numbered 0 - (n-1)
 	Log         []msgs.Entry
 	CommitIndex int
+	MasterID    int
+}
+
+func calcMaster(v int, n int) int {
+	return int(math.Mod(float64(v), float64(n)))
 }
 
 // PROTOCOL BODY
 
-func RunParticipant(state State, io *msgs.Io) {
-	masterID := 0
+func MonitorMaster(s *State, io *msgs.Io) {
+	for {
+		failed := <-io.Failure
+		if failed == (*s).MasterID {
+			glog.Warning("Master failed :(")
+			nextMaster := calcMaster((*s).View+1, (*s).ClusterSize)
+			if nextMaster == (*s).ID {
+				glog.Info("Starting new master at ", (*s).ID)
+				(*s).View++
+				(*s).MasterID = nextMaster
+				go RunMaster((*s).View, (*s).ID, 3, (*s).ClusterSize, io)
+			}
+		}
 
+	}
+}
+
+func RunParticipant(state State, io *msgs.Io) {
+	go MonitorMaster(&state, io)
+
+	glog.Info("Ready for requests")
 	for {
 
 		// get request
-		glog.Info("Ready for requests")
 		select {
 
 		case req := <-(*io).Incoming.Requests.Prepare:
 			glog.Info("Prepare requests recieved at ", state.ID, ": ", req)
-			// TODO: check view
+			// check view
+			if req.View < state.View {
+				glog.Warning("Sender is behind")
+				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.PrepareResponse{state.ID, false}
+				break
+
+			}
+
+			if req.View > state.View {
+				glog.Warning("Participant is behind")
+				state.View = req.View
+				state.MasterID = calcMaster(state.View, state.ClusterSize)
+			}
 
 			// check sender is master
-			if req.SenderID != masterID {
-				glog.Warning("Sender is not master")
-				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Prepare <- msgs.PrepareResponse{state.ID, true}
+			if req.SenderID != state.MasterID {
+				glog.Warningf("Sender (ID %d) is the not master (ID %d)", req.SenderID, state.MasterID)
+				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.PrepareResponse{state.ID, false}
 				break
 			}
 
@@ -43,10 +78,21 @@ func RunParticipant(state State, io *msgs.Io) {
 
 		case req := <-(*io).Incoming.Requests.Commit:
 			glog.Info("Commit requests recieved at ", state.ID)
-			// TODO: check view
+			// check view
+			if req.View < state.View {
+				glog.Warning("Sender is behind")
+				break
+
+			}
+
+			if req.View > state.View {
+				glog.Warning("Participant is behind")
+				state.View = req.View
+				state.MasterID = calcMaster(state.View, state.ClusterSize)
+			}
 
 			// check sender is master
-			if req.SenderID != masterID {
+			if req.SenderID != state.MasterID {
 				glog.Warning("Sender is not master")
 				break
 			}

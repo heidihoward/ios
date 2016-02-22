@@ -25,14 +25,16 @@ func Init(io *msgs.Io, config Config) {
 		ID:          config.ID,
 		ClusterSize: config.N,
 		Log:         make([]msgs.Entry, 100), //TODO: Fix this
-		CommitIndex: -1}
+		CommitIndex: -1,
+		MasterID:    0}
 
 	// if master, start master goroutine
-	masterID := 0
-	if masterID == state.ID {
+	if state.MasterID == state.ID {
 		glog.Info("Starting leader module")
-		go RunMaster(0, config.ID, 0, 1+(config.N/2), io)
+		go RunMaster(0, config.ID, 0, config.N, io)
 	}
+
+	// start master if required in future
 
 	// operator as normal node
 	glog.Info("Starting participant module")
