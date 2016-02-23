@@ -36,6 +36,7 @@ func TestMakeIo(t *testing.T) {
 	// create a node in system of 3 nodes
 	nodes := 3
 	io := MakeIo(10, nodes)
+	go io.DumpPersistentStorage()
 
 	// TEST
 	if len((*io).OutgoingUnicast) != nodes {

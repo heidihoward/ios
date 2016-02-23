@@ -74,6 +74,11 @@ type QueryResponse struct {
 	Entry    Entry
 }
 
+type LogUpdate struct {
+	Index int
+	Entry Entry
+}
+
 // DATA STRUCTURES FOR ABSTRACTING MSG IO
 
 type Requests struct {
@@ -102,6 +107,8 @@ type Io struct {
 	OutgoingBroadcast ProtoMsgs
 	OutgoingUnicast   map[int]*ProtoMsgs
 	Failure           chan int
+	ViewPersist       chan int
+	LogPersist        chan LogUpdate
 }
 
 // TODO: find a more generic method
@@ -225,7 +232,9 @@ func MakeIo(buf int, n int) *Io {
 		Incoming:          MakeProtoMsgs(buf),
 		OutgoingBroadcast: MakeProtoMsgs(buf),
 		OutgoingUnicast:   make(map[int]*ProtoMsgs),
-		Failure:           make(chan int, buf)}
+		Failure:           make(chan int, buf),
+		ViewPersist:       make(chan int),
+		LogPersist:        make(chan LogUpdate)}
 
 	for id := 0; id < n; id++ {
 		protomsgs := MakeProtoMsgs(buf)
@@ -320,5 +329,16 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 		glog.Info("Sending ", snd)
 		return snd, err
 
+	}
+}
+
+func (io *Io) DumpPersistentStorage() {
+	for {
+		select {
+		case view := <-(*io).ViewPersist:
+			glog.Info("Updating view to ", view)
+		case log := <-(*io).LogPersist:
+			glog.Info("Updating log with ", log)
+		}
 	}
 }

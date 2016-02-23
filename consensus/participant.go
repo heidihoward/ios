@@ -76,6 +76,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
+				(*io).ViewPersist <- state.View
 				state.MasterID = mod(state.View, config.N)
 			}
 
@@ -93,6 +94,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				checkInvariant(state.Log[req.Index], req.Entry)
 			}
 			state.Log[req.Index] = req.Entry
+			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 
 			// reply
 			reply := msgs.PrepareResponse{config.ID, true}
@@ -111,6 +113,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
+				(*io).ViewPersist <- state.View
 				state.MasterID = mod(state.View, config.N)
 			}
 
@@ -127,6 +130,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				checkInvariant(state.Log[req.Index], req.Entry)
 			}
 			state.Log[req.Index] = req.Entry
+			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 
 			// pass to state machine if ready
 			if state.CommitIndex == req.Index-1 {
@@ -156,6 +160,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
+				(*io).ViewPersist <- state.View
 				state.MasterID = mod(state.View, config.N)
 			}
 
@@ -175,6 +180,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
+				(*io).ViewPersist <- state.View
 				state.MasterID = mod(state.View, config.N)
 			}
 

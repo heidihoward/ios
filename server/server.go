@@ -312,6 +312,7 @@ func main() {
 	// setting up the consensus algorithm
 	cons_config := consensus.Config{*id, len(conf.Peers.Address)}
 	consensus.Init(cons_io, cons_config)
+	cons_io.DumpPersistentStorage()
 
 	// tidy up
 	time.Sleep(30 * time.Second)
