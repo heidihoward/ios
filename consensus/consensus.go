@@ -38,7 +38,7 @@ func Init(io *msgs.Io, config Config) {
 	// if master, start master goroutine
 	if config.ID == 0 {
 		glog.Info("Starting leader module")
-		go RunMaster(0, 0, io, config)
+		go RunMaster(0, true, io, config)
 	}
 
 	// operator as normal node

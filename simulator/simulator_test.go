@@ -67,4 +67,14 @@ func TestSimulator(t *testing.T) {
 
 	checkRequest(t, request4, ios, 1)
 
+	//check 2nd failure
+	ios[2].Failure <- 1
+
+	request5 := msgs.ClientRequest{
+		ClientID:  4,
+		RequestID: 2,
+		Request:   "update B 3"}
+
+	checkRequest(t, request5, ios, 2)
+
 }

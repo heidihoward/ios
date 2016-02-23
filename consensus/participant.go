@@ -26,11 +26,11 @@ func mod(x int, y int) int {
 func checkInvariant(prevEntry msgs.Entry, nxtEntry msgs.Entry) {
 	// if committed, request never changes
 	if prevEntry.Committed && prevEntry.Request != nxtEntry.Request {
-		glog.Fatal("Committed entry is being overwritten", prevEntry, nxtEntry)
+		glog.Fatal("Committed entry is being overwritten ", prevEntry, nxtEntry)
 	}
 	// each index is allocated once per term
 	if prevEntry.View == nxtEntry.View && prevEntry.Request != nxtEntry.Request {
-		glog.Fatal("Index has been reallocated", prevEntry, nxtEntry)
+		glog.Fatal("Index has been reallocated ", prevEntry, nxtEntry)
 	}
 
 }
@@ -47,7 +47,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config) {
 				glog.Info("Starting new master at ", config.ID)
 				(*s).View++
 				(*s).MasterID = nextMaster
-				go RunMaster((*s).View, 3, io, config)
+				go RunMaster((*s).View, false, io, config)
 			}
 		}
 
@@ -100,7 +100,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			glog.Info("Response dispatched: ", reply)
 
 		case req := <-(*io).Incoming.Requests.Commit:
-			glog.Info("Commit requests recieved at ", config.ID)
+			glog.Info("Commit requests recieved at ", config.ID, ": ", req)
 			// check view
 			if req.View < state.View {
 				glog.Warning("Sender is behind")
@@ -143,6 +143,24 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			}
 			glog.Info("Response dispatched")
 
+		case req := <-(*io).Incoming.Requests.NewView:
+			glog.Info("New view requests recieved at ", config.ID, ": ", req)
+
+			// check view
+			if req.View < state.View {
+				glog.Warning("Sender is behind")
+				break
+
+			}
+
+			if req.View > state.View {
+				glog.Warning("Participant is behind")
+				state.View = req.View
+				state.MasterID = mod(state.View, config.N)
+			}
+
+			(*io).OutgoingUnicast[req.SenderID].Responses.NewView <- msgs.NewViewResponse{config.ID, state.View, state.LastIndex}
+			glog.Info("Response dispatched")
 		}
 	}
 }

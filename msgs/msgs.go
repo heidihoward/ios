@@ -50,16 +50,29 @@ type CommitResponse struct {
 	CommitIndex int
 }
 
+type NewViewRequest struct {
+	SenderID int
+	View     int
+}
+
+type NewViewResponse struct {
+	SenderID int
+	View     int
+	Index    int
+}
+
 // DATA STRUCTURES FOR ABSTRACTING MSG IO
 
 type Requests struct {
 	Prepare chan PrepareRequest
 	Commit  chan CommitRequest
+	NewView chan NewViewRequest
 }
 
 type Responses struct {
 	Prepare chan PrepareResponse
 	Commit  chan CommitResponse
+	NewView chan NewViewResponse
 }
 
 type ProtoMsgs struct {
@@ -92,6 +105,11 @@ func (io *Io) Broadcaster() {
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.Commit <- r
 			}
+		case r := <-(*io).OutgoingBroadcast.Requests.NewView:
+			glog.Info("Broadcasting ", r)
+			for id := range (*io).OutgoingUnicast {
+				(*io).OutgoingUnicast[id].Requests.NewView <- r
+			}
 		case r := <-(*io).OutgoingBroadcast.Responses.Prepare:
 			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
@@ -101,6 +119,11 @@ func (io *Io) Broadcaster() {
 			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.Commit <- r
+			}
+		case r := <-(*io).OutgoingBroadcast.Requests.NewView:
+			glog.Info("Broadcasting ", r)
+			for id := range (*io).OutgoingUnicast {
+				(*io).OutgoingUnicast[id].Requests.NewView <- r
 			}
 
 		}
@@ -113,19 +136,26 @@ func (io *Io) Broadcaster() {
 func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 	for {
 		select {
-
+		// Requests
 		case r := <-(*from).Requests.Prepare:
 			glog.Info("Forwarding ", r)
 			(*to).Requests.Prepare <- r
 		case r := <-(*from).Requests.Commit:
 			glog.Info("Forwarding", r)
 			(*to).Requests.Commit <- r
+		case r := <-(*from).Requests.NewView:
+			glog.Info("Forwarding", r)
+			(*to).Requests.NewView <- r
+			// Responses
 		case r := <-(*from).Responses.Prepare:
 			glog.Info("Forwarding", r)
 			(*to).Responses.Prepare <- r
-		case r := <-(*from).Requests.Commit:
+		case r := <-(*from).Responses.Commit:
 			glog.Info("Forwarding", r)
-			(*to).Requests.Commit <- r
+			(*to).Responses.Commit <- r
+		case r := <-(*from).Responses.NewView:
+			glog.Info("Forwarding", r)
+			(*to).Responses.NewView <- r
 
 		}
 
@@ -145,8 +175,14 @@ func Unmarshal(data []byte, v interface{}) error {
 
 func MakeProtoMsgs(buf int) ProtoMsgs {
 	return ProtoMsgs{
-		Requests{make(chan PrepareRequest, buf), make(chan CommitRequest, buf)},
-		Responses{make(chan PrepareResponse, buf), make(chan CommitResponse, buf)}}
+		Requests{
+			make(chan PrepareRequest, buf),
+			make(chan CommitRequest, buf),
+			make(chan NewViewRequest, buf)},
+		Responses{
+			make(chan PrepareResponse, buf),
+			make(chan CommitResponse, buf),
+			make(chan NewViewResponse, buf)}}
 }
 
 func MakeIo(buf int, n int) *Io {
