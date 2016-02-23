@@ -32,7 +32,8 @@ func Init(io *msgs.Io, config Config) {
 		View:        0,
 		Log:         make([]msgs.Entry, 100), //TODO: Fix this
 		CommitIndex: -1,
-		MasterID:    0}
+		MasterID:    0,
+		LastIndex:   -1}
 
 	// if master, start master goroutine
 	if config.ID == 0 {

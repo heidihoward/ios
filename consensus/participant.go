@@ -10,6 +10,7 @@ type State struct {
 	Log         []msgs.Entry
 	CommitIndex int
 	MasterID    int
+	LastIndex   int
 }
 
 func mod(x int, y int) int {
@@ -19,6 +20,19 @@ func mod(x int, y int) int {
 	} else {
 		return mod(dif, y)
 	}
+}
+
+// check protocol invariant
+func checkInvariant(prevEntry msgs.Entry, nxtEntry msgs.Entry) {
+	// if committed, request never changes
+	if prevEntry.Committed && prevEntry.Request != nxtEntry.Request {
+		glog.Fatal("Committed entry is being overwritten", prevEntry, nxtEntry)
+	}
+	// each index is allocated once per term
+	if prevEntry.View == nxtEntry.View && prevEntry.Request != nxtEntry.Request {
+		glog.Fatal("Index has been reallocated", prevEntry, nxtEntry)
+	}
+
 }
 
 // PROTOCOL BODY
@@ -72,8 +86,15 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				break
 			}
 
-			// add entry & reply
+			// add entry
+			if req.Index > state.LastIndex {
+				state.LastIndex = req.Index
+			} else {
+				checkInvariant(state.Log[req.Index], req.Entry)
+			}
 			state.Log[req.Index] = req.Entry
+
+			// reply
 			reply := msgs.PrepareResponse{config.ID, true}
 			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Prepare <- reply
 			glog.Info("Response dispatched: ", reply)
@@ -99,7 +120,12 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				break
 			}
 
-			// write entry
+			// add entry
+			if req.Index > state.LastIndex {
+				state.LastIndex = req.Index
+			} else {
+				checkInvariant(state.Log[req.Index], req.Entry)
+			}
 			state.Log[req.Index] = req.Entry
 
 			// pass to state machine if ready
