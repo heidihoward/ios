@@ -61,18 +61,33 @@ type NewViewResponse struct {
 	Index    int
 }
 
+type QueryRequest struct {
+	SenderID int
+	View     int
+	Index    int
+}
+
+type QueryResponse struct {
+	SenderID int
+	View     int
+	Present  bool
+	Entry    Entry
+}
+
 // DATA STRUCTURES FOR ABSTRACTING MSG IO
 
 type Requests struct {
 	Prepare chan PrepareRequest
 	Commit  chan CommitRequest
 	NewView chan NewViewRequest
+	Query   chan QueryRequest
 }
 
 type Responses struct {
 	Prepare chan PrepareResponse
 	Commit  chan CommitResponse
 	NewView chan NewViewResponse
+	Query   chan QueryResponse
 }
 
 type ProtoMsgs struct {
@@ -94,7 +109,7 @@ func (io *Io) Broadcaster() {
 	glog.Info("Setting up broadcaster for ", len((*io).OutgoingUnicast), " nodes")
 	for {
 		select {
-
+		// Requests
 		case r := <-(*io).OutgoingBroadcast.Requests.Prepare:
 			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
@@ -110,20 +125,31 @@ func (io *Io) Broadcaster() {
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Requests.NewView <- r
 			}
+		case r := <-(*io).OutgoingBroadcast.Requests.Query:
+			glog.Info("Broadcasting ", r)
+			for id := range (*io).OutgoingUnicast {
+				(*io).OutgoingUnicast[id].Requests.Query <- r
+			}
+			// Responses
 		case r := <-(*io).OutgoingBroadcast.Responses.Prepare:
 			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
 				(*io).OutgoingUnicast[id].Responses.Prepare <- r
 			}
-		case r := <-(*io).OutgoingBroadcast.Requests.Commit:
+		case r := <-(*io).OutgoingBroadcast.Responses.Commit:
 			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Requests.Commit <- r
+				(*io).OutgoingUnicast[id].Responses.Commit <- r
 			}
-		case r := <-(*io).OutgoingBroadcast.Requests.NewView:
+		case r := <-(*io).OutgoingBroadcast.Responses.NewView:
 			glog.Info("Broadcasting ", r)
 			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Requests.NewView <- r
+				(*io).OutgoingUnicast[id].Responses.NewView <- r
+			}
+		case r := <-(*io).OutgoingBroadcast.Responses.Query:
+			glog.Info("Broadcasting ", r)
+			for id := range (*io).OutgoingUnicast {
+				(*io).OutgoingUnicast[id].Responses.Query <- r
 			}
 
 		}
@@ -146,6 +172,9 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 		case r := <-(*from).Requests.NewView:
 			glog.Info("Forwarding", r)
 			(*to).Requests.NewView <- r
+		case r := <-(*from).Requests.Query:
+			glog.Info("Forwarding", r)
+			(*to).Requests.Query <- r
 			// Responses
 		case r := <-(*from).Responses.Prepare:
 			glog.Info("Forwarding", r)
@@ -156,7 +185,9 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 		case r := <-(*from).Responses.NewView:
 			glog.Info("Forwarding", r)
 			(*to).Responses.NewView <- r
-
+		case r := <-(*from).Responses.Query:
+			glog.Info("Forwarding", r)
+			(*to).Responses.Query <- r
 		}
 
 	}
@@ -178,11 +209,13 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 		Requests{
 			make(chan PrepareRequest, buf),
 			make(chan CommitRequest, buf),
-			make(chan NewViewRequest, buf)},
+			make(chan NewViewRequest, buf),
+			make(chan QueryRequest, buf)},
 		Responses{
 			make(chan PrepareResponse, buf),
 			make(chan CommitResponse, buf),
-			make(chan NewViewResponse, buf)}}
+			make(chan NewViewResponse, buf),
+			make(chan QueryResponse, buf)}}
 }
 
 func MakeIo(buf int, n int) *Io {

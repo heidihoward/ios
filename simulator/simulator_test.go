@@ -57,7 +57,7 @@ func TestSimulator(t *testing.T) {
 
 	checkRequest(t, request3, ios, 0)
 
-	// check failure recovery
+	//check failure recovery
 	ios[1].Failure <- 0
 
 	request4 := msgs.ClientRequest{
