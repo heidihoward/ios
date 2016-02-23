@@ -161,6 +161,26 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 
 			(*io).OutgoingUnicast[req.SenderID].Responses.NewView <- msgs.NewViewResponse{config.ID, state.View, state.LastIndex}
 			glog.Info("Response dispatched")
+
+		case req := <-(*io).Incoming.Requests.Query:
+			glog.Info("Query requests recieved at ", config.ID, ": ", req)
+
+			// check view
+			if req.View < state.View {
+				glog.Warning("Sender is behind")
+				break
+
+			}
+
+			if req.View > state.View {
+				glog.Warning("Participant is behind")
+				state.View = req.View
+				state.MasterID = mod(state.View, config.N)
+			}
+
+			present := state.LastIndex >= req.Index
+			reply := msgs.QueryResponse{config.ID, state.View, present, state.Log[req.Index]}
+			(*io).OutgoingUnicast[req.SenderID].Responses.Query <- reply
 		}
 	}
 }

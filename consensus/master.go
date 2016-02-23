@@ -58,7 +58,7 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 
 		// collect responses
 		glog.Info("Waiting for ", majority, " new view responses")
-		var min_index int
+		min_index := 100 //TODO: Fix this hardcoding
 		// TODO: FEATURE add option to wait longer
 		for i := 0; i < majority; {
 			res := <-(*io).Incoming.Responses.NewView
@@ -76,6 +76,7 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 
 		// recover entries
 		for curr_index := min_index; curr_index < index; curr_index++ {
+			glog.Info("Starting recovery for index ", curr_index)
 			// dispatch query to all
 			query := msgs.QueryRequest{config.ID, view, curr_index}
 			(*io).OutgoingBroadcast.Requests.Query <- query
@@ -119,6 +120,7 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 			if (*candidate).Committed {
 				// if committed, then dispatch commit
 				commit := msgs.CommitRequest{config.ID, view, curr_index, *candidate}
+				glog.Info("Committing ", commit)
 				(*io).OutgoingBroadcast.Requests.Commit <- commit
 			} else {
 				// if not committed, then dispatch prepare then commit
@@ -129,6 +131,7 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 
 	}
 
+	glog.Info("Ready to handle requests")
 	// handle client requests (1 at a time)
 	for {
 
