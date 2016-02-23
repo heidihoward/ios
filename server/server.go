@@ -45,14 +45,6 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 		return res // FAST PASS
 	}
 
-	// write to persistent storage
-	n, err := disk.WriteString(req.Request)
-	_ = disk.Flush()
-	if err != nil {
-		glog.Fatal(err)
-	}
-	glog.Infof("Written %b bytes to persistent storage", n)
-
 	// CONSENESUS ALGORITHM HERE
 	glog.Info("Passing request to consensus algorithm")
 	(*cons_io).IncomingRequests <- req
@@ -229,6 +221,9 @@ func main() {
 	keyval = store.New()
 	c = cache.Create()
 
+	// setup IO
+	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
+
 	// setting up persistent log
 	filename := "persistent_" + strconv.Itoa(*id) + ".log"
 	glog.Info("Opening file: ", filename)
@@ -240,15 +235,50 @@ func main() {
 	defer disk.Flush()
 
 	// check persistent storage for commands
+	found := false
+	log := make([]msgs.Entry, 100) //TODO: Fix this
+	view := 0
 	disk_reader := bufio.NewReader(file)
 	for {
-		str, err := disk_reader.ReadString('\n')
+		b, err := disk_reader.ReadBytes(byte('\n'))
 		if err != nil {
 			glog.Info("No more commands in persistent storage")
 			break
 		}
-		_ = keyval.Process(str)
+		found = true
+		var update msgs.LogUpdate
+		err = msgs.Unmarshal(b, &update)
+		if err != nil {
+			glog.Fatal("Cannot parse log update", err)
+		}
+		log[update.Index] = update.Entry
+		//TODO: do this properly
+		view = update.Entry.View
 	}
+
+	// write updates to persistent storage
+	go func() {
+		for {
+			// get write requests
+			select {
+			//disgard view updates
+			case view := <-(*cons_io).ViewPersist:
+				glog.Info("Updating view to ", view)
+
+			case log := <-(*cons_io).LogPersist:
+				glog.Info("Updating log with ", log)
+				b, err := msgs.Marshal(log)
+				// write to persistent storage
+				_, err = disk.Write(b)
+				_, err = disk.Write([]byte("\n"))
+				_ = disk.Flush()
+				if err != nil {
+					glog.Fatal(err)
+				}
+			}
+
+		}
+	}()
 
 	// set up client server
 	glog.Info("Starting up client server")
@@ -275,7 +305,6 @@ func main() {
 		peers[i] = Peer{
 			i, conf.Peers.Address[i], false}
 	}
-	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
 
 	//set up peer server
 	glog.Info("Starting up peer server")
@@ -311,7 +340,11 @@ func main() {
 
 	// setting up the consensus algorithm
 	cons_config := consensus.Config{*id, len(conf.Peers.Address)}
-	consensus.Init(cons_io, cons_config)
+	if !found {
+		consensus.Init(cons_io, cons_config)
+	} else {
+		consensus.Recover(cons_io, cons_config, view, log)
+	}
 	cons_io.DumpPersistentStorage()
 
 	// tidy up
