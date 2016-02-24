@@ -35,6 +35,17 @@ var peer_port = flag.Int("peer-port", 8090, "port to listen on for peers")
 var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
 
+func openFile(filename string) (*bufio.Writer, *bufio.Reader) {
+	glog.Info("Opening file: ", filename)
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	w := bufio.NewWriter(file)
+	r := bufio.NewReader(file)
+	return w, r
+}
+
 func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	glog.Info("Handling ", req.Request)
 
@@ -225,20 +236,13 @@ func main() {
 	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
 
 	// setting up persistent log
-	filename := "persistent_" + strconv.Itoa(*id) + ".log"
-	glog.Info("Opening file: ", filename)
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	disk = bufio.NewWriter(file)
+	disk, disk_reader := openFile("persistent_" + strconv.Itoa(*id) + ".log")
 	defer disk.Flush()
 
 	// check persistent storage for commands
 	found := false
 	log := make([]msgs.Entry, 100) //TODO: Fix this
 	view := 0
-	disk_reader := bufio.NewReader(file)
 	for {
 		b, err := disk_reader.ReadBytes(byte('\n'))
 		if err != nil {
@@ -341,8 +345,10 @@ func main() {
 	// setting up the consensus algorithm
 	cons_config := consensus.Config{*id, len(conf.Peers.Address)}
 	if !found {
+		glog.Info("Starting fresh consensus instance")
 		consensus.Init(cons_io, cons_config)
 	} else {
+		glog.Info("Restoring consensus instance")
 		consensus.Recover(cons_io, cons_config, view, log)
 	}
 	cons_io.DumpPersistentStorage()

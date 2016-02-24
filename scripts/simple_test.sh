@@ -8,12 +8,15 @@ rm persistent.log
 rm latency*.csv
 
 # start server
-$GOPATH/bin/server &
+cd server
+$GOPATH/bin/server -id=0 -client-port=8080 -peer-port=8090 &
+$GOPATH/bin/server -id=1 -client-port=8081 -peer-port=8091 &
 
 # start clients 
-$GOPATH/bin/client -config=client/example.conf -mode=test -auto=test/workload.conf -stat=latency_1.csv &
-$GOPATH/bin/client -config=client/example.conf -mode=test -auto=test/workload.conf -stat=latency_2.csv &
-$GOPATH/bin/client -config=client/example.conf -mode=test -auto=test/workload.conf -stat=latency_3.csv &
+cd client
+$GOPATH/bin/client -id=0  -mode=test -stat=latency_1.csv &
+$GOPATH/bin/client -id=1 -mode=test -stat=latency_2.csv &
+$GOPATH/bin/client -id=2 -mode=test -stat=latency_3.csv &
 
 # stop 
 sleep 20
