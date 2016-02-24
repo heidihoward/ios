@@ -18,7 +18,6 @@ import (
 )
 
 var keyval *store.Store
-var disk *bufio.Writer
 var c *cache.Cache
 var cons_io *msgs.Io
 

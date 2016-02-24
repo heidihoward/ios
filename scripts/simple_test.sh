@@ -4,13 +4,14 @@
 # tidy up from previous tests
 cd $GOPATH/src/github.com/heidi-ann/hydra
 
-rm persistent.log
+rm *.temp
 rm latency*.csv
 
 # start server
 cd server
 $GOPATH/bin/server -id=0 -client-port=8080 -peer-port=8090 &
 $GOPATH/bin/server -id=1 -client-port=8081 -peer-port=8091 &
+$GOPATH/bin/server -id=2 -client-port=8082 -peer-port=8092 &
 
 # start clients 
 cd client
