@@ -236,13 +236,13 @@ func main() {
 	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
 
 	// setting up persistent log
-	disk, disk_reader := openFile("persistent_" + strconv.Itoa(*id) + ".log")
+	disk, disk_reader := openFile("persistent_log_" + strconv.Itoa(*id) + ".temp")
 	defer disk.Flush()
+	meta_disk, meta_disk_reader := openFile("persistent_data_" + strconv.Itoa(*id) + ".temp")
 
 	// check persistent storage for commands
 	found := false
 	log := make([]msgs.Entry, 100) //TODO: Fix this
-	view := 0
 	for {
 		b, err := disk_reader.ReadBytes(byte('\n'))
 		if err != nil {
@@ -256,8 +256,18 @@ func main() {
 			glog.Fatal("Cannot parse log update", err)
 		}
 		log[update.Index] = update.Entry
-		//TODO: do this properly
-		view = update.Entry.View
+	}
+
+	// check persistent storage for view
+	view := 0
+	for {
+		b, err := meta_disk_reader.ReadBytes(byte('\n'))
+		if err != nil {
+			glog.Info("No more view updates in persistent storage")
+			break
+		}
+		found = true
+		view, _ = strconv.Atoi(string(b))
 	}
 
 	// write updates to persistent storage
@@ -268,7 +278,12 @@ func main() {
 			//disgard view updates
 			case view := <-(*cons_io).ViewPersist:
 				glog.Info("Updating view to ", view)
-
+				_, err := meta_disk.Write([]byte(strconv.Itoa(view)))
+				_, err = meta_disk.Write([]byte("\n"))
+				_ = disk.Flush()
+				if err != nil {
+					glog.Fatal(err)
+				}
 			case log := <-(*cons_io).LogPersist:
 				glog.Info("Updating log with ", log)
 				b, err := msgs.Marshal(log)
