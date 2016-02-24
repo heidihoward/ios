@@ -20,6 +20,7 @@ import (
 var keyval *store.Store
 var c *cache.Cache
 var cons_io *msgs.Io
+var notifyclient map[msgs.ClientRequest](chan msgs.ClientResponse)
 
 type Peer struct {
 	id      int
@@ -45,6 +46,33 @@ func openFile(filename string) (*bufio.Writer, *bufio.Reader) {
 	return w, r
 }
 
+func stateMachine() {
+	for {
+		req := <-(*cons_io).OutgoingRequests
+		glog.Info("Request has been safely replicated by consensus algorithm", req)
+
+		// check if request already applied
+		found, reply := c.Check(req)
+		if found {
+			glog.Info("Request found in cache and thus cannot be applied")
+		} else {
+			// apply request
+			output := keyval.Process(req.Request)
+			keyval.Print()
+
+			// write response to request cache
+			reply := msgs.ClientResponse{
+				req.ClientID, req.RequestID, output}
+			c.Add(reply)
+		}
+
+		// if any handleRequests are waiting on this reply, then reply to them
+		if notifyclient[req] != nil {
+			notifyclient[req] <- reply
+		}
+	}
+}
+
 func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	glog.Info("Handling ", req.Request)
 
@@ -58,25 +86,11 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	// CONSENESUS ALGORITHM HERE
 	glog.Info("Passing request to consensus algorithm")
 	(*cons_io).IncomingRequests <- req
-	_ = <-(*cons_io).OutgoingRequests
-	glog.Info("Request has been safely replicated by consensus algorithm")
 
-	// check if request already applied
-	found, res = c.Check(req)
-	if found {
-		glog.Info("Request found in cache and thus cannot be applied")
-		return res
-	}
+	// wait for reply
+	notifyclient[req] = make(chan msgs.ClientResponse)
+	reply := <-notifyclient[req]
 
-	// apply request
-	output := keyval.Process(req.Request)
-	keyval.Print()
-
-	// write response to request cache
-	reply := msgs.ClientResponse{
-		req.ClientID, req.RequestID, output}
-
-	c.Add(reply)
 	return reply
 }
 
@@ -230,6 +244,9 @@ func main() {
 	//set up state machine
 	keyval = store.New()
 	c = cache.Create()
+
+	notifyclient = make(map[msgs.ClientRequest](chan msgs.ClientResponse))
+	go stateMachine()
 
 	// setup IO
 	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
