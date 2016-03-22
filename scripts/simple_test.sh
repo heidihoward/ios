@@ -4,7 +4,7 @@
 # tidy up from previous tests
 cd $GOPATH/src/github.com/heidi-ann/hydra
 
-rm server/persistent_data_*.temp
+rm server/*.temp
 rm client/latency_*.csv
 
 # start server
