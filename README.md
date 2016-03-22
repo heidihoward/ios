@@ -24,11 +24,20 @@ go install
 ### Usage 
 
 #### Server
-To start a Hydra server on port 8080:
+To start a Hydra server:
 ```
-$GOPATH/bin/server -port 8080 -logtostderr true
+$GOPATH/bin/server -id 0 -logtostderr true
 ```
-If port is not specificed it will default to 8080. The server is use a file called persistent.log to store a perisitent copy of the history of requests. If you would like to start a fresh server, remove the local persistent.log file first.
+This will start an Hydra server with ID 0, clients can now communicate with the server over port 8080 and other servers can communicate with this server over port 8090. You can modfiy these ports as follows:
+```
+$GOPATH/bin/server -id 1 -client-port 8081  -peer-port 8091 -logtostderr true
+```
+
+*Currently, the code assumes that for a node with id X then the port is id 809X.*
+
+
+
+The server is using files called persistent_log_1.temp and persistent_data_1.temp to store a perisitent copy hydra's state. If you would like to start a fresh server, make sure to use rm *.temp first.
 
 #### Client
 The (mode independent) client state is stored in the example.conf file. The client has three possible interfaces:

@@ -35,15 +35,27 @@ var peer_port = flag.Int("peer-port", 8090, "port to listen on for peers")
 var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
 
-func openFile(filename string) (*bufio.Writer, *bufio.Reader) {
-	glog.Info("Opening file: ", filename)
+func openFile(filename string) (*bufio.Writer, *bufio.Reader, bool) {
+	// check if file exists already for logging
+	var is_new bool
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		glog.Info("Creating and opening file: ", filename)
+		is_new = true
+	} else {
+		glog.Info("Opening file: ", filename)
+		is_new = false
+	}
+
+	// open file
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		glog.Fatal(err)
 	}
+
+	// create writer and reader
 	w := bufio.NewWriter(file)
 	r := bufio.NewReader(file)
-	return w, r
+	return w, r, is_new
 }
 
 func stateMachine() {
@@ -252,38 +264,43 @@ func main() {
 	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
 
 	// setting up persistent log
-	disk, disk_reader := openFile("persistent_log_" + strconv.Itoa(*id) + ".temp")
+	disk, disk_reader, is_empty := openFile("persistent_log_" + strconv.Itoa(*id) + ".temp")
 	defer disk.Flush()
-	meta_disk, meta_disk_reader := openFile("persistent_data_" + strconv.Itoa(*id) + ".temp")
+	meta_disk, meta_disk_reader, is_new := openFile("persistent_data_" + strconv.Itoa(*id) + ".temp")
 
 	// check persistent storage for commands
 	found := false
 	log := make([]msgs.Entry, 100) //TODO: Fix this
-	for {
-		b, err := disk_reader.ReadBytes(byte('\n'))
-		if err != nil {
-			glog.Info("No more commands in persistent storage")
-			break
+
+	if !is_empty {
+		for {
+			b, err := disk_reader.ReadBytes(byte('\n'))
+			if err != nil {
+				glog.Info("No more commands in persistent storage")
+				break
+			}
+			found = true
+			var update msgs.LogUpdate
+			err = msgs.Unmarshal(b, &update)
+			if err != nil {
+				glog.Fatal("Cannot parse log update", err)
+			}
+			log[update.Index] = update.Entry
 		}
-		found = true
-		var update msgs.LogUpdate
-		err = msgs.Unmarshal(b, &update)
-		if err != nil {
-			glog.Fatal("Cannot parse log update", err)
-		}
-		log[update.Index] = update.Entry
 	}
 
 	// check persistent storage for view
 	view := 0
-	for {
-		b, err := meta_disk_reader.ReadBytes(byte('\n'))
-		if err != nil {
-			glog.Info("No more view updates in persistent storage")
-			break
+	if !is_new {
+		for {
+			b, err := meta_disk_reader.ReadBytes(byte('\n'))
+			if err != nil {
+				glog.Info("No more view updates in persistent storage")
+				break
+			}
+			found = true
+			view, _ = strconv.Atoi(string(b))
 		}
-		found = true
-		view, _ = strconv.Atoi(string(b))
 	}
 
 	// write updates to persistent storage
