@@ -12,6 +12,7 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master")
 	majority := (config.N + 1) / 2
+
 	// determine next safe index
 	index := -1
 	if !inital {
@@ -59,5 +60,7 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 		}
 
 	}
+
+	glog.Warning("Master stepping down")
 
 }

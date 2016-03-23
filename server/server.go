@@ -256,12 +256,11 @@ func main() {
 	//set up state machine
 	keyval = store.New()
 	c = cache.Create()
+	// setup IO
+	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
 
 	notifyclient = make(map[msgs.ClientRequest](chan msgs.ClientResponse))
 	go stateMachine()
-
-	// setup IO
-	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
 
 	// setting up persistent log
 	disk, disk_reader, is_empty := openFile("persistent_log_" + strconv.Itoa(*id) + ".temp")

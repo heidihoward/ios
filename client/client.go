@@ -38,7 +38,7 @@ func connect(addrs []string, tries int) (net.Conn, error) {
 
 			// if successful
 			if err == nil {
-				glog.Infof("Connected to %s", addrs[i])
+				glog.Infof("Connect established to %s", addrs[i])
 				return conn, err
 			}
 
@@ -146,9 +146,9 @@ func main() {
 		// get next command
 		text, ok := ioapi.Next()
 		if !ok {
-			glog.Fatal("No more commands")
+			break
 		}
-		glog.Info("API produced ", text)
+		glog.Info("API produced: ", text)
 
 		// encode as request
 		req := msgs.ClientRequest{
@@ -169,6 +169,7 @@ func main() {
 			if err == nil {
 				break
 			}
+			glog.Warning(err)
 			conn, err = connect(conf.Addresses.Address, conf.Parameters.Retries)
 			if err != nil {
 				glog.Fatal(err)
@@ -195,5 +196,7 @@ func main() {
 		ioapi.Return(reply.Response)
 
 	}
+
+	glog.Fatal("No more commands")
 
 }
