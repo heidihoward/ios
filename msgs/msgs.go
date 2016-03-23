@@ -37,6 +37,11 @@ type PrepareResponse struct {
 	Success  bool
 }
 
+type Prepare struct {
+	Request  PrepareRequest
+	Response PrepareResponse
+}
+
 type CommitRequest struct {
 	SenderID int
 	View     int
@@ -50,6 +55,11 @@ type CommitResponse struct {
 	CommitIndex int
 }
 
+type Commit struct {
+	Request  CommitRequest
+	Response CommitResponse
+}
+
 type NewViewRequest struct {
 	SenderID int
 	View     int
@@ -59,6 +69,11 @@ type NewViewResponse struct {
 	SenderID int
 	View     int
 	Index    int
+}
+
+type NewView struct {
+	Request  NewViewRequest
+	Response NewViewResponse
 }
 
 type QueryRequest struct {
@@ -72,6 +87,11 @@ type QueryResponse struct {
 	View     int
 	Present  bool
 	Entry    Entry
+}
+
+type Query struct {
+	Request  QueryRequest
+	Response QueryResponse
 }
 
 type LogUpdate struct {
@@ -89,10 +109,10 @@ type Requests struct {
 }
 
 type Responses struct {
-	Prepare chan PrepareResponse
-	Commit  chan CommitResponse
-	NewView chan NewViewResponse
-	Query   chan QueryResponse
+	Prepare chan Prepare
+	Commit  chan Commit
+	NewView chan NewView
+	Query   chan Query
 }
 
 type ProtoMsgs struct {
@@ -219,10 +239,10 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 			make(chan NewViewRequest, buf),
 			make(chan QueryRequest, buf)},
 		Responses{
-			make(chan PrepareResponse, buf),
-			make(chan CommitResponse, buf),
-			make(chan NewViewResponse, buf),
-			make(chan QueryResponse, buf)}}
+			make(chan Prepare, buf),
+			make(chan Commit, buf),
+			make(chan NewView, buf),
+			make(chan Query, buf)}}
 }
 
 func MakeIo(buf int, n int) *Io {
@@ -270,7 +290,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		glog.Info("Unmarshalled ", msg)
 		(*msgch).Requests.Commit <- msg
 	case 3:
-		var msg PrepareResponse
+		var msg Prepare
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
 			glog.Fatal("Cannot parse message", err)
@@ -278,7 +298,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		glog.Info("Unmarshalled ", msg)
 		(*msgch).Responses.Prepare <- msg
 	case 4:
-		var msg CommitResponse
+		var msg Commit
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
 			glog.Fatal("Cannot parse message", err)
@@ -305,28 +325,24 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(1), b)
-		glog.Info("Sending ", snd)
 		return snd, err
 
 	case msg := <-(*msgch).Requests.Commit:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(2), b)
-		glog.Info("Sending ", snd)
 		return snd, err
 
 	case msg := <-(*msgch).Responses.Prepare:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(3), b)
-		glog.Info("Sending ", snd)
 		return snd, err
 
 	case msg := <-(*msgch).Responses.Commit:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(4), b)
-		glog.Info("Sending ", snd)
 		return snd, err
 
 	}

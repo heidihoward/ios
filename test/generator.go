@@ -45,9 +45,9 @@ func (g *Generator) Next() (string, bool) {
 	glog.Info("Key is", key)
 
 	if rand.Intn(100) < g.Ratio {
-		return fmt.Sprintf("get %s\n", key), true
+		return fmt.Sprintf("get %s", key), true
 	} else {
-		return fmt.Sprintf("update %s 7\n", key), true
+		return fmt.Sprintf("update %s 7", key), true
 	}
 }
 

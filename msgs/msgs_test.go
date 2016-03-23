@@ -33,6 +33,9 @@ func TestMakeIo(t *testing.T) {
 		SenderID: 0,
 		Success:  true}
 
+	prep := Prepare{
+		prepare, prepare_res}
+
 	// create a node in system of 3 nodes
 	nodes := 3
 	io := MakeIo(10, nodes)
@@ -57,10 +60,10 @@ func TestMakeIo(t *testing.T) {
 
 	// TEST
 	out := (*io).OutgoingUnicast[0]
-	(*out).Responses.Prepare <- prepare_res
+	(*out).Responses.Prepare <- prep
 	select {
 	case reply := <-(*out).Responses.Prepare:
-		if reply != prepare_res {
+		if reply.Response != prepare_res {
 			t.Error(reply)
 		}
 	case <-time.After(time.Millisecond):
@@ -69,13 +72,13 @@ func TestMakeIo(t *testing.T) {
 
 	//TEST
 	go io.Broadcaster()
-	(*io).OutgoingBroadcast.Responses.Prepare <- prepare_res
+	(*io).OutgoingBroadcast.Responses.Prepare <- prep
 
 	for id := 0; id < nodes; id++ {
 		// check each receives it
 		select {
 		case reply := <-(*io).OutgoingUnicast[id].Responses.Prepare:
-			if reply != prepare_res {
+			if reply.Response != prepare_res {
 				t.Error(reply)
 			}
 		case <-time.After(time.Millisecond):

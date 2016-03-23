@@ -17,30 +17,32 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 	var candidate *msgs.Entry
 
 	for n := 0; n < majority; n++ {
-		res := <-(*io).Incoming.Responses.Query
-		// TODO: check term and sender
-		if res.Present {
-			// if committed, then done
-			if res.Entry.Committed {
-				candidate = &res.Entry
-				break
-			}
+		msg := <-(*io).Incoming.Responses.Query
+		if msg.Request == query {
+			res := msg.Response
+			// TODO: check term and sender
+			if res.Present {
+				// if committed, then done
+				if res.Entry.Committed {
+					candidate = &res.Entry
+					break
+				}
 
-			// if first entry, then new candidate
-			if candidate == nil {
-				candidate = &res.Entry
-			}
+				// if first entry, then new candidate
+				if candidate == nil {
+					candidate = &res.Entry
+				}
 
-			// if higher view then candidate then new candidate
-			if res.Entry.View > (*candidate).View {
-				candidate = &res.Entry
-			}
+				// if higher view then candidate then new candidate
+				if res.Entry.View > (*candidate).View {
+					candidate = &res.Entry
+				}
 
-			// if same view and differnt requests then panic!
-			if res.Entry.View == (*candidate).View && res.Entry.Request != (*candidate).Request {
-				glog.Fatal("Same index has been issued more then once")
+				// if same view and differnt requests then panic!
+				if res.Entry.View == (*candidate).View && res.Entry.Request != (*candidate).Request {
+					glog.Fatal("Same index has been issued more then once")
+				}
 			}
-
 		}
 	}
 

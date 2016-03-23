@@ -23,14 +23,17 @@ func RunCoordinator(view int, index int, req msgs.ClientRequest, io *msgs.Io, co
 		majority := (config.N + 1) / 2
 		glog.Info("Waiting for ", majority, " prepare responses")
 		for i := 0; i < majority; {
-			res := <-(*io).Incoming.Responses.Prepare
-			glog.Info("Received ", res)
-			if !res.Success {
-				glog.Warning("Master is stepping down")
-				return false
+			msg := <-(*io).Incoming.Responses.Prepare
+			// check msg replies to the msg we just sent
+			if msg.Request == prepare {
+				glog.Info("Received ", msg)
+				if !msg.Response.Success {
+					glog.Warning("Master is stepping down")
+					return false
+				}
+				i++
+				glog.Info("Successful response received, waiting for ", majority-i, " more")
 			}
-			i++
-			glog.Info("Successful response received, waiting for ", majority-i, " more")
 		}
 	}
 

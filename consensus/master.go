@@ -24,17 +24,23 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 		glog.Info("Waiting for ", majority, " new view responses")
 		min_index := 100 //TODO: Fix this hardcoding
 		// TODO: FEATURE add option to wait longer
+
 		for i := 0; i < majority; {
-			res := <-(*io).Incoming.Responses.NewView
-			glog.Info("Received ", res)
-			if res.Index > index {
-				index = res.Index
-			} else if res.Index < min_index {
-				min_index = res.Index
+			msg := <-(*io).Incoming.Responses.NewView
+			// check msg replies to the msg we just sent
+			if msg.Request == req {
+				res := msg.Response
+				glog.Info("Received ", res)
+				if res.Index > index {
+					index = res.Index
+				} else if res.Index < min_index {
+					min_index = res.Index
+				}
+				i++
+				// TODO: BUG need to check view
+				glog.Info("Successful new view received, waiting for ", majority-i, " more")
 			}
-			i++
-			// TODO: BUG need to check view
-			glog.Info("Successful new view received, waiting for ", majority-i, " more")
+
 		}
 		glog.Info("Index is ", index)
 

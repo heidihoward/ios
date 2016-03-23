@@ -68,7 +68,8 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			// check view
 			if req.View < state.View {
 				glog.Warning("Sender is behind")
-				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.PrepareResponse{config.ID, false}
+				reply := msgs.PrepareResponse{config.ID, false}
+				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.Prepare{req, reply}
 				break
 
 			}
@@ -83,7 +84,8 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			// check sender is master
 			if req.SenderID != state.MasterID {
 				glog.Warningf("Sender (ID %d) is the not master (ID %d)", req.SenderID, state.MasterID)
-				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.PrepareResponse{config.ID, false}
+				reply := msgs.PrepareResponse{config.ID, false}
+				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.Prepare{req, reply}
 				break
 			}
 
@@ -98,7 +100,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 
 			// reply
 			reply := msgs.PrepareResponse{config.ID, true}
-			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Prepare <- reply
+			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Prepare <- msgs.Prepare{req, reply}
 			glog.Info("Response dispatched: ", reply)
 
 		case req := <-(*io).Incoming.Requests.Commit:
@@ -138,11 +140,13 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				(*io).OutgoingRequests <- req.Entry.Request
 				state.CommitIndex++
 
-				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{config.ID, true, state.CommitIndex}
+				reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
+				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
 				glog.Info("Entry Committed")
 			} else {
 
-				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.CommitResponse{config.ID, false, state.CommitIndex}
+				reply := msgs.CommitResponse{config.ID, false, state.CommitIndex}
+				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
 				glog.Info("Entry not yet committed")
 			}
 			glog.Info("Response dispatched")
@@ -164,7 +168,8 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			(*io).OutgoingUnicast[req.SenderID].Responses.NewView <- msgs.NewViewResponse{config.ID, state.View, state.LastIndex}
+			reply := msgs.NewViewResponse{config.ID, state.View, state.LastIndex}
+			(*io).OutgoingUnicast[req.SenderID].Responses.NewView <- msgs.NewView{req, reply}
 			glog.Info("Response dispatched")
 
 		case req := <-(*io).Incoming.Requests.Query:
@@ -186,7 +191,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 
 			present := state.LastIndex >= req.Index
 			reply := msgs.QueryResponse{config.ID, state.View, present, state.Log[req.Index]}
-			(*io).OutgoingUnicast[req.SenderID].Responses.Query <- reply
+			(*io).OutgoingUnicast[req.SenderID].Responses.Query <- msgs.Query{req, reply}
 		}
 	}
 }
