@@ -57,13 +57,14 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 
 		// wait for request
 		req := <-(*io).IncomingRequests
-		glog.Info("Request received ", req)
+		glog.Info("Request received: ", req)
 		index++
 
 		ok := RunCoordinator(view, index, req, io, config, true)
 		if !ok {
 			break
 		}
+		glog.Info("Finished replicating request: ", req)
 
 	}
 

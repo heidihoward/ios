@@ -150,14 +150,14 @@ func handlePeer(cn net.Conn, _ bool) {
 	go func() {
 		for {
 			// read request
+			glog.Infof("Ready for next message from %d", peer_id)
 			text, err := reader.ReadBytes(byte('\n'))
-			glog.Info(string(text))
-			glog.Info("Reading from peer ", peer_id)
 			if err != nil {
+				glog.Warning(err)
 				close_err <- err
 				break
 			}
-
+			glog.Infof("Read from peer %d: ", peer_id, string(text))
 			(*cons_io).Incoming.BytesToProtoMsg(text)
 
 		}
@@ -170,23 +170,24 @@ func handlePeer(cn net.Conn, _ bool) {
 			if err != nil {
 				glog.Fatal("Could not marshal message")
 			}
-			glog.Info("Sending ", string(b))
+			glog.Infof("Sending to %d: %s", peer_id, string(b))
 			_, err = writer.Write(b)
 			_, err = writer.Write([]byte("\n"))
 			if err != nil {
+				glog.Warning(err)
 				close_err <- err
 				break
 			}
 			err = writer.Flush()
+			glog.Info("Sent")
 		}
 	}()
 
 	// block until connection fails
 	err = <-close_err
-	glog.Warning(err)
 
 	// tidy up
-	glog.Infof("No longer about to handle traffic from peer %d at %s ", id, addr)
+	glog.Infof("No longer able to handle traffic from peer %d at %s ", id, addr)
 	peers[peer_id].handled = false
 	(*cons_io).Failure <- peer_id
 	cn.Close()
@@ -256,7 +257,7 @@ func main() {
 	keyval = store.New()
 	c = cache.Create()
 	// setup IO
-	cons_io = msgs.MakeIo(10, len(conf.Peers.Address))
+	cons_io = msgs.MakeIo(100, len(conf.Peers.Address))
 
 	notifyclient = make(map[msgs.ClientRequest](chan msgs.ClientResponse))
 	go stateMachine()
