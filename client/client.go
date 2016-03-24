@@ -2,9 +2,9 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"errors"
 	"flag"
-	"fmt"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/api/interactive"
 	"github.com/heidi-ann/hydra/api/rest"
@@ -14,6 +14,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -113,7 +114,7 @@ func main() {
 	if err != nil {
 		glog.Fatal(err)
 	}
-	stats := bufio.NewWriter(file)
+	stats := csv.NewWriter(file)
 	defer stats.Flush()
 
 	// set up request id
@@ -183,13 +184,13 @@ func main() {
 		msgs.Unmarshal(replyBytes, reply)
 
 		// write to latency to log
-		str := fmt.Sprintf("%d\n", time.Since(startTime).Nanoseconds())
-		n, err := stats.WriteString(str)
+		latency := strconv.FormatInt(time.Since(startTime).Nanoseconds(), 10)
+		err = stats.Write([]string{startTime.String(), latency})
 		if err != nil {
 			glog.Fatal(err)
 		}
-		glog.Warningf("Written %d bytes to log", n)
-		_ = stats.Flush()
+		stats.Flush()
+		// TODO: call error to check if successful
 
 		// writing result to user
 		// time.Since(startTime)
