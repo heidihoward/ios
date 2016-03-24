@@ -116,10 +116,9 @@ func checkPeer() {
 
 			if err != nil {
 				glog.Warning(err)
-				break
+			} else {
+				handlePeer(cn, true)
 			}
-
-			handlePeer(cn, true)
 		}
 	}
 }
