@@ -62,7 +62,6 @@ func (s *Store) Process(req string) string {
 
 func (s *Store) Print() {
 	for key, value := range *s {
-		fmt.Println("(", key, value, ")")
+		glog.Info("(", key, value, ")")
 	}
-	fmt.Println("\n")
 }

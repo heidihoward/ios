@@ -1,23 +1,33 @@
 #!/bin/bash          
-# simple test, 1 server, 3 clients, no failures locally
+# simple test with no failures, no failures locally
+
+# first args is number of servers (don't forget to change server config file)
+# 2nd args is number of client
 
 # tidy up from previous tests
 cd $GOPATH/src/github.com/heidi-ann/hydra
 
 rm server/*.temp
-rm scripts/results/*
+rm -r scripts/results/$1s$2c/*
+
+# make results directory
+mkdir scripts/results/$1s$2c
 
 # start server
 cd server
-$GOPATH/bin/server -id=0 -client-port=8080 -peer-port=8090 &
-$GOPATH/bin/server -id=1 -client-port=8081 -peer-port=8091 &
-$GOPATH/bin/server -id=2 -client-port=8082 -peer-port=8092 &
+echo "starting $1 servers"
+for ((id=0; id<$1; id++))
+do
+	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id &
+done
 
 # start clients 
 cd ../client
-$GOPATH/bin/client -id=0 -mode=test -stat=../scripts/results/latency_0.csv &
-$GOPATH/bin/client -id=1 -mode=test -stat=../scripts/results/latency_1.csv &
-$GOPATH/bin/client -id=2 -mode=test -stat=../scripts/results/latency_2.csv &
+echo "starting $2 clients"
+for ((id=0; id<$2; id++))
+do
+	$GOPATH/bin/client -id=$id -mode=test -stat=../scripts/results/$1s$2c/latency_$id.csv &
+done
 
 # stop 
 sleep 20
