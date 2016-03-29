@@ -5,7 +5,7 @@
 cd $GOPATH/src/github.com/heidi-ann/hydra
 
 rm server/*.temp
-rm client/latency_*.csv
+rm scripts/results/*
 
 # start server
 cd server

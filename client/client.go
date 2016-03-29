@@ -154,7 +154,6 @@ func main() {
 		// encode as request
 		req := msgs.ClientRequest{
 			*id, requestID, text}
-		requestID++
 		b, err := msgs.Marshal(req)
 		if err != nil {
 			glog.Fatal(err)
@@ -183,15 +182,27 @@ func main() {
 		reply := new(msgs.ClientResponse)
 		msgs.Unmarshal(replyBytes, reply)
 
+		//check reply is as expected
+		if reply.ClientID != *id {
+			// TODO: Make this a fatel error
+			glog.Fatal("Response received has wrong ClientID: expected ",
+				*id, " ,received ", reply.ClientID)
+		}
+		if reply.RequestID != requestID {
+			glog.Fatal("Response received has wrong RequestID: expected ",
+				requestID, " ,received ", reply.RequestID)
+		}
+
 		// write to latency to log
 		latency := strconv.FormatInt(time.Since(startTime).Nanoseconds(), 10)
-		err = stats.Write([]string{startTime.String(), latency})
+		err = stats.Write([]string{startTime.String(), strconv.Itoa(requestID), latency})
 		if err != nil {
 			glog.Fatal(err)
 		}
 		stats.Flush()
 		// TODO: call error to check if successful
 
+		requestID++
 		// writing result to user
 		// time.Since(startTime)
 		ioapi.Return(reply.Response)

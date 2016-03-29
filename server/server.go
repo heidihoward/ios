@@ -73,7 +73,7 @@ func stateMachine() {
 			keyval.Print()
 
 			// write response to request cache
-			reply := msgs.ClientResponse{
+			reply = msgs.ClientResponse{
 				req.ClientID, req.RequestID, output}
 			c.Add(reply)
 		}
@@ -102,6 +102,14 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	// wait for reply
 	notifyclient[req] = make(chan msgs.ClientResponse)
 	reply := <-notifyclient[req]
+
+	// check reply
+	if reply.ClientID != req.ClientID {
+		glog.Fatal("ClientID is different")
+	}
+	if reply.RequestID != req.RequestID {
+		glog.Fatal("RequestID is different")
+	}
 
 	return reply
 }
