@@ -265,7 +265,7 @@ func main() {
 	keyval = store.New()
 	c = cache.Create()
 	// setup IO
-	cons_io = msgs.MakeIo(100, len(conf.Peers.Address))
+	cons_io = msgs.MakeIo(1000, len(conf.Peers.Address))
 
 	notifyclient = make(map[msgs.ClientRequest](chan msgs.ClientResponse))
 	go stateMachine()
@@ -277,7 +277,7 @@ func main() {
 
 	// check persistent storage for commands
 	found := false
-	log := make([]msgs.Entry, 100) //TODO: Fix this
+	log := make([]msgs.Entry, 1000) //TODO: Fix this
 
 	if !is_empty {
 		for {
