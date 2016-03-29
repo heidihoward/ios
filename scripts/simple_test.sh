@@ -15,9 +15,9 @@ $GOPATH/bin/server -id=2 -client-port=8082 -peer-port=8092 &
 
 # start clients 
 cd ../client
-$GOPATH/bin/client -id=0 -mode=test -stat=latency_1.csv &
-$GOPATH/bin/client -id=1 -mode=test -stat=latency_2.csv &
-$GOPATH/bin/client -id=2 -mode=test -stat=latency_3.csv &
+$GOPATH/bin/client -id=0 -mode=test -stat=../scripts/results/latency_0.csv &
+$GOPATH/bin/client -id=1 -mode=test -stat=../scripts/results/latency_1.csv &
+$GOPATH/bin/client -id=2 -mode=test -stat=../scripts/results/latency_2.csv &
 
 # stop 
 sleep 20
