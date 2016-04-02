@@ -9,16 +9,22 @@ cd $GOPATH/src/github.com/heidi-ann/hydra
 
 rm server/*.temp
 rm -r scripts/results/$1s$2c/*
+rm scripts/serv.conf
 
 # make results directory
 mkdir scripts/results/$1s$2c
+
+# generate server configuration files
+cd scripts
+./generate_serv_conf.sh $1
+cd ..
 
 # start server
 cd server
 echo "starting $1 servers"
 for ((id=0; id<$1; id++))
 do
-	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id &
+	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id -config=../scripts/serv.conf &
 done
 
 # start clients 
