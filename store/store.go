@@ -2,7 +2,6 @@
 package store
 
 import (
-	"fmt"
 	"github.com/golang/glog"
 	"strings"
 )

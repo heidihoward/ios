@@ -211,6 +211,6 @@ func main() {
 
 	}
 
-	glog.Warning("No more commands")
+	glog.Info("No more commands")
 
 }
