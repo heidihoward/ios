@@ -182,7 +182,16 @@ func main() {
 
 		//handle reply
 		reply := new(msgs.ClientResponse)
-		msgs.Unmarshal(replyBytes, reply)
+		err = msgs.Unmarshal(replyBytes, reply)
+
+		if err != nil {
+			glog.Fatal(err)
+		}
+
+		//check reply is not nil
+		if *reply == (msgs.ClientResponse{}) {
+			glog.Fatal("Response is nil")
+		}
 
 		//check reply is as expected
 		if reply.ClientID != *id {
