@@ -38,7 +38,7 @@ do
 done
 
 # stop 
-sleep 20
+sleep 2
 kill $(jobs -p)
 
 echo "done, results in $3/$1s$2c"

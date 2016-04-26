@@ -23,14 +23,15 @@ func mod(x int, y int) int {
 }
 
 // check protocol invariant
-func checkInvariant(prevEntry msgs.Entry, nxtEntry msgs.Entry) {
+func checkInvariant(log []msgs.Entry, index int, nxtEntry msgs.Entry) {
+	prevEntry := log[index]
 	// if committed, request never changes
 	if prevEntry.Committed && prevEntry.Request != nxtEntry.Request {
-		glog.Fatal("Committed entry is being overwritten ", prevEntry, nxtEntry)
+		glog.Fatal("Committed entry is being overwritten at", prevEntry, nxtEntry, index)
 	}
 	// each index is allocated once per term
 	if prevEntry.View == nxtEntry.View && prevEntry.Request != nxtEntry.Request {
-		glog.Fatal("Index has been reallocated ", prevEntry, nxtEntry)
+		glog.Fatal("Index has been reallocated at ", prevEntry, nxtEntry, index)
 	}
 
 }
@@ -93,7 +94,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.Index > state.LastIndex {
 				state.LastIndex = req.Index
 			} else {
-				checkInvariant(state.Log[req.Index], req.Entry)
+				checkInvariant(state.Log, req.Index, req.Entry)
 			}
 			state.Log[req.Index] = req.Entry
 			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
@@ -129,7 +130,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.Index > state.LastIndex {
 				state.LastIndex = req.Index
 			} else {
-				checkInvariant(state.Log[req.Index], req.Entry)
+				checkInvariant(state.Log, req.Index, req.Entry)
 			}
 			state.Log[req.Index] = req.Entry
 			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
