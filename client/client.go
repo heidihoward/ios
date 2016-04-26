@@ -164,12 +164,19 @@ func main() {
 		tries := 0
 
 		// dispatch request until successfull
-		var replyBytes []byte
+		var reply *msgs.ClientResponse
 		for {
 			tries++
-			replyBytes, err = dispatcher(b, conn, rd, timeout)
+			replyBytes, err := dispatcher(b, conn, rd, timeout)
 			if err == nil {
-				break
+
+				//handle reply
+				reply = new(msgs.ClientResponse)
+				err = msgs.Unmarshal(replyBytes, reply)
+
+				if err == nil {
+					break
+				}
 			}
 			glog.Warning(err)
 			conn, err = connect(conf.Addresses.Address, conf.Parameters.Retries)
@@ -178,14 +185,6 @@ func main() {
 			}
 			rd = bufio.NewReader(conn)
 
-		}
-
-		//handle reply
-		reply := new(msgs.ClientResponse)
-		err = msgs.Unmarshal(replyBytes, reply)
-
-		if err != nil {
-			glog.Fatal(err)
 		}
 
 		//check reply is not nil
