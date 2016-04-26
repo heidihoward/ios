@@ -27,6 +27,8 @@ do
 	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id -config=../scripts/serv.conf &
 done
 
+sleep 1
+
 # start clients 
 cd ../client
 echo "starting $2 clients"
