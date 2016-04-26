@@ -8,18 +8,19 @@
 cd $GOPATH/src/github.com/heidi-ann/hydra
 
 rm server/*.temp
-rm -r scripts/results/$1s$2c/*
 rm scripts/serv.conf
 
+TIME=`date '+%m-%d-%H%M%S'`
+
 # make results directory
-mkdir scripts/results/$1s$2c
+mkdir -p scripts/results/$TIME/$1s$2c
 
 # generate server configuration files
 cd scripts
 ./generate_serv_conf.sh $1
 cd ..
 
-# start server
+# start servers
 cd server
 echo "starting $1 servers"
 for ((id=0; id<$1; id++))
@@ -32,11 +33,12 @@ cd ../client
 echo "starting $2 clients"
 for ((id=0; id<$2; id++))
 do
-	$GOPATH/bin/client -id=$id -mode=test -stat=../scripts/results/$1s$2c/latency_$id.csv &
+	$GOPATH/bin/client -id=$id -mode=test -stat=../scripts/results/$TIME/$1s$2c/latency_$id.csv &
 done
 
 # stop 
 sleep 20
 kill $(jobs -p)
 
+echo "done, results in scripts/results/$TIME/$1s$2c"
 # produce CDF of latency
