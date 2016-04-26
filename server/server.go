@@ -221,7 +221,10 @@ func handleConnection(cn net.Conn) {
 		}
 		glog.Info(string(text))
 		req := new(msgs.ClientRequest)
-		msgs.Unmarshal(text, req)
+		err = msgs.Unmarshal(text, req)
+		if err != nil {
+			glog.Fatal(err)
+		}
 
 		// construct reply
 		reply := handleRequest(*req)
