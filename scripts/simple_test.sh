@@ -3,6 +3,7 @@
 
 # first args is number of servers (don't forget to change server config file)
 # 2nd args is number of client
+# 3rd arg is path from hydra of where to store results
 
 # tidy up from previous tests
 cd $GOPATH/src/github.com/heidi-ann/hydra
@@ -10,10 +11,8 @@ cd $GOPATH/src/github.com/heidi-ann/hydra
 rm server/*.temp
 rm scripts/serv.conf
 
-TIME=`date '+%m-%d-%H%M%S'`
-
 # make results directory
-mkdir -p scripts/results/$TIME/$1s$2c
+mkdir -p $3/$1s$2c
 
 # generate server configuration files
 cd scripts
@@ -33,12 +32,12 @@ cd ../client
 echo "starting $2 clients"
 for ((id=0; id<$2; id++))
 do
-	$GOPATH/bin/client -id=$id -mode=test -stat=../scripts/results/$TIME/$1s$2c/latency_$id.csv &
+	$GOPATH/bin/client -id=$id -mode=test -stat=../$3/$1s$2c/latency_$id.csv &
 done
 
 # stop 
 sleep 20
 kill $(jobs -p)
 
-echo "done, results in scripts/results/$TIME/$1s$2c"
+echo "done, results in $3/$1s$2c"
 # produce CDF of latency
