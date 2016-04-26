@@ -30,7 +30,7 @@ done
 # start clients 
 cd ../client
 echo "starting $2 clients"
-for ((id=0; id<$2; id++))
+for ((id=1; id<=$2; id++))
 do
 	$GOPATH/bin/client -id=$id -mode=test -stat=../$3/$1s$2c/latency_$id.csv &
 done

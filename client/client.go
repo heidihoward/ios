@@ -186,7 +186,6 @@ func main() {
 
 		//check reply is as expected
 		if reply.ClientID != *id {
-			// TODO: Make this a fatel error
 			glog.Fatal("Response received has wrong ClientID: expected ",
 				*id, " ,received ", reply.ClientID)
 		}
