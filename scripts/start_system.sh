@@ -37,9 +37,4 @@ do
 	$GOPATH/bin/client -id=$id -mode=test -stat=../$3/$1s$2c/latency_$id.csv &
 done
 
-# stop 
-sleep 2
-kill $(jobs -p)
-
-echo "done, results in $3/$1s$2c"
-# produce CDF of latency
+echo "setup complete, recording results in $3/$1s$2c"
