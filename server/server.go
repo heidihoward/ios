@@ -259,15 +259,6 @@ func main() {
 	flag.Parse()
 	defer glog.Flush()
 
-	// always flush (whatever happens)
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		sig := <-sigs
-		glog.Flush()
-		glog.Fatal("Termination due to: ", sig)
-	}()
-
 	conf := config.ParseServerConfig(*config_file)
 	if *id == -1 {
 		glog.Fatal("ID is required")
@@ -416,14 +407,21 @@ func main() {
 	cons_config := consensus.Config{*id, len(conf.Peers.Address)}
 	if !found {
 		glog.Info("Starting fresh consensus instance")
-		consensus.Init(cons_io, cons_config)
+		go consensus.Init(cons_io, cons_config)
 	} else {
 		glog.Info("Restoring consensus instance")
-		consensus.Recover(cons_io, cons_config, view, log)
+		go consensus.Recover(cons_io, cons_config, view, log)
 	}
-	cons_io.DumpPersistentStorage()
+	go cons_io.DumpPersistentStorage()
 
 	// tidy up
-	time.Sleep(30 * time.Second)
-	glog.Info("Shutting down")
+	glog.Info("Setup complete")
+
+	// waiting for exit
+	// always flush (whatever happens)
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-sigs
+	glog.Flush()
+	glog.Warning("Shutting down due to ", sig)
 }

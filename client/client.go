@@ -99,12 +99,8 @@ func main() {
 
 	// always flush (whatever happens)
 	sigs := make(chan os.Signal, 1)
+	finish := make(chan bool, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		sig := <-sigs
-		glog.Flush()
-		glog.Fatal("Termination due to: ", sig)
-	}()
 
 	// parse config files
 	conf := config.ParseClientConfig(*config_file)
@@ -152,89 +148,97 @@ func main() {
 	}
 
 	glog.Info("Client is ready to process incoming requests")
-	for {
-
-		// get next command
-		text, ok := ioapi.Next()
-		if !ok {
-			break
-		}
-		glog.Info("API produced: ", text)
-
-		// encode as request
-		req := msgs.ClientRequest{
-			*id, requestID, text}
-		b, err := msgs.Marshal(req)
-		if err != nil {
-			glog.Fatal(err)
-		}
-		glog.Info(string(b))
-
-		startTime := time.Now()
-		tries := 0
-
-		// dispatch request until successfull
-		var reply *msgs.ClientResponse
+	go func() {
 		for {
-			tries++
-			replyBytes, err := dispatcher(b, conn, rd, timeout)
-			if err == nil {
-
-				//handle reply
-				reply = new(msgs.ClientResponse)
-				err = msgs.Unmarshal(replyBytes, reply)
-
-				if err == nil {
-					break
-				}
+			// get next command
+			text, ok := ioapi.Next()
+			if !ok {
+				finish <- true
+				break
 			}
-			glog.Warning(err)
+			glog.Info("API produced: ", text)
 
-			// try to establish a new connection
+			// encode as request
+			req := msgs.ClientRequest{
+				*id, requestID, text}
+			b, err := msgs.Marshal(req)
+			if err != nil {
+				glog.Fatal(err)
+			}
+			glog.Info(string(b))
+
+			startTime := time.Now()
+			tries := 0
+
+			// dispatch request until successfull
+			var reply *msgs.ClientResponse
 			for {
-				conn, err = connect(conf.Addresses.Address, conf.Parameters.Retries)
+				tries++
+				replyBytes, err := dispatcher(b, conn, rd, timeout)
 				if err == nil {
-					break
+
+					//handle reply
+					reply = new(msgs.ClientResponse)
+					err = msgs.Unmarshal(replyBytes, reply)
+
+					if err == nil {
+						break
+					}
 				}
-				glog.Warning("Serious connectivity issues")
-				time.Sleep(time.Second)
+				glog.Warning(err)
+
+				// try to establish a new connection
+				for {
+					conn, err = connect(conf.Addresses.Address, conf.Parameters.Retries)
+					if err == nil {
+						break
+					}
+					glog.Warning("Serious connectivity issues")
+					time.Sleep(time.Second)
+				}
+
+				rd = bufio.NewReader(conn)
+
 			}
 
-			rd = bufio.NewReader(conn)
+			//check reply is not nil
+			if *reply == (msgs.ClientResponse{}) {
+				glog.Fatal("Response is nil")
+			}
+
+			//check reply is as expected
+			if reply.ClientID != *id {
+				glog.Fatal("Response received has wrong ClientID: expected ",
+					*id, " ,received ", reply.ClientID)
+			}
+			if reply.RequestID != requestID {
+				glog.Fatal("Response received has wrong RequestID: expected ",
+					requestID, " ,received ", reply.RequestID)
+			}
+
+			// write to latency to log
+			latency := strconv.FormatInt(time.Since(startTime).Nanoseconds(), 10)
+			err = stats.Write([]string{startTime.String(), strconv.Itoa(requestID), latency, strconv.Itoa(tries)})
+			if err != nil {
+				glog.Fatal(err)
+			}
+			stats.Flush()
+			// TODO: call error to check if successful
+
+			requestID++
+			// writing result to user
+			// time.Since(startTime)
+			ioapi.Return(reply.Response)
 
 		}
+	}()
 
-		//check reply is not nil
-		if *reply == (msgs.ClientResponse{}) {
-			glog.Fatal("Response is nil")
-		}
-
-		//check reply is as expected
-		if reply.ClientID != *id {
-			glog.Fatal("Response received has wrong ClientID: expected ",
-				*id, " ,received ", reply.ClientID)
-		}
-		if reply.RequestID != requestID {
-			glog.Fatal("Response received has wrong RequestID: expected ",
-				requestID, " ,received ", reply.RequestID)
-		}
-
-		// write to latency to log
-		latency := strconv.FormatInt(time.Since(startTime).Nanoseconds(), 10)
-		err = stats.Write([]string{startTime.String(), strconv.Itoa(requestID), latency, strconv.Itoa(tries)})
-		if err != nil {
-			glog.Fatal(err)
-		}
-		stats.Flush()
-		// TODO: call error to check if successful
-
-		requestID++
-		// writing result to user
-		// time.Since(startTime)
-		ioapi.Return(reply.Response)
-
+	select {
+	case sig := <-sigs:
+		glog.Warning("Termination due to: ", sig)
+	case <-finish:
+		glog.Info("No more commands")
 	}
-
-	glog.Info("No more commands")
+	glog.Flush()
 
 }
