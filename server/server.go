@@ -385,7 +385,7 @@ func main() {
 	go func() {
 		for {
 			checkPeer()
-			time.Sleep(10 * time.Second)
+			time.Sleep(1 * time.Second)
 		}
 	}()
 

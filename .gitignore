@@ -28,3 +28,5 @@ _testmain.go
 # project specific
 *.temp
 *.csv
+*.log
+*serv.conf

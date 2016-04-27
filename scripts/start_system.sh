@@ -25,7 +25,10 @@ cd server
 echo "starting $1 servers"
 for ((id=0; id<$1; id++))
 do
-	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id -config=../scripts/serv.conf $4 &
+	# make logging directory for server
+	mkdir ../$3/$1s$2c/s$id.log
+	# start server
+	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id -config=../scripts/serv.conf -log_dir=../$3/$1s$2c/s$id.log $4 &
 done
 
 sleep 1
@@ -35,7 +38,10 @@ cd ../client
 echo "starting $2 clients"
 for ((id=1; id<=$2; id++))
 do
-	$GOPATH/bin/client -id=$id -mode=test -stat=../$3/$1s$2c/latency_$id.csv $4 &
+	# make logging directory for client
+	mkdir ../$3/$1s$2c/c$id.log
+	# start client
+	$GOPATH/bin/client -id=$id -mode=test -stat=../$3/$1s$2c/latency_$id.csv -log_dir=../$3/$1s$2c/c$id.log $4  &
 done
 
 echo "setup complete, recording results in $3/$1s$2c"
