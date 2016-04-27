@@ -14,7 +14,9 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -39,7 +41,7 @@ func connect(addrs []string, tries int) (net.Conn, error) {
 
 			// if successful
 			if err == nil {
-				glog.Warningf("Connect established to %s", addrs[i])
+				glog.Infof("Connect established to %s", addrs[i])
 				return conn, err
 			}
 
@@ -94,6 +96,15 @@ func main() {
 	// set up logging
 	flag.Parse()
 	defer glog.Flush()
+
+	// always flush (whatever happens)
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-sigs
+		glog.Flush()
+		glog.Fatal("Termination due to: ", sig)
+	}()
 
 	// parse config files
 	conf := config.ParseClientConfig(*config_file)
@@ -178,10 +189,17 @@ func main() {
 				}
 			}
 			glog.Warning(err)
-			conn, err = connect(conf.Addresses.Address, conf.Parameters.Retries)
-			if err != nil {
-				glog.Fatal(err)
+
+			// try to establish a new connection
+			for {
+				conn, err = connect(conf.Addresses.Address, conf.Parameters.Retries)
+				if err == nil {
+					break
+				}
+				glog.Warning("Serious connectivity issues")
+				time.Sleep(time.Second)
 			}
+
 			rd = bufio.NewReader(conn)
 
 		}

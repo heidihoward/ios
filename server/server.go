@@ -12,8 +12,10 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -257,12 +259,22 @@ func main() {
 	flag.Parse()
 	defer glog.Flush()
 
+	// always flush (whatever happens)
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-sigs
+		glog.Flush()
+		glog.Fatal("Termination due to: ", sig)
+	}()
+
 	conf := config.ParseServerConfig(*config_file)
 	if *id == -1 {
 		glog.Fatal("ID is required")
 	}
 
 	glog.Info("Starting server ", *id)
+	defer glog.Warning("Shutting down server", *id)
 
 	//set up state machine
 	keyval = store.New()

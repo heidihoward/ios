@@ -4,7 +4,6 @@
 # first args is number of servers (don't forget to change server config file)
 # 2nd args is number of client
 # 3rd arg is path from hydra of where to store results
-# 4th arg is logging arguments
 
 # tidy up from previous tests
 cd $GOPATH/src/github.com/heidi-ann/hydra
@@ -28,7 +27,7 @@ do
 	# make logging directory for server
 	mkdir ../$3/$1s$2c/s$id.log
 	# start server
-	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id -config=../scripts/serv.conf -log_dir=../$3/$1s$2c/s$id.log $4 &
+	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id -config=../scripts/serv.conf -log_dir=../$3/$1s$2c/s$id.log&
 done
 
 sleep 1
@@ -41,7 +40,7 @@ do
 	# make logging directory for client
 	mkdir ../$3/$1s$2c/c$id.log
 	# start client
-	$GOPATH/bin/client -id=$id -mode=test -stat=../$3/$1s$2c/latency_$id.csv -log_dir=../$3/$1s$2c/c$id.log $4  &
+	$GOPATH/bin/client -id=$id -mode=test -stat=../$3/$1s$2c/latency_$id.csv -log_dir=../$3/$1s$2c/c$id.log &
 done
 
 echo "setup complete, recording results in $3/$1s$2c"
