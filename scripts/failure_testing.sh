@@ -5,7 +5,7 @@ TIME=`date '+%m-%d-%H%M%S'`
 
 ./scripts/start_system.sh 3 1 scripts/results/$TIME
 
-PID=$(ps | grep "[/]Users/heidi/go/bin/server" | awk '{print $1}' | head -1)
+PID=$(ps | grep "[/]Users/heidi/go/bin/server" | awk '{print $1}' | head -2 | tail -1)
 sleep 0.03
 kill $PID
 

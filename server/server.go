@@ -127,15 +127,23 @@ func checkPeer() {
 			if err != nil {
 				glog.Warning(err)
 			} else {
-				handlePeer(cn, true)
+				go handlePeer(cn, true)
 			}
+		} else {
+			glog.Info("Peer ", i, " is currently connected")
 		}
 	}
 }
 
-func handlePeer(cn net.Conn, _ bool) {
+func handlePeer(cn net.Conn, init bool) {
 	addr := cn.RemoteAddr().String()
-	glog.Info("Peer connection from ", addr)
+	if init {
+		glog.Info("Outgoing peer connection to ", addr)
+	} else {
+		glog.Info("Incoming peer connection from ", addr)
+	}
+
+	defer glog.Warningf("Connection closed from %s ", addr)
 
 	// handle requests
 	reader := bufio.NewReader(cn)
@@ -152,7 +160,7 @@ func handlePeer(cn net.Conn, _ bool) {
 		return
 	}
 
-	glog.Infof("Eeady to handle traffic from peer %d at %s ", peer_id, addr)
+	glog.Infof("Ready to handle traffic from peer %d at %s ", peer_id, addr)
 
 	peers[peer_id].handled = true
 
@@ -176,6 +184,7 @@ func handlePeer(cn net.Conn, _ bool) {
 	go func() {
 		for {
 			// send reply
+			glog.Infof("Ready to send message to %d", peer_id)
 			b, err := (*cons_io).OutgoingUnicast[peer_id].ProtoMsgToBytes()
 			if err != nil {
 				glog.Fatal("Could not marshal message")
@@ -194,7 +203,7 @@ func handlePeer(cn net.Conn, _ bool) {
 	}()
 
 	// block until connection fails
-	err = <-close_err
+	<-close_err
 
 	// tidy up
 	glog.Warningf("No longer able to handle traffic from peer %d at %s ", peer_id, addr)
@@ -384,14 +393,6 @@ func main() {
 	from := &((*cons_io).Incoming)
 	go from.Forward((*cons_io).OutgoingUnicast[*id])
 
-	// regularly check if all peers are connected and retry if not
-	go func() {
-		for {
-			checkPeer()
-			time.Sleep(1 * time.Second)
-		}
-	}()
-
 	// handle for incoming peers
 	go func() {
 		for {
@@ -400,6 +401,14 @@ func main() {
 				glog.Fatal(err)
 			}
 			go handlePeer(conn, false)
+		}
+	}()
+
+	// regularly check if all peers are connected and retry if not
+	go func() {
+		for {
+			checkPeer()
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
