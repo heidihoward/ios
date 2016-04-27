@@ -197,7 +197,7 @@ func handlePeer(cn net.Conn, _ bool) {
 	err = <-close_err
 
 	// tidy up
-	glog.Infof("No longer able to handle traffic from peer %d at %s ", peer_id, addr)
+	glog.Warningf("No longer able to handle traffic from peer %d at %s ", peer_id, addr)
 	peers[peer_id].handled = false
 	(*cons_io).Failure <- peer_id
 	cn.Close()
@@ -265,7 +265,7 @@ func main() {
 	}
 
 	glog.Info("Starting server ", *id)
-	defer glog.Warning("Shutting down server", *id)
+	defer glog.Warning("Shutting down server ", *id)
 
 	//set up state machine
 	keyval = store.New()
@@ -384,7 +384,7 @@ func main() {
 	from := &((*cons_io).Incoming)
 	go from.Forward((*cons_io).OutgoingUnicast[*id])
 
-	// regularly check if all peers are connected and reply if not
+	// regularly check if all peers are connected and retry if not
 	go func() {
 		for {
 			checkPeer()
