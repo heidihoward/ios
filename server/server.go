@@ -119,7 +119,7 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 func checkPeer() {
 	for i := range peers {
 		if !peers[i].handled {
-			glog.Info("Peer ", i, " is not currently connected")
+			glog.Info("Peer ", i, " is not currently connected to ", *id)
 			cn, err := net.Dial("tcp", peers[i].address)
 
 			if err != nil {
@@ -150,7 +150,7 @@ func handlePeer(cn net.Conn, _ bool) {
 		return
 	}
 
-	glog.Infof("Ready to handle traffic from peer %d at %s ", peer_id, addr)
+	glog.Infof("Peer %d is ready to handle traffic from peer %d at %s ", *id, peer_id, addr)
 
 	peers[peer_id].handled = true
 
@@ -195,7 +195,7 @@ func handlePeer(cn net.Conn, _ bool) {
 	err = <-close_err
 
 	// tidy up
-	glog.Infof("No longer able to handle traffic from peer %d at %s ", id, addr)
+	glog.Infof("Peer %d is no longer able to handle traffic from peer %d at %s ", *id, peer_id, addr)
 	peers[peer_id].handled = false
 	(*cons_io).Failure <- peer_id
 	cn.Close()

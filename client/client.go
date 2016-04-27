@@ -39,13 +39,12 @@ func connect(addrs []string, tries int) (net.Conn, error) {
 
 			// if successful
 			if err == nil {
-				glog.Infof("Connect established to %s", addrs[i])
+				glog.Warningf("Connect established to %s", addrs[i])
 				return conn, err
 			}
 
 			//if unsuccessful
 			glog.Warning(err)
-			time.Sleep(2 * time.Second)
 		}
 	}
 
@@ -122,7 +121,7 @@ func main() {
 	requestID := 1
 
 	// connecting to server
-	conn, err := connect(conf.Addresses.Address, 3)
+	conn, err := connect(conf.Addresses.Address, 1)
 	if err != nil {
 		glog.Fatal(err)
 	}
