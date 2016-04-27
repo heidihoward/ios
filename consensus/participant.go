@@ -25,15 +25,18 @@ func mod(x int, y int) int {
 // check protocol invariant
 func checkInvariant(log []msgs.Entry, index int, nxtEntry msgs.Entry) {
 	prevEntry := log[index]
-	// if committed, request never changes
-	if prevEntry.Committed && prevEntry.Request != nxtEntry.Request {
-		glog.Fatal("Committed entry is being overwritten at", prevEntry, nxtEntry, index)
-	}
-	// each index is allocated once per term
-	if prevEntry.View == nxtEntry.View && prevEntry.Request != nxtEntry.Request {
-		glog.Fatal("Index has been reallocated at ", prevEntry, nxtEntry, index)
-	}
 
+	// if no entry, then no problem
+	if prevEntry != (msgs.Entry{}) {
+		// if committed, request never changes
+		if prevEntry.Committed && prevEntry.Request != nxtEntry.Request {
+			glog.Fatal("Committed entry is being overwritten at", prevEntry, nxtEntry, index)
+		}
+		// each index is allocated once per term
+		if prevEntry.View == nxtEntry.View && prevEntry.Request != nxtEntry.Request {
+			glog.Fatal("Index has been reallocated at ", prevEntry, nxtEntry, index)
+		}
+	}
 }
 
 // PROTOCOL BODY

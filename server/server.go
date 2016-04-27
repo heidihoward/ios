@@ -72,7 +72,7 @@ func stateMachine() {
 		} else {
 			// apply request
 			output := keyval.Process(req.Request)
-			keyval.Print()
+			//keyval.Print()
 
 			// write response to request cache
 			reply = msgs.ClientResponse{
@@ -308,6 +308,7 @@ func main() {
 				glog.Fatal("Cannot parse log update", err)
 			}
 			log[update.Index] = update.Entry
+			glog.Info("Adding for persistent storage :", update)
 		}
 	}
 
