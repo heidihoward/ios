@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -22,7 +23,9 @@ import (
 var keyval *store.Store
 var c *cache.Cache
 var cons_io *msgs.Io
+
 var notifyclient map[msgs.ClientRequest](chan msgs.ClientResponse)
+var notifyclient_mutex sync.RWMutex
 
 type Peer struct {
 	id      int
@@ -31,6 +34,7 @@ type Peer struct {
 }
 
 var peers []Peer
+var peers_mutex sync.RWMutex
 
 var client_port = flag.Int("client-port", 8080, "port to listen on for clients")
 var peer_port = flag.Int("peer-port", 8090, "port to listen on for peers")
@@ -81,9 +85,11 @@ func stateMachine() {
 		}
 
 		// if any handleRequests are waiting on this reply, then reply to them
+		notifyclient_mutex.Lock()
 		if notifyclient[req] != nil {
 			notifyclient[req] <- reply
 		}
+		notifyclient_mutex.Unlock()
 	}
 }
 
@@ -102,7 +108,9 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	(*cons_io).IncomingRequests <- req
 
 	// wait for reply
+	notifyclient_mutex.Lock()
 	notifyclient[req] = make(chan msgs.ClientResponse)
+	notifyclient_mutex.Unlock()
 	reply := <-notifyclient[req]
 
 	// check reply
@@ -120,7 +128,10 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 // try to create one if not
 func checkPeer() {
 	for i := range peers {
-		if !peers[i].handled {
+		peers_mutex.RLock()
+		failed := !peers[i].handled
+		peers_mutex.RUnlock()
+		if failed {
 			glog.Info("Peer ", i, " is not currently connected")
 			cn, err := net.Dial("tcp", peers[i].address)
 
@@ -162,7 +173,9 @@ func handlePeer(cn net.Conn, init bool) {
 
 	glog.Infof("Ready to handle traffic from peer %d at %s ", peer_id, addr)
 
+	peers_mutex.Lock()
 	peers[peer_id].handled = true
+	peers_mutex.Unlock()
 
 	close_err := make(chan error)
 	go func() {
@@ -207,7 +220,9 @@ func handlePeer(cn net.Conn, init bool) {
 
 	// tidy up
 	glog.Warningf("No longer able to handle traffic from peer %d at %s ", peer_id, addr)
+	peers_mutex.Unlock()
 	peers[peer_id].handled = false
+	peers_mutex.Lock()
 	(*cons_io).Failure <- peer_id
 	cn.Close()
 }
@@ -283,6 +298,7 @@ func main() {
 	cons_io = msgs.MakeIo(1000, len(conf.Peers.Address))
 
 	notifyclient = make(map[msgs.ClientRequest](chan msgs.ClientResponse))
+	notifyclient_mutex = sync.RWMutex{}
 	go stateMachine()
 
 	// setting up persistent log
@@ -380,6 +396,7 @@ func main() {
 		peers[i] = Peer{
 			i, conf.Peers.Address[i], false}
 	}
+	peers_mutex = sync.RWMutex{}
 
 	//set up peer server
 	glog.Info("Starting up peer server")
@@ -390,7 +407,9 @@ func main() {
 	}
 
 	// handle local peer (without sending network traffic)
+	peers_mutex.Lock()
 	peers[*id].handled = true
+	peers_mutex.Unlock()
 	from := &((*cons_io).Incoming)
 	go from.Forward((*cons_io).OutgoingUnicast[*id])
 
