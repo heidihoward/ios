@@ -1,5 +1,5 @@
 # Hydra
-Geo-replicated and strongly consistent key-value store
+Welcome to Hydra, a strongly consistent key-value store, built on the Ios distributed consensus protocol. 
 
 ### Installation
 

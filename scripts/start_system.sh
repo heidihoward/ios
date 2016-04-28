@@ -27,7 +27,7 @@ do
 	# make logging directory for server
 	mkdir ../$3/$1s$2c/s$id.log
 	# start server
-	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id -config=../scripts/serv.conf -log_dir=../$3/$1s$2c/s$id.log&
+	$GOPATH/bin/server -id=$id -client-port=808$id -peer-port=809$id -config=../scripts/serv.conf -log_dir=../$3/$1s$2c/s$id.log &
 done
 
 sleep 1
