@@ -8,6 +8,7 @@ import (
 type Commands struct {
 	Reads     int
 	Conflicts int
+	Interval  int
 }
 
 type Termination struct {

@@ -5,6 +5,7 @@ import (
 	"github.com/golang/glog"
 	"math/rand"
 	"strconv"
+	"time"
 )
 
 // Generator generates workloads for the store
@@ -13,10 +14,11 @@ type Generator struct {
 	Ratio    int // percentage of read requests
 	Conflict int // 1 to 5, degree of requests which target particular area
 	Requests int // terminate after this number of requests
+	Interval int // milliseconand delay between client resquest and response
 }
 
 func Generate(conf ConfigAuto) *Generator {
-	return &Generator{conf.Commands.Reads, conf.Commands.Conflicts, conf.Termination.Requests}
+	return &Generator{conf.Commands.Reads, conf.Commands.Conflicts, conf.Termination.Requests, conf.Commands.Interval}
 }
 
 func (g *Generator) Next() (string, bool) {
@@ -26,6 +28,8 @@ func (g *Generator) Next() (string, bool) {
 		return "", false
 	}
 	g.Requests--
+
+	time.Sleep(time.Duration(g.Interval) * time.Millisecond)
 
 	// generate key
 	key := "A" // default just in case
