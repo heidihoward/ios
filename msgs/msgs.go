@@ -133,50 +133,50 @@ type Io struct {
 
 // TODO: find a more generic method
 func (io *Io) Broadcaster() {
-	glog.Info("Setting up broadcaster for ", len((*io).OutgoingUnicast), " nodes")
+	glog.Info("Setting up broadcaster for ", len(io.OutgoingUnicast), " nodes")
 	for {
 		select {
 		// Requests
-		case r := <-(*io).OutgoingBroadcast.Requests.Prepare:
+		case r := <-io.OutgoingBroadcast.Requests.Prepare:
 			glog.Info("Broadcasting ", r)
-			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Requests.Prepare <- r
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Requests.Prepare <- r
 			}
-		case r := <-(*io).OutgoingBroadcast.Requests.Commit:
+		case r := <-io.OutgoingBroadcast.Requests.Commit:
 			glog.Info("Broadcasting ", r)
-			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Requests.Commit <- r
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Requests.Commit <- r
 			}
-		case r := <-(*io).OutgoingBroadcast.Requests.NewView:
+		case r := <-io.OutgoingBroadcast.Requests.NewView:
 			glog.Info("Broadcasting ", r)
-			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Requests.NewView <- r
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Requests.NewView <- r
 			}
-		case r := <-(*io).OutgoingBroadcast.Requests.Query:
+		case r := <-io.OutgoingBroadcast.Requests.Query:
 			glog.Info("Broadcasting ", r)
-			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Requests.Query <- r
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Requests.Query <- r
 			}
 			// Responses
-		case r := <-(*io).OutgoingBroadcast.Responses.Prepare:
+		case r := <-io.OutgoingBroadcast.Responses.Prepare:
 			glog.Info("Broadcasting ", r)
-			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Responses.Prepare <- r
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Responses.Prepare <- r
 			}
-		case r := <-(*io).OutgoingBroadcast.Responses.Commit:
+		case r := <-io.OutgoingBroadcast.Responses.Commit:
 			glog.Info("Broadcasting ", r)
-			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Responses.Commit <- r
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Responses.Commit <- r
 			}
-		case r := <-(*io).OutgoingBroadcast.Responses.NewView:
+		case r := <-io.OutgoingBroadcast.Responses.NewView:
 			glog.Info("Broadcasting ", r)
-			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Responses.NewView <- r
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Responses.NewView <- r
 			}
-		case r := <-(*io).OutgoingBroadcast.Responses.Query:
+		case r := <-io.OutgoingBroadcast.Responses.Query:
 			glog.Info("Broadcasting ", r)
-			for id := range (*io).OutgoingUnicast {
-				(*io).OutgoingUnicast[id].Responses.Query <- r
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Responses.Query <- r
 			}
 
 		}
@@ -190,31 +190,31 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 	for {
 		select {
 		// Requests
-		case r := <-(*from).Requests.Prepare:
+		case r := <-from.Requests.Prepare:
 			glog.Info("Forwarding ", r)
-			(*to).Requests.Prepare <- r
-		case r := <-(*from).Requests.Commit:
+			to.Requests.Prepare <- r
+		case r := <-from.Requests.Commit:
 			glog.Info("Forwarding", r)
-			(*to).Requests.Commit <- r
-		case r := <-(*from).Requests.NewView:
+			to.Requests.Commit <- r
+		case r := <-from.Requests.NewView:
 			glog.Info("Forwarding", r)
-			(*to).Requests.NewView <- r
-		case r := <-(*from).Requests.Query:
+			to.Requests.NewView <- r
+		case r := <-from.Requests.Query:
 			glog.Info("Forwarding", r)
-			(*to).Requests.Query <- r
+			to.Requests.Query <- r
 			// Responses
-		case r := <-(*from).Responses.Prepare:
+		case r := <-from.Responses.Prepare:
 			glog.Info("Forwarding", r)
-			(*to).Responses.Prepare <- r
-		case r := <-(*from).Responses.Commit:
+			to.Responses.Prepare <- r
+		case r := <-from.Responses.Commit:
 			glog.Info("Forwarding", r)
-			(*to).Responses.Commit <- r
-		case r := <-(*from).Responses.NewView:
+			to.Responses.Commit <- r
+		case r := <-from.Responses.NewView:
 			glog.Info("Forwarding", r)
-			(*to).Responses.NewView <- r
-		case r := <-(*from).Responses.Query:
+			to.Responses.NewView <- r
+		case r := <-from.Responses.Query:
 			glog.Info("Forwarding", r)
-			(*to).Responses.Query <- r
+			to.Responses.Query <- r
 		}
 
 	}
@@ -280,7 +280,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Fatal("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		(*msgch).Requests.Prepare <- msg
+		msgch.Requests.Prepare <- msg
 	case 2:
 		var msg CommitRequest
 		err := Unmarshal(b[1:], &msg)
@@ -288,7 +288,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Fatal("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		(*msgch).Requests.Commit <- msg
+		msgch.Requests.Commit <- msg
 	case 3:
 		var msg Prepare
 		err := Unmarshal(b[1:], &msg)
@@ -296,7 +296,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Fatal("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		(*msgch).Responses.Prepare <- msg
+		msgch.Responses.Prepare <- msg
 	case 4:
 		var msg Commit
 		err := Unmarshal(b[1:], &msg)
@@ -304,7 +304,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Fatal("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		(*msgch).Responses.Commit <- msg
+		msgch.Responses.Commit <- msg
 	}
 }
 
@@ -321,25 +321,25 @@ func appendr(x byte, xs []byte) []byte {
 
 func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 	select {
-	case msg := <-(*msgch).Requests.Prepare:
+	case msg := <-msgch.Requests.Prepare:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(1), b)
 		return snd, err
 
-	case msg := <-(*msgch).Requests.Commit:
+	case msg := <-msgch.Requests.Commit:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(2), b)
 		return snd, err
 
-	case msg := <-(*msgch).Responses.Prepare:
+	case msg := <-msgch.Responses.Prepare:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(3), b)
 		return snd, err
 
-	case msg := <-(*msgch).Responses.Commit:
+	case msg := <-msgch.Responses.Commit:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(4), b)
@@ -351,9 +351,9 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 func (io *Io) DumpPersistentStorage() {
 	for {
 		select {
-		case view := <-(*io).ViewPersist:
+		case view := <-io.ViewPersist:
 			glog.Info("Updating view to ", view)
-		case log := <-(*io).LogPersist:
+		case log := <-io.LogPersist:
 			glog.Info("Updating log with ", log)
 		}
 	}
