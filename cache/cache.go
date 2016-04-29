@@ -1,22 +1,32 @@
+// Cache is a simple key value store mapping client ID's to the response to the last request sent to them
+// It is safe for concurreny access
+// TODO: make locking more fine grained
 package cache
 
 import (
 	"github.com/heidi-ann/hydra/msgs"
+	"sync"
 )
 
-type Cache map[int]msgs.ClientResponse
+type Cache struct {
+	m map[int]msgs.ClientResponse
+	sync.RWMutex
+}
 
 func Create() *Cache {
-	var c Cache
-	c = map[int]msgs.ClientResponse{}
-	return &c
+	c := map[int]msgs.ClientResponse{}
+	return &Cache{c, sync.RWMutex{}}
 }
 
 func (c *Cache) Check(req msgs.ClientRequest) (bool, msgs.ClientResponse) {
-	last := (*c)[req.ClientID]
+	c.RLock()
+	last := c.m[req.ClientID]
+	c.RUnlock()
 	return req.RequestID == last.RequestID, last
 }
 
 func (c *Cache) Add(res msgs.ClientResponse) {
-	(*c)[res.ClientID] = res
+	c.Lock()
+	c.m[res.ClientID] = res
+	c.Unlock()
 }
