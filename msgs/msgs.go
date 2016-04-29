@@ -305,6 +305,38 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.Commit <- msg
+	case 5:
+		var msg NewViewRequest
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
+		msgch.Requests.NewView <- msg
+	case 6:
+		var msg NewView
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
+		msgch.Responses.NewView <- msg
+	case 7:
+		var msg QueryRequest
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
+		msgch.Requests.Query <- msg
+	case 8:
+		var msg Query
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
+		msgch.Responses.Query <- msg
 	}
 }
 
@@ -345,6 +377,29 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 		snd := appendr(byte(4), b)
 		return snd, err
 
+	case msg := <-msgch.Requests.NewView:
+		glog.Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(5), b)
+		return snd, err
+
+	case msg := <-msgch.Responses.NewView:
+		glog.Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(6), b)
+		return snd, err
+
+	case msg := <-msgch.Requests.Query:
+		glog.Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(7), b)
+		return snd, err
+
+	case msg := <-msgch.Responses.Query:
+		glog.Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(8), b)
+		return snd, err
 	}
 }
 
