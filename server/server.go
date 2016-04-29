@@ -243,7 +243,8 @@ func handleConnection(cn net.Conn) {
 			if err == io.EOF {
 				break
 			}
-			glog.Fatal(err)
+			glog.Warning(err)
+			break
 		}
 		glog.Info(string(text))
 		req := new(msgs.ClientRequest)
