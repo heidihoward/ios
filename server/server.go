@@ -66,7 +66,7 @@ func openFile(filename string) (*bufio.Writer, *bufio.Reader, bool) {
 
 func stateMachine() {
 	for {
-		req := <-(*cons_io).OutgoingRequests
+		req := <-cons_io.OutgoingRequests
 		glog.Info("Request has been safely replicated by consensus algorithm", req)
 
 		// check if request already applied
@@ -105,7 +105,7 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 
 	// CONSENESUS ALGORITHM HERE
 	glog.Info("Passing request to consensus algorithm")
-	(*cons_io).IncomingRequests <- req
+	cons_io.IncomingRequests <- req
 
 	// wait for reply
 	notifyclient_mutex.Lock()
@@ -189,7 +189,7 @@ func handlePeer(cn net.Conn, init bool) {
 				break
 			}
 			glog.Infof("Read from peer %d: ", peer_id, string(text))
-			(*cons_io).Incoming.BytesToProtoMsg(text)
+			cons_io.Incoming.BytesToProtoMsg(text)
 
 		}
 	}()
@@ -198,7 +198,7 @@ func handlePeer(cn net.Conn, init bool) {
 		for {
 			// send reply
 			glog.Infof("Ready to send message to %d", peer_id)
-			b, err := (*cons_io).OutgoingUnicast[peer_id].ProtoMsgToBytes()
+			b, err := cons_io.OutgoingUnicast[peer_id].ProtoMsgToBytes()
 			if err != nil {
 				glog.Fatal("Could not marshal message")
 			}
@@ -223,7 +223,7 @@ func handlePeer(cn net.Conn, init bool) {
 	peers_mutex.Unlock()
 	peers[peer_id].handled = false
 	peers_mutex.Lock()
-	(*cons_io).Failure <- peer_id
+	cons_io.Failure <- peer_id
 	cn.Close()
 }
 
@@ -348,7 +348,7 @@ func main() {
 			// get write requests
 			select {
 			//disgard view updates
-			case view := <-(*cons_io).ViewPersist:
+			case view := <-cons_io.ViewPersist:
 				glog.Info("Updating view to ", view)
 				_, err := meta_disk.Write([]byte(strconv.Itoa(view)))
 				_, err = meta_disk.Write([]byte("\n"))
@@ -356,7 +356,7 @@ func main() {
 				if err != nil {
 					glog.Fatal(err)
 				}
-			case log := <-(*cons_io).LogPersist:
+			case log := <-cons_io.LogPersist:
 				glog.Info("Updating log with ", log)
 				b, err := msgs.Marshal(log)
 				// write to persistent storage
@@ -410,8 +410,8 @@ func main() {
 	peers_mutex.Lock()
 	peers[*id].handled = true
 	peers_mutex.Unlock()
-	from := &((*cons_io).Incoming)
-	go from.Forward((*cons_io).OutgoingUnicast[*id])
+	from := &(cons_io.Incoming)
+	go from.Forward(cons_io.OutgoingUnicast[*id])
 
 	// handle for incoming peers
 	go func() {
