@@ -147,7 +147,7 @@ func main() {
 		glog.Fatal("Invalid mode: ", mode)
 	}
 
-	glog.Info("Client is ready to process incoming requests")
+	glog.Info("Client is ready to start processing incoming requests")
 	go func() {
 		for {
 			// get next command
@@ -156,7 +156,7 @@ func main() {
 				finish <- true
 				break
 			}
-			glog.Info("API produced: ", text)
+			glog.Info("Request ", requestID, " is: ", text)
 
 			// encode as request
 			req := msgs.ClientRequest{
@@ -185,7 +185,7 @@ func main() {
 						break
 					}
 				}
-				glog.Warning(err)
+				glog.Warning("Request ", requestID, " failed due to: ", err)
 
 				// try to establish a new connection
 				for {

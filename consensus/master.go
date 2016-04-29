@@ -10,7 +10,7 @@ var noop = msgs.ClientRequest{-1, -1, ""}
 // RunMaster implements the Master mode
 func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 	// setup
-	glog.Info("Starting up master")
+	glog.Info("Starting up master in view ", view)
 	majority := (config.N + 1) / 2
 
 	// determine next safe index
