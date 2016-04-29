@@ -220,9 +220,9 @@ func handlePeer(cn net.Conn, init bool) {
 
 	// tidy up
 	glog.Warningf("No longer able to handle traffic from peer %d at %s ", peer_id, addr)
-	peers_mutex.Unlock()
-	peers[peer_id].handled = false
 	peers_mutex.Lock()
+	peers[peer_id].handled = false
+	peers_mutex.Unlock()
 	cons_io.Failure <- peer_id
 	cn.Close()
 }
