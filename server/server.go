@@ -237,7 +237,7 @@ func handleConnection(cn net.Conn) {
 	for {
 
 		// read request
-		glog.Info("Reading")
+		glog.Info("Ready for Reading")
 		text, err := reader.ReadBytes(byte('\n'))
 		if err != nil {
 			if err == io.EOF {
@@ -246,7 +246,8 @@ func handleConnection(cn net.Conn) {
 			glog.Warning(err)
 			break
 		}
-		glog.Info(string(text))
+		glog.Info("--------------------New request----------------------")
+		glog.Info("Request: ", string(text))
 		req := new(msgs.ClientRequest)
 		err = msgs.Unmarshal(text, req)
 		if err != nil {
@@ -296,7 +297,7 @@ func main() {
 	keyval = store.New()
 	c = cache.Create()
 	// setup IO
-	cons_io = msgs.MakeIo(1000, len(conf.Peers.Address))
+	cons_io = msgs.MakeIo(2000, len(conf.Peers.Address))
 
 	notifyclient = make(map[msgs.ClientRequest](chan msgs.ClientResponse))
 	notifyclient_mutex = sync.RWMutex{}
@@ -309,7 +310,7 @@ func main() {
 
 	// check persistent storage for commands
 	found := false
-	log := make([]msgs.Entry, 1000) //TODO: Fix this
+	log := make([]msgs.Entry, 10000) //TODO: Fix this
 
 	if !is_empty {
 		for {
@@ -346,29 +347,32 @@ func main() {
 	// write updates to persistent storage
 	go func() {
 		for {
-			// get write requests
-			select {
-			//disgard view updates
-			case view := <-cons_io.ViewPersist:
-				glog.Info("Updating view to ", view)
-				_, err := meta_disk.Write([]byte(strconv.Itoa(view)))
-				_, err = meta_disk.Write([]byte("\n"))
-				_ = disk.Flush()
-				if err != nil {
-					glog.Fatal(err)
-				}
-			case log := <-cons_io.LogPersist:
-				glog.Info("Updating log with ", log)
-				b, err := msgs.Marshal(log)
-				// write to persistent storage
-				_, err = disk.Write(b)
-				_, err = disk.Write([]byte("\n"))
-				_ = disk.Flush()
-				if err != nil {
-					glog.Fatal(err)
-				}
+			view := <-cons_io.ViewPersist
+			glog.Info("Updating view to ", view)
+			_, err := meta_disk.Write([]byte(strconv.Itoa(view)))
+			_, err = meta_disk.Write([]byte("\n"))
+			_ = disk.Flush()
+			if err != nil {
+				glog.Fatal(err)
 			}
+		}
+	}()
 
+	go func() {
+		for {
+			log := <-cons_io.LogPersist
+			glog.Info("Updating log with ", log)
+			b, err := msgs.Marshal(log)
+			if err != nil {
+				glog.Fatal(err)
+			}
+			// write to persistent storage
+			n1, err := disk.Write(b)
+			n2, err := disk.Write([]byte("\n"))
+			if err != nil {
+				glog.Fatal(err)
+			}
+			glog.Info(n1+n2, " bytes written to persistent log")
 		}
 	}()
 
@@ -442,7 +446,7 @@ func main() {
 		glog.Info("Restoring consensus instance")
 		go consensus.Recover(cons_io, cons_config, view, log)
 	}
-	go cons_io.DumpPersistentStorage()
+	//go cons_io.DumpPersistentStorage()
 
 	// tidy up
 	glog.Info("Setup complete")
@@ -452,6 +456,7 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigs
+	disk.Flush()
 	glog.Flush()
 	glog.Warning("Shutting down due to ", sig)
 }

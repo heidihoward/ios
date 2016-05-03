@@ -13,6 +13,7 @@ func RunCoordinator(view int, index int, req msgs.ClientRequest, io *msgs.Io, co
 		Committed: false,
 		Request:   req}
 
+	majority := (config.N + 1) / 2
 	// phase 1: prepare
 	if prepare {
 		prepare := msgs.PrepareRequest{config.ID, view, index, entry}
@@ -20,7 +21,6 @@ func RunCoordinator(view int, index int, req msgs.ClientRequest, io *msgs.Io, co
 		(*io).OutgoingBroadcast.Requests.Prepare <- prepare
 
 		// collect responses
-		majority := (config.N + 1) / 2
 		glog.Info("Waiting for ", majority, " prepare responses")
 		for i := 0; i < majority; {
 			msg := <-(*io).Incoming.Responses.Prepare
@@ -43,5 +43,15 @@ func RunCoordinator(view int, index int, req msgs.ClientRequest, io *msgs.Io, co
 	glog.Info("Starting commit phase", commit)
 	(*io).OutgoingBroadcast.Requests.Commit <- commit
 	// TODO: handle replies properly
+	go func() {
+		for i := 0; i < majority; {
+			msg := <-(*io).Incoming.Responses.Commit
+			// check msg replies to the msg we just sent
+			if msg.Request == commit {
+				glog.Info("Received ", msg)
+			}
+		}
+	}()
+
 	return true
 }

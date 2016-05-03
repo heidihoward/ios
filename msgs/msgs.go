@@ -253,8 +253,8 @@ func MakeIo(buf int, n int) *Io {
 		OutgoingBroadcast: MakeProtoMsgs(buf),
 		OutgoingUnicast:   make(map[int]*ProtoMsgs),
 		Failure:           make(chan int, buf),
-		ViewPersist:       make(chan int),
-		LogPersist:        make(chan LogUpdate)}
+		ViewPersist:       make(chan int, buf),
+		LogPersist:        make(chan LogUpdate, buf)}
 
 	for id := 0; id < n; id++ {
 		protomsgs := MakeProtoMsgs(buf)
