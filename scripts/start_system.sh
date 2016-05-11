@@ -14,9 +14,10 @@ rm scripts/serv.conf
 # make results directory
 mkdir -p $3/$1s$2c
 
-# generate server configuration files
+# generate server and client configuration files
 cd scripts
 ./generate_serv_conf.sh $1
+./generate_client_conf.sh $1 500
 cd ..
 
 # start servers
