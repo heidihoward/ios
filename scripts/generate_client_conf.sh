@@ -5,7 +5,14 @@ echo "[addresses]" > client.conf
 
 for ((id=0; id<$1; id++))
 do
-	echo "address = 127.0.0.1:809$id" >> client.conf
+	if (($id<10))
+	then
+		port=3310$id
+	else
+		port=331$id
+	fi
+
+	echo "address = 127.0.0.1:$port" >> client.conf
 done
 
 echo "[parameters]

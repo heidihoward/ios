@@ -26,8 +26,8 @@ done
 
 
 
-# testing latency for 3 to 9 servers with a single client
-for (( i = 3; i <= 9; i++ )); do
+# testing latency for 3 to 15 servers with a single client
+for (( i = 3; i <= 15; i++ )); do
 
 	# start
 	./scripts/start_system.sh $i 1 scripts/results/$TIME/scale
