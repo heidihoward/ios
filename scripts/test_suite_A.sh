@@ -13,7 +13,7 @@ echo "ending experiment"
 ./scripts/stop_system.sh
 
 # testing latency from 1 to 10 clients with a 3 server system
-for (( i = 1; i < 10; i++ )); do
+for (( i = 1; i < 15; i++ )); do
 
 	# start
 	./scripts/start_system.sh 3 $i scripts/results/$TIME/load
