@@ -29,7 +29,10 @@ func (g *Generator) Next() (string, bool) {
 	}
 	g.Requests--
 
-	delay := rand.Intn(g.Interval)
+	delay := 0
+	if g.Interval > 0 {
+		delay = rand.Intn(g.Interval)
+	}
 	time.Sleep(time.Duration(delay) * time.Millisecond)
 
 	// generate key
