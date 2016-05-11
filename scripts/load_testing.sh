@@ -11,4 +11,5 @@ for (( i = 1; i < 10; i++ )); do
 	# stop 
 	sleep 5
 	./scripts/stop_system.sh
+	sleep 1
 done

@@ -30,7 +30,7 @@ func Init(io *msgs.Io, config Config) {
 	glog.Infof("Starting node %d of %d", config.ID, config.N)
 	state := State{
 		View:        0,
-		Log:         make([]msgs.Entry, 1000), //TODO: Fix this
+		Log:         make([]msgs.Entry, 10000), //TODO: Fix this
 		CommitIndex: -1,
 		MasterID:    0,
 		LastIndex:   -1}
@@ -54,7 +54,7 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 	// setup
 	glog.Infof("Restarting node %d of %d", config.ID, config.N)
 
-	new_log := make([]msgs.Entry, 1000) //TODO: Fix this
+	new_log := make([]msgs.Entry, 10000) //TODO: Fix this
 	copy(new_log, log)
 	state := State{
 		View:        view,

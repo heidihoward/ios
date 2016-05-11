@@ -29,7 +29,8 @@ func (g *Generator) Next() (string, bool) {
 	}
 	g.Requests--
 
-	time.Sleep(time.Duration(g.Interval) * time.Millisecond)
+	delay := rand.Intn(g.Interval)
+	time.Sleep(time.Duration(delay) * time.Millisecond)
 
 	// generate key
 	key := "A" // default just in case
