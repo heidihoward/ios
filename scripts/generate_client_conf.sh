@@ -1,7 +1,7 @@
 #!/bin/bash 
-# generates a client config file called client.conf for $1 nodes with $2 timeout
+# generates a client config file called client.conf for $1 nodes with $2 timeout in dir $3
 
-echo "[addresses]" > client.conf
+echo "[addresses]" > $3/client.conf
 
 for ((id=0; id<$1; id++))
 do
@@ -12,10 +12,10 @@ do
 		port=331$id
 	fi
 
-	echo "address = 127.0.0.1:$port" >> client.conf
+	echo "address = 127.0.0.1:$port" >> $3/client.conf
 done
 
 echo "[parameters]
 retries = 1
 timeout = $2
-" >> client.conf
+" >> $3/client.conf

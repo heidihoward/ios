@@ -16,7 +16,7 @@ sleep 0.03
 cd server
 
 echo "restarting node ID 0"
-../scripts/start_node.sh 0 ../scripts/results/$TIME/5s1c/s0B.log
+../scripts/start_node.sh 0 ../scripts/results/$TIME/5s1c/logs/s0B.log
 cd ..
 
 # stop experiment

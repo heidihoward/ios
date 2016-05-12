@@ -40,6 +40,7 @@ var client_port = flag.Int("client-port", 8080, "port to listen on for clients")
 var peer_port = flag.Int("peer-port", 8090, "port to listen on for peers")
 var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
+var disk_path = flag.String("disk", ".", "Path to directory to store persistent storage")
 
 func openFile(filename string) (*bufio.Writer, *bufio.Reader, bool) {
 	// check if file exists already for logging
@@ -304,9 +305,9 @@ func main() {
 	go stateMachine()
 
 	// setting up persistent log
-	disk, disk_reader, is_empty := openFile("persistent_log_" + strconv.Itoa(*id) + ".temp")
+	disk, disk_reader, is_empty := openFile(*disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp")
 	defer disk.Flush()
-	meta_disk, meta_disk_reader, is_new := openFile("persistent_data_" + strconv.Itoa(*id) + ".temp")
+	meta_disk, meta_disk_reader, is_new := openFile(*disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp")
 
 	// check persistent storage for commands
 	found := false

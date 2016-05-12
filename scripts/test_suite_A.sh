@@ -54,7 +54,7 @@ sleep 0.1
 cd server
 
 echo "restarting node ID 0"
-../scripts/start_node.sh 0 ../scripts/results/$TIME/failure/5s1c/s0B.log
+../scripts/start_node.sh 0 ../scripts/results/$TIME/failure/5s1c
 cd ..
 
 # stop node ID 1
@@ -67,7 +67,7 @@ sleep 0.1
 cd server
 
 echo "restarting node ID 1"
-../scripts/start_node.sh 1 ../scripts/results/$TIME/failure/5s1c/s1B.log
+../scripts/start_node.sh 1 ../scripts/results/$TIME/failure/5s1c
 cd ..
 
 # stop experiment

@@ -11,9 +11,9 @@ else
 	port=$id
 fi
 
-# makr logging dir
-mkdir -p $2
+cd $2
+mkdir logs/s$1B.log
 
 # start server
-$GOPATH/bin/server -id=$id -client-port=331$port -peer-port=333$port -config=../scripts/serv.conf -log_dir=$2 &
+$GOPATH/bin/server -id=$id -client-port=331$port -peer-port=333$port -config=config/serv.conf -log_dir=logs/s$1B.log -disk=disk &
 

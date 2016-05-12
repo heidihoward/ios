@@ -1,7 +1,7 @@
 #!/bin/bash 
-# generates a server config file called serv.conf for $1 nodes
+# generates a server config file called serv.conf for $1 nodes in dir $2
 
-echo "[peers]" > serv.conf
+echo "[peers]" > $2/serv.conf
 
 for ((id=0; id<$1; id++))
 do
@@ -11,9 +11,9 @@ do
 	else
 		port=333$id
 	fi
-	echo "address = 127.0.0.1:$port" >> serv.conf
+	echo "address = 127.0.0.1:$port" >> $2/serv.conf
 done
 
 echo "[options]
 length = 100000
-" >> serv.conf
+" >> $2/serv.conf
