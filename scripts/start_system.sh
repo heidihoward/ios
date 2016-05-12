@@ -10,16 +10,21 @@ SRC=$GOPATH/src/github.com/heidi-ann/hydra
 cd $SRC
 
 # make results directory
-mkdir -p $3/$1s$2c
-cd $3/$1s$2c
+mkdir -p $3
+cd $3
 mkdir results
 mkdir logs
 mkdir disk
-mkdir config
+mkdir -p config
 
 # generate server and client configuration files
 $SRC/scripts/generate_serv_conf.sh $1 config
 $SRC/scripts/generate_client_conf.sh $1 500 config
+
+# generate default workload configuration files, if its not already present
+if [ ! -f config/workload.conf ]; then
+	$SRC/scripts/generate_workload_conf.sh 0 config
+fi
 
 # start servers
 echo "starting $1 servers"
@@ -47,7 +52,7 @@ do
 	# make logging/results directory for client
 	mkdir logs/c$id.log
 	# start client
-	$GOPATH/bin/client -id=$id -mode=test -stat=results/latency_$id.csv -log_dir=logs/c$id.log -config=config/client.conf -auto=$SRC/test/workload.conf &
+	$GOPATH/bin/client -id=$id -mode=test -stat=results/latency_$id.csv -log_dir=logs/c$id.log -config=config/client.conf -auto=config/workload.conf &
 done
 
-echo "setup complete, recording results in $3/$1s$2c"
+echo "setup complete, recording results in $3"
