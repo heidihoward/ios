@@ -41,7 +41,7 @@ func Init(io *msgs.Io, config Config) {
 	// if master, start master goroutine
 	if config.ID == 0 {
 		glog.Info("Starting leader module")
-		go RunMaster(0, true, io, config)
+		go RunMaster(0, -1, true, io, config)
 	}
 
 	// operator as normal node
@@ -66,7 +66,7 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 	// if master, start master goroutine
 	if config.ID == state.MasterID {
 		glog.Info("Starting leader module")
-		go RunMaster(view, true, io, config)
+		go RunMaster(view, -1, true, io, config)
 	}
 
 	// apply recovered requests to state machine

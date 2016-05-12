@@ -51,7 +51,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config) {
 				glog.Info("Starting new master at ", config.ID)
 				(*s).View++
 				(*s).MasterID = nextMaster
-				go RunMaster((*s).View, false, io, config)
+				go RunMaster((*s).View, (*s).CommitIndex, false, io, config)
 			}
 		}
 

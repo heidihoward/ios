@@ -5,10 +5,10 @@ import (
 	"github.com/heidi-ann/hydra/msgs"
 )
 
-var noop = msgs.ClientRequest{-1, -1, ""}
+var noop = msgs.ClientRequest{-1, -1, "noop"}
 
 // RunMaster implements the Master mode
-func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
+func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master in view ", view)
 	majority := (config.N + 1) / 2
@@ -22,7 +22,7 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 
 		// collect responses
 		glog.Info("Waiting for ", majority, " new view responses")
-		min_index := 100 //TODO: Fix this hardcoding
+		min_index := commit_index
 		// TODO: FEATURE add option to wait longer
 
 		for i := 0; i < majority; {
@@ -45,7 +45,7 @@ func RunMaster(view int, inital bool, io *msgs.Io, config Config) {
 		glog.Info("Index is ", index)
 
 		// recover entries
-		for curr_index := min_index; curr_index < index; curr_index++ {
+		for curr_index := commit_index; curr_index <= index; curr_index++ {
 			RunRecoveryCoordinator(view, curr_index, io, config)
 		}
 

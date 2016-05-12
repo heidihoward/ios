@@ -53,6 +53,6 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 
 	// if committed, then dispatch commit
 	// if not committed, then dispatch prepare then commit
-	RunCoordinator(view, index, (*candidate).Request, io, config, !(*candidate).Committed)
+	RunCoordinator(view, index, (*candidate).Request, io, config, candidate.Committed)
 	return true
 }
