@@ -17,7 +17,7 @@ func Create() *Interative {
 
 }
 
-func (i *Interative) Next() (string, bool) {
+func (i *Interative) Next() (string, bool, bool) {
 	b := (*bufio.Reader)(i)
 	fmt.Print("Enter command: ")
 	text, err := b.ReadString('\n')
@@ -26,7 +26,7 @@ func (i *Interative) Next() (string, bool) {
 	}
 	text = strings.Trim(text, "\n")
 	glog.Info("User entered", text)
-	return text, true
+	return text, true, true
 }
 
 func (_ *Interative) Return(str string) {

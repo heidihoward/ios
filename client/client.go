@@ -21,7 +21,7 @@ import (
 )
 
 type API interface {
-	Next() (string, bool)
+	Next() (string, bool, bool)
 	Return(string)
 }
 
@@ -164,7 +164,7 @@ func main() {
 	go func() {
 		for {
 			// get next command
-			text, ok := ioapi.Next()
+			text, replicate, ok := ioapi.Next()
 			if !ok {
 				finish <- true
 				break
@@ -173,7 +173,7 @@ func main() {
 
 			// encode as request
 			req := msgs.ClientRequest{
-				*id, requestID, text}
+				*id, requestID, replicate, text}
 			b, err := msgs.Marshal(req)
 			if err != nil {
 				glog.Fatal(err)

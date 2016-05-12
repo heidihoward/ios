@@ -64,15 +64,15 @@ func Create() *Rest {
 
 }
 
-func (r *Rest) Next() (string, bool) {
+func (r *Rest) Next() (string, bool, bool) {
 	glog.Info("Waiting for next request")
 	restreq, ok := <-waiting
 	if !ok {
-		return "", false
+		return "", false, false
 	}
 	outstanding <- restreq
 	glog.Info("Next request received: ", restreq.Req)
-	return restreq.Req, true
+	return restreq.Req, true, true
 }
 
 func (r *Rest) Return(str string) {

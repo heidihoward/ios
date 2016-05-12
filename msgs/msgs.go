@@ -10,6 +10,7 @@ import (
 type ClientRequest struct {
 	ClientID  int
 	RequestID int
+	Replicate bool
 	Request   string
 }
 

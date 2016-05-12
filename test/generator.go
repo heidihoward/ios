@@ -21,11 +21,11 @@ func Generate(conf ConfigAuto) *Generator {
 	return &Generator{conf.Commands.Reads, conf.Commands.Conflicts, conf.Termination.Requests, conf.Commands.Interval}
 }
 
-func (g *Generator) Next() (string, bool) {
+func (g *Generator) Next() (string, bool, bool) {
 
 	//handle termination after n requests
 	if g.Requests == 0 {
-		return "", false
+		return "", false, false
 	}
 	g.Requests--
 
@@ -53,9 +53,9 @@ func (g *Generator) Next() (string, bool) {
 	glog.Info("Key is", key)
 
 	if rand.Intn(100) < g.Ratio {
-		return fmt.Sprintf("get %s", key), true
+		return fmt.Sprintf("get %s", key), false, true
 	} else {
-		return fmt.Sprintf("update %s 7", key), true
+		return fmt.Sprintf("update %s 7", key), true, true
 	}
 }
 

@@ -5,7 +5,7 @@ import (
 	"github.com/heidi-ann/hydra/msgs"
 )
 
-var noop = msgs.ClientRequest{-1, -1, "noop"}
+var noop = msgs.ClientRequest{-1, -1, true, "noop"}
 
 // RunMaster implements the Master mode
 func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Config) {
@@ -58,13 +58,19 @@ func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Conf
 		// wait for request
 		req := <-(*io).IncomingRequests
 		glog.Info("Request received: ", req)
-		index++
 
-		ok := RunCoordinator(view, index, req, io, config, true)
-		if !ok {
-			break
+		// if possible, handle request without replication
+		if !req.Replicate {
+			(*io).OutgoingRequests <- req
+			glog.Info("Request handled with replication: ", req)
+		} else {
+			index++
+			ok := RunCoordinator(view, index, req, io, config, true)
+			if !ok {
+				break
+			}
+			glog.Info("Finished replicating request: ", req)
 		}
-		glog.Info("Finished replicating request: ", req)
 
 	}
 
