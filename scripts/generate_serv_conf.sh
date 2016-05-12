@@ -13,3 +13,7 @@ do
 	fi
 	echo "address = 127.0.0.1:$port" >> serv.conf
 done
+
+echo "[options]
+length = 100000
+" >> serv.conf

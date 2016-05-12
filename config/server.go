@@ -9,6 +9,9 @@ type ServerConfig struct {
 	Peers struct {
 		Address []string
 	}
+	Options struct {
+		Length int
+	}
 }
 
 func ParseServerConfig(filename string) ServerConfig {

@@ -438,7 +438,11 @@ func main() {
 	}()
 
 	// setting up the consensus algorithm
-	cons_config := consensus.Config{*id, len(conf.Peers.Address)}
+	log_length := 1000
+	if conf.Options.Length > 0 {
+		log_length = conf.Options.Length
+	}
+	cons_config := consensus.Config{*id, len(conf.Peers.Address), log_length}
 	if !found {
 		glog.Info("Starting fresh consensus instance")
 		go consensus.Init(cons_io, cons_config)
