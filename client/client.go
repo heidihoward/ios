@@ -31,18 +31,31 @@ var stat_file = flag.String("stat", "latency.csv", "File to write stats to")
 var mode = flag.String("mode", "interactive", "interactive, rest or test")
 var id = flag.Int("id", -1, "ID of client (must be unique)")
 
-func connect(addrs []string, tries int) (net.Conn, error) {
+func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
 	var conn net.Conn
 	var err error
 
+	// first, try on to connect to the most likely leader
+	glog.Info("Trying to connect to ", addrs[hint])
+	conn, err = net.Dial("tcp", addrs[hint])
+	// if successful
+	if err == nil {
+		glog.Infof("Connect established to %s", addrs[hint])
+		return conn, hint, err
+	}
+	//if unsuccessful
+	glog.Warning(err)
+
+	// if fails, try everyone else
 	for i := range addrs {
 		for t := tries; t > 0; t-- {
+			glog.Info("Trying to connect to ", addrs[i])
 			conn, err = net.Dial("tcp", addrs[i])
 
 			// if successful
 			if err == nil {
 				glog.Infof("Connect established to %s", addrs[i])
-				return conn, err
+				return conn, i, err
 			}
 
 			//if unsuccessful
@@ -50,7 +63,7 @@ func connect(addrs []string, tries int) (net.Conn, error) {
 		}
 	}
 
-	return conn, err
+	return conn, hint + 1, err
 }
 
 // send bytes and wait for reply, return bytes returned if succussful or error otherwise
@@ -128,7 +141,7 @@ func main() {
 	requestID := 1
 
 	// connecting to server
-	conn, err := connect(conf.Addresses.Address, 1)
+	conn, leader, err := connect(conf.Addresses.Address, 1, 0)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -189,7 +202,7 @@ func main() {
 
 				// try to establish a new connection
 				for {
-					conn, err = connect(conf.Addresses.Address, conf.Parameters.Retries)
+					conn, leader, err = connect(conf.Addresses.Address, leader+1, conf.Parameters.Retries)
 					if err == nil {
 						break
 					}

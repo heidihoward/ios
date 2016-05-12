@@ -45,7 +45,7 @@ func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Conf
 		glog.Info("Index is ", index)
 
 		// recover entries
-		for curr_index := commit_index; curr_index <= index; curr_index++ {
+		for curr_index := commit_index + 1; curr_index <= index; curr_index++ {
 			RunRecoveryCoordinator(view, curr_index, io, config)
 		}
 
