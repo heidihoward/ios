@@ -29,5 +29,4 @@ _testmain.go
 *.temp
 *.csv
 *.log
-*serv.conf
-*client.conf
+results

@@ -308,6 +308,7 @@ func main() {
 	disk, disk_reader, is_empty := openFile(*disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp")
 	defer disk.Flush()
 	meta_disk, meta_disk_reader, is_new := openFile(*disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp")
+	defer meta_disk.Flush()
 
 	// check persistent storage for commands
 	found := false
@@ -352,7 +353,6 @@ func main() {
 			glog.Info("Updating view to ", view)
 			_, err := meta_disk.Write([]byte(strconv.Itoa(view)))
 			_, err = meta_disk.Write([]byte("\n"))
-			_ = disk.Flush()
 			if err != nil {
 				glog.Fatal(err)
 			}
@@ -462,6 +462,7 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigs
 	disk.Flush()
+	meta_disk.Flush()
 	glog.Flush()
 	glog.Warning("Shutting down due to ", sig)
 }

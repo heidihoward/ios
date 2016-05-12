@@ -25,8 +25,8 @@ type API interface {
 	Return(string)
 }
 
-var config_file = flag.String("config", "example.conf", "Client configuration file")
-var auto_file = flag.String("auto", "../test/workload.conf", "If workload is automatically generated, configure file for workload")
+var config_file = flag.String("config", "client/example.conf", "Client configuration file")
+var auto_file = flag.String("auto", "test/workload.conf", "If workload is automatically generated, configure file for workload")
 var stat_file = flag.String("stat", "latency.csv", "File to write stats to")
 var mode = flag.String("mode", "interactive", "interactive, rest or test")
 var id = flag.Int("id", -1, "ID of client (must be unique)")

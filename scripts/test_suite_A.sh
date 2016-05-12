@@ -1,11 +1,11 @@
 #!/bin/bash
 # Run complete test suite
 
-TIME=`date '+%m-%d-%H%M%S'` 
+TIME=`date '+%m-%d-%H%M%S'`
 
 # start servers
 echo "Staring servers and clients"
-./scripts/start_system.sh 3 1 scripts/results/$TIME/simple
+./scripts/start_system.sh 3 1 results/$TIME/simple
 
 # stop experiment
 sleep 5
@@ -16,7 +16,7 @@ echo "ending experiment"
 for (( i = 1; i < 15; i++ )); do
 
 	# start
-	./scripts/start_system.sh 3 $i scripts/results/$TIME/load
+	./scripts/start_system.sh 3 $i results/$TIME/load
 
 	# stop 
 	sleep 5
@@ -30,7 +30,7 @@ done
 for (( i = 3; i <= 15; i++ )); do
 
 	# start
-	./scripts/start_system.sh $i 1 scripts/results/$TIME/scale
+	./scripts/start_system.sh $i 1 results/$TIME/scale
 
 	# stop 
 	sleep 5
@@ -42,7 +42,7 @@ done
 
 # start servers
 echo "Staring servers and clients"
-./scripts/start_system.sh 5 1 scripts/results/$TIME/failure
+./scripts/start_system.sh 5 1 results/$TIME/failure
 
 # stop node ID 0
 sleep 0.1
@@ -54,7 +54,7 @@ sleep 0.1
 cd server
 
 echo "restarting node ID 0"
-../scripts/start_node.sh 0 ../scripts/results/$TIME/failure/5s1c
+../scripts/start_node.sh 0 ../results/$TIME/failure/5s1c
 cd ..
 
 # stop node ID 1
@@ -67,7 +67,7 @@ sleep 0.1
 cd server
 
 echo "restarting node ID 1"
-../scripts/start_node.sh 1 ../scripts/results/$TIME/failure/5s1c
+../scripts/start_node.sh 1 ../results/$TIME/failure/5s1c
 cd ..
 
 # stop experiment
