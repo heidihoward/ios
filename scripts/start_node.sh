@@ -11,6 +11,9 @@ else
 	port=$id
 fi
 
+# makr logging dir
+mkdir -p $2
 
+# start server
 $GOPATH/bin/server -id=$id -client-port=331$port -peer-port=333$port -config=../scripts/serv.conf -log_dir=$2 &
 

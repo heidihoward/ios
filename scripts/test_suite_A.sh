@@ -45,16 +45,29 @@ echo "Staring servers and clients"
 ./scripts/start_system.sh 5 1 scripts/results/$TIME/failure
 
 # stop node ID 0
-sleep 0.03
+sleep 0.1
 echo "stopping node ID 0"
 ./scripts/stop_node.sh 0
 
 # restart node ID 0
-sleep 0.03
+sleep 0.1
 cd server
 
 echo "restarting node ID 0"
-../scripts/start_node.sh 0 scripts/results/$TIME/failure/5s1c/s0.log &
+../scripts/start_node.sh 0 ../scripts/results/$TIME/failure/5s1c/s0B.log
+cd ..
+
+# stop node ID 1
+sleep 0.1
+echo "stopping node ID 1"
+./scripts/stop_node.sh 1
+
+# restart node ID 1
+sleep 0.1
+cd server
+
+echo "restarting node ID 1"
+../scripts/start_node.sh 1 ../scripts/results/$TIME/failure/5s1c/s1B.log
 cd ..
 
 # stop experiment
