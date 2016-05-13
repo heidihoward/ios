@@ -14,10 +14,10 @@ for (( i = 1; i < 15; i++ )); do
 	DIR2=$DIR/"$i"c
 	mkdir -p $DIR2
 	# start
-	./scripts/start_system.sh 3 $i $DIR2
+	./benchmarks/start_system.sh 3 $i $DIR2
 
 	# stop 
 	sleep 5
-	./scripts/stop_system.sh
+	./benchmarks/stop_system.sh
 	sleep 1
 done

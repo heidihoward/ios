@@ -14,10 +14,10 @@ for (( i = 2; i <= 64; i = i*2 )); do
 	mkdir -p $DIR/"$i"r/config
 	./scripts/generate_serv_conf.sh 3 $DIR/"$i"r/config $i
 	# start
-	./scripts/start_system.sh 3 64 $DIR/"$i"r
+	./benchmarks/start_system.sh 3 64 $DIR/"$i"r
 
 	# stop 
 	sleep 5
-	./scripts/stop_system.sh
+	./benchmarks/stop_system.sh
 	sleep 1
 done

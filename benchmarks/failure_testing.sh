@@ -4,7 +4,7 @@ TIME=`date '+%m-%d-%H%M%S'`
 
 # start servers
 echo "Staring servers and clients"
-./scripts/start_system.sh 3 1 scripts/results/$TIME
+./benchmarks/start_system.sh 3 1 scripts/results/$TIME
 
 # stop node ID 2
 PID=$(ps | grep "[/]Users/heidi/go/bin/server" | awk '{print $1}' | head -3 | tail -1)
