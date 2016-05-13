@@ -51,25 +51,53 @@ func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Conf
 
 	}
 
-	glog.Info("Ready to handle requests")
-	// handle client requests (1 at a time)
-	for {
+	if config.Batching == 0 {
+		glog.Info("Ready to handle requests. No batching enabled")
+		// handle client requests (1 at a time)
+		for {
 
-		// wait for request
-		req := <-(*io).IncomingRequests
-		glog.Info("Request received: ", req)
+			// wait for request
+			req := <-(*io).IncomingRequests
+			glog.Info("Request received: ", req)
 
-		// if possible, handle request without replication
-		if !req.Replicate {
-			(*io).OutgoingRequests <- req
-			glog.Info("Request handled with replication: ", req)
-		} else {
-			index++
-			ok := RunCoordinator(view, index, req, io, config, true)
-			if !ok {
-				break
+			// if possible, handle request without replication
+			if !req.Replicate {
+				(*io).OutgoingRequests <- req
+				glog.Info("Request handled with replication: ", req)
+			} else {
+				index++
+				ok := RunCoordinator(view, index, []msgs.ClientRequest{req}, io, config, true)
+				if !ok {
+					break
+				}
+				glog.Info("Finished replicating request: ", req)
 			}
-			glog.Info("Finished replicating request: ", req)
+
+		}
+	} else {
+		glog.Info("Ready to handle request. Batch every ", config.Batching, " requests")
+		for {
+			reqs := make([]msgs.ClientRequest, config.Batching)
+			for i := 0; i < config.Batching; {
+				req := <-(*io).IncomingRequests
+				glog.Info("Request received: ", req)
+
+				if !req.Replicate {
+					(*io).OutgoingRequests <- req
+					glog.Info("Request handled with replication: ", req)
+				} else {
+					reqs[i] = req
+					i++
+				}
+
+				index++
+				ok := RunCoordinator(view, index, reqs, io, config, true)
+				if !ok {
+					break
+				}
+				glog.Info("Finished replicating requests: ", reqs)
+			}
+
 		}
 
 	}

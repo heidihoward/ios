@@ -21,6 +21,7 @@ type Config struct {
 	ID        int // id of node
 	N         int // size of cluster (nodes numbered 0 to N-1)
 	LogLength int // max log size
+	Batching  int // how often to batch process requesst in ms, 0 means no batching
 }
 
 // Init runs the consensus algorithm.
@@ -76,7 +77,10 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 			break
 		}
 		state.CommitIndex = i
-		(*io).OutgoingRequests <- state.Log[i].Request
+
+		for _, request := range state.Log[i].Requests {
+			(*io).OutgoingRequests <- request
+		}
 	}
 
 	// operator as normal node

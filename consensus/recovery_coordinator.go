@@ -3,6 +3,7 @@ package consensus
 import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/msgs"
+	"reflect"
 )
 
 // returns true if successful
@@ -39,7 +40,7 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 				}
 
 				// if same view and differnt requests then panic!
-				if res.Entry.View == (*candidate).View && res.Entry.Request != (*candidate).Request {
+				if res.Entry.View == (*candidate).View && !reflect.DeepEqual(res.Entry.Requests, candidate.Requests) {
 					glog.Fatal("Same index has been issued more then once")
 				}
 			}
@@ -48,11 +49,11 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 
 	// if empty, then dispatch prepare and commit for no-op
 	if candidate == nil {
-		candidate = &msgs.Entry{view, false, noop}
+		candidate = &msgs.Entry{view, false, []msgs.ClientRequest{noop}}
 	}
 
 	// if committed, then dispatch commit
 	// if not committed, then dispatch prepare then commit
-	RunCoordinator(view, index, (*candidate).Request, io, config, candidate.Committed)
+	RunCoordinator(view, index, candidate.Requests, io, config, candidate.Committed)
 	return true
 }

@@ -10,7 +10,8 @@ type ServerConfig struct {
 		Address []string
 	}
 	Options struct {
-		Length int
+		Length   int
+		Batching int
 	}
 }
 

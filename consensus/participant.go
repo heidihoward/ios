@@ -3,6 +3,7 @@ package consensus
 import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/msgs"
+	"reflect"
 )
 
 type State struct {
@@ -27,13 +28,13 @@ func checkInvariant(log []msgs.Entry, index int, nxtEntry msgs.Entry) {
 	prevEntry := log[index]
 
 	// if no entry, then no problem
-	if prevEntry != (msgs.Entry{}) {
+	if !reflect.DeepEqual(prevEntry, msgs.Entry{}) {
 		// if committed, request never changes
-		if prevEntry.Committed && prevEntry.Request != nxtEntry.Request {
+		if prevEntry.Committed && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
 			glog.Fatal("Committed entry is being overwritten at", prevEntry, nxtEntry, index)
 		}
 		// each index is allocated once per term
-		if prevEntry.View == nxtEntry.View && prevEntry.Request != nxtEntry.Request {
+		if prevEntry.View == nxtEntry.View && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
 			glog.Fatal("Index has been reallocated at ", prevEntry, nxtEntry, index)
 		}
 	}
@@ -141,7 +142,9 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			// pass to state machine if ready
 			if state.CommitIndex == req.Index-1 {
 
-				(*io).OutgoingRequests <- req.Entry.Request
+				for _, request := range req.Entry.Requests {
+					(*io).OutgoingRequests <- request
+				}
 				state.CommitIndex++
 
 				reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}

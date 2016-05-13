@@ -17,9 +17,14 @@ mkdir logs
 mkdir disk
 mkdir -p config
 
-# generate server and client configuration files
-$SRC/scripts/generate_serv_conf.sh $1 config
-$SRC/scripts/generate_client_conf.sh $1 500 config
+# generate server and client configuration files, if its not already present
+if [ ! -f config/serv.conf ]; then
+	$SRC/scripts/generate_serv_conf.sh $1 config 0
+fi
+
+if [ ! -f config/client.conf ]; then
+	$SRC/scripts/generate_client_conf.sh $1 500 config
+fi
 
 # generate default workload configuration files, if its not already present
 if [ ! -f config/workload.conf ]; then

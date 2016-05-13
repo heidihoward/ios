@@ -3,15 +3,16 @@ package consensus
 import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/msgs"
+	"reflect"
 )
 
 // returns true if successful
-func RunCoordinator(view int, index int, req msgs.ClientRequest, io *msgs.Io, config Config, prepare bool) bool {
+func RunCoordinator(view int, index int, reqs []msgs.ClientRequest, io *msgs.Io, config Config, prepare bool) bool {
 
 	entry := msgs.Entry{
 		View:      view,
 		Committed: false,
-		Request:   req}
+		Requests:  reqs}
 
 	majority := (config.N + 1) / 2
 	// phase 1: prepare
@@ -25,7 +26,7 @@ func RunCoordinator(view int, index int, req msgs.ClientRequest, io *msgs.Io, co
 		for i := 0; i < majority; {
 			msg := <-(*io).Incoming.Responses.Prepare
 			// check msg replies to the msg we just sent
-			if msg.Request == prepare {
+			if reflect.DeepEqual(msg.Request, prepare) {
 				glog.Info("Received ", msg)
 				if !msg.Response.Success {
 					glog.Warning("Master is stepping down")
@@ -47,7 +48,7 @@ func RunCoordinator(view int, index int, req msgs.ClientRequest, io *msgs.Io, co
 		for i := 0; i < majority; {
 			msg := <-(*io).Incoming.Responses.Commit
 			// check msg replies to the msg we just sent
-			if msg.Request == commit {
+			if reflect.DeepEqual(msg.Request, commit) {
 				glog.Info("Received ", msg)
 			}
 		}

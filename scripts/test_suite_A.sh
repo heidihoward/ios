@@ -93,3 +93,19 @@ for (( i = 0; i <= 100; i = i+5 )); do
 	./scripts/stop_system.sh
 	sleep 1
 done
+
+# Batch: test how batching improves throughput
+DIR=results/$TIME/batch
+mkdir -p $DIR
+
+for (( i = 2; i <= 64; i = i*2 )); do
+	mkdir -p $DIR/"$i"r/config
+	./scripts/generate_serv_conf.sh 3 $DIR/"$i"r/config $i
+	# start
+	./scripts/start_system.sh 3 64 $DIR/"$i"r
+
+	# stop 
+	sleep 5
+	./scripts/stop_system.sh
+	sleep 1
+done

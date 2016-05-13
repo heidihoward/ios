@@ -23,7 +23,7 @@ type ClientResponse struct {
 type Entry struct {
 	View      int
 	Committed bool
-	Request   ClientRequest
+	Requests  []ClientRequest
 }
 
 type PrepareRequest struct {

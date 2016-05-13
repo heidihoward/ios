@@ -1,5 +1,5 @@
 #!/bin/bash 
-# generates a server config file called serv.conf for $1 nodes in dir $2
+# generates a server config file called serv.conf for $1 nodes in dir $2 in batch size $3
 
 echo "[peers]" > $2/serv.conf
 
@@ -16,4 +16,5 @@ done
 
 echo "[options]
 length = 100000
+batching = 0
 " >> $2/serv.conf
