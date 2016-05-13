@@ -33,9 +33,6 @@ This will start an Hydra server with ID 0, clients can now communicate with the 
 $GOPATH/bin/server -id 1 -client-port 8081  -peer-port 8091 -logtostderr true
 ```
 
-*Currently, the code assumes that for a node with id X then the port is id 809X.*
-
-
 
 The server is using files called persistent_log_1.temp and persistent_data_1.temp to store a perisitent copy hydra's state. If you would like to start a fresh server, make sure to use rm *.temp first.
 
