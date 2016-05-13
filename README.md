@@ -64,4 +64,4 @@ The benchmarking scripts are as follows:
 - `scale_testing.sh` - varying clusters size
 - `simple_testing.sh` - quick test of a simple system (START HERE)
 
-The ipython3 notebook `graph plotting` plots the outputs of the above tests
+The ipython3 notebook `graph_plotting.iynp` plots the outputs of the above tests
