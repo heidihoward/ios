@@ -1,5 +1,7 @@
 from matplotlib import rc 
 import matplotlib.pyplot as plt
+import matplotlib.pylab as pyl
+import numpy as np
 import csv
 
 def fig_to_file(fig, filename, ext):
