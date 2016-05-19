@@ -10,7 +10,7 @@ else
 fi
 
 # testing latency for 3 to 15 servers with a single client
-for (( i = 3; i <= 15; i++ )); do
+for (( i = 1; i <= 15; i++ )); do
 	DIR2=$DIR/"$i"s
 	mkdir -p $DIR2
 	# start

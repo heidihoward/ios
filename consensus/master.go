@@ -12,7 +12,7 @@ var noop = msgs.ClientRequest{-1, -1, true, "noop"}
 func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master in view ", view)
-	majority := (config.N + 1) / 2
+	majority := Majority(config.N)
 
 	// determine next safe index
 	index := -1

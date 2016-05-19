@@ -14,7 +14,7 @@ func RunCoordinator(view int, index int, reqs []msgs.ClientRequest, io *msgs.Io,
 		Committed: false,
 		Requests:  reqs}
 
-	majority := (config.N + 1) / 2
+	majority := Majority(config.N)
 	// phase 1: prepare
 	if prepare {
 		prepare := msgs.PrepareRequest{config.ID, view, index, entry}

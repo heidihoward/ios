@@ -8,7 +8,7 @@ import (
 
 // returns true if successful
 func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) bool {
-	majority := (config.N + 1) / 2
+	majority := Majority(config.N)
 	glog.Info("Starting recovery for index ", index)
 	// dispatch query to all
 	query := msgs.QueryRequest{config.ID, view, index}
