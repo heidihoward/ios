@@ -140,7 +140,7 @@ def read_results_file(filename):
             # latency in ms
             val = int(row[2])/1000000 
             results['latency'].append(val)
-            results['reqs'].append(row[1])
+            results['reqs'].append(int(row[1]))
 
             secs = float(row[0].rsplit(" ")[1].rsplit(":")[2])
             mins = float(row[0].rsplit(" ")[1].rsplit(":")[1])*60.0 
