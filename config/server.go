@@ -11,7 +11,8 @@ type ServerConfig struct {
 	}
 	Options struct {
 		Length   int
-		Batching int
+		BatchInterval int
+		MaxBatch int
 	}
 }
 

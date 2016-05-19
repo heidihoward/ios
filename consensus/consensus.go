@@ -21,7 +21,8 @@ type Config struct {
 	ID        int // id of node
 	N         int // size of cluster (nodes numbered 0 to N-1)
 	LogLength int // max log size
-	Batching  int // how often to batch process requesst in ms, 0 means no batching
+	BatchInterval  int // how often to batch process request in ms, 0 means no batching
+	MaxBatch int // maximum requests in a batch, unused if BatchInterval=0
 }
 
 // Init runs the consensus algorithm.

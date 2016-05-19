@@ -3,6 +3,7 @@ package consensus
 import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/hydra/msgs"
+	"time"
 )
 
 var noop = msgs.ClientRequest{-1, -1, true, "noop"}
@@ -51,18 +52,18 @@ func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Conf
 
 	}
 
-	if config.Batching == 0 {
+	if config.BatchInterval == 0 {
 		glog.Info("Ready to handle requests. No batching enabled")
 		// handle client requests (1 at a time)
 		for {
 
 			// wait for request
-			req := <-(*io).IncomingRequests
+			req := <-io.IncomingRequests
 			glog.Info("Request received: ", req)
 
 			// if possible, handle request without replication
 			if !req.Replicate {
-				(*io).OutgoingRequests <- req
+				io.OutgoingRequests <- req
 				glog.Info("Request handled with replication: ", req)
 			} else {
 				index++
@@ -75,32 +76,57 @@ func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Conf
 
 		}
 	} else {
-		glog.Info("Ready to handle request. Batch every ", config.Batching, " requests")
+		glog.Info("Ready to handle request. Batch every ", config.BatchInterval, " microseconds")
 		for {
-			reqs := make([]msgs.ClientRequest, config.Batching)
-			for i := 0; i < config.Batching; {
-				req := <-(*io).IncomingRequests
-				glog.Info("Request received: ", req)
+			// setup for holding requests
+			reqs := make([]msgs.ClientRequest, config.MaxBatch)
+			reqs_num := 0
 
-				if !req.Replicate {
-					(*io).OutgoingRequests <- req
-					glog.Info("Request handled with replication: ", req)
-				} else {
-					reqs[i] = req
-					i++
+			// start collecting requests
+			timeout := make(chan bool, 1)
+			go func() {
+				<-time.After(time.Microsecond * time.Duration(config.BatchInterval))
+				timeout <- true
+			}()
+
+			exit:= false
+		    for ;exit==false; {
+		    	select {
+		    	case req := <-io.IncomingRequests:
+					if !req.Replicate {
+						io.OutgoingRequests <- req
+						glog.Info("Request handled without replication: ", req)
+					} else {
+						reqs[reqs_num] = req
+						glog.Info("Request ",reqs_num, " is : ", req)
+						reqs_num = reqs_num + 1
+						if reqs_num==config.MaxBatch {
+							exit=true
+							break
+						}
+					}
+				case <-timeout:
+					exit=true
+					break
 				}
+		    }
+			
 
+		    // assign requests to coordinators
+		    if reqs_num>0 {
+		    	glog.Info("Starting to replicate ",reqs_num, " requests")
+				reqs_small := reqs[:reqs_num]
 				index++
-				ok := RunCoordinator(view, index, reqs, io, config, true)
+				ok := RunCoordinator(view, index, reqs_small, io, config, true)
 				if !ok {
 					break
 				}
-				glog.Info("Finished replicating requests: ", reqs)
+				glog.Info("Finished replicating requests: ", reqs_small)
 			}
-
 		}
 
 	}
+
 
 	glog.Warning("Master stepping down")
 

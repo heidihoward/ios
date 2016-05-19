@@ -16,5 +16,6 @@ done
 
 echo "[options]
 length = 100000
-batching = 0
+batchInterval = $3
+maxBatch = 100
 " >> $2/serv.conf
