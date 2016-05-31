@@ -1,6 +1,7 @@
 // Cache is a simple key value store mapping client ID's to the response to the last request sent to them
 // It is safe for concurreny access
-// TODO: make locking more fine grained
+
+// TODO: locking should be more fine grained
 package cache
 
 import (
