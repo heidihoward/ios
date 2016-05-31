@@ -25,11 +25,11 @@ go install
 ### Usage 
 
 #### Server
-To start a Hydra server:
+To start a Ios server:
 ```
 $GOPATH/bin/server -id 0 -logtostderr true
 ```
-This will start an Hydra server with ID 0, clients can now communicate with the server over port 8080 and other servers can communicate with this server over port 8090. You can modfiy these ports as follows:
+This will start an Ios server with ID 0, clients can now communicate with the server over port 8080 and other servers can communicate with this server over port 8090. You can modfiy these ports as follows:
 ```
 $GOPATH/bin/server -id 1 -client-port 8081  -peer-port 8091 -logtostderr true
 ```

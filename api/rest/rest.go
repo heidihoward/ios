@@ -1,4 +1,4 @@
-// REST API for Client side Hydra
+// REST API for Client side Ios
 package rest
 
 import (
