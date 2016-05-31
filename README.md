@@ -1,3 +1,5 @@
+![Ios project logo](https://raw.githubusercontent.com/heidi-ann/hydra/misc/logo.png)
+
 # Ios
 Welcome to Ios, a distributed and strongly consistent key-value store, built on the Ios distributed consensus protocol. 
 
