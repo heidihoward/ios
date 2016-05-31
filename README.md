@@ -1,6 +1,5 @@
 ![Ios project logo](../master/misc/logo.png?raw=true)
 
-# Ios
 Welcome to Ios, a distributed and strongly consistent key-value store, built on the Ios distributed consensus protocol. 
 
 ### Installation
