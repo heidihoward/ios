@@ -13,7 +13,7 @@ package consensus
 
 import (
 	"github.com/golang/glog"
-	"github.com/heidi-ann/hydra/msgs"
+	"github.com/heidi-ann/ios/msgs"
 )
 
 // Config describes the static configuration of the consensus algorithm

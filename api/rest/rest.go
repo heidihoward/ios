@@ -20,7 +20,7 @@ var waiting chan RestRequest
 var outstanding chan RestRequest
 
 func versionServer(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "hydra 0.1\n")
+	io.WriteString(w, "ios 0.1\n")
 }
 
 func closeServer(w http.ResponseWriter, req *http.Request) {

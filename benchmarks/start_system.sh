@@ -3,10 +3,10 @@
 
 # first args is number of servers (don't forget to change server config file)
 # 2nd args is number of client
-# 3rd arg is path from hydra of where to store results
+# 3rd arg is path from ios of where to store results
 
 # tidy up from previous tests
-SRC=$GOPATH/src/github.com/heidi-ann/hydra
+SRC=$GOPATH/src/github.com/heidi-ann/ios
 cd $SRC
 
 # make results directory

@@ -3,7 +3,7 @@
 
 TIME=`date '+%m-%d-%H%M%S'`
 
-SRC=$GOPATH/src/github.com/heidi-ann/hydra
+SRC=$GOPATH/src/github.com/heidi-ann/ios
 cd $SRC
 
 ./benchmarks/simple_testing.sh results/$TIME/simple

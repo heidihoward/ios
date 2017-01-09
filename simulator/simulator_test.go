@@ -3,7 +3,7 @@ package simulator
 import (
 	"flag"
 	"github.com/golang/glog"
-	"github.com/heidi-ann/hydra/msgs"
+	"github.com/heidi-ann/ios/msgs"
 	"testing"
 	"time"
 )

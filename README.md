@@ -12,9 +12,9 @@ After install go:
 ```
 go get github.com/golang/glog
 go get gopkg.in/gcfg.v1
-go get github.com/heidi-ann/hydra
+go get github.com/heidi-ann/ios
 
-cd $GOPATH/github.com/heidi-ann/hydra
+cd $GOPATH/github.com/heidi-ann/ios
 
 cd server/
 go install
@@ -35,11 +35,11 @@ $GOPATH/bin/server -id 1 -client-port 8081  -peer-port 8091 -logtostderr true
 ```
 
 
-The server is using files called persistent_log_1.temp and persistent_data_1.temp to store a perisitent copy hydra's state. If you would like to start a fresh server, make sure to use rm *.temp first.
+The server is using files called persistent_log_1.temp and persistent_data_1.temp to store a perisitent copy ios's state. If you would like to start a fresh server, make sure to use rm *.temp first.
 
 #### Client
 The (mode independent) client state is stored in the example.conf file. The client has three possible interfaces:
-* Test - a workload is auotmatically generated for hydra. This workload is configuated using a workload.conf file. An example of this is given in test/workload.conf.
+* Test - a workload is auotmatically generated for ios. This workload is configuated using a workload.conf file. An example of this is given in test/workload.conf.
 * Interactive - requests are entered from the terminal. Requests takes the form of get A or update A B. There can be multiple commands in a single request, seperated by semi-colons
 * REST API - a http server on port 12345
 Each client needs a unique id.

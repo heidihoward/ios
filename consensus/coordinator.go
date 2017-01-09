@@ -2,7 +2,7 @@ package consensus
 
 import (
 	"github.com/golang/glog"
-	"github.com/heidi-ann/hydra/msgs"
+	"github.com/heidi-ann/ios/msgs"
 	"reflect"
 )
 

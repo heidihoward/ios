@@ -5,7 +5,7 @@
 package cache
 
 import (
-	"github.com/heidi-ann/hydra/msgs"
+	"github.com/heidi-ann/ios/msgs"
 	"sync"
 )
 
