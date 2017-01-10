@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 # generates a server config file called serv.conf for $1 nodes in dir $2 in batch size $3
 
 echo "[peers]" > $2/serv.conf
