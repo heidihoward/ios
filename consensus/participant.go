@@ -31,7 +31,7 @@ func checkInvariant(log []msgs.Entry, index int, nxtEntry msgs.Entry) {
 	if !reflect.DeepEqual(prevEntry, msgs.Entry{}) {
 		// if committed, request never changes
 		if prevEntry.Committed && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
-			glog.Fatal("Committed entry is being overwritten at", prevEntry, nxtEntry, index)
+			glog.Fatal("Committed entry is being overwritten at ", prevEntry, nxtEntry, index)
 		}
 		// each index is allocated once per term
 		if prevEntry.View == nxtEntry.View && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
