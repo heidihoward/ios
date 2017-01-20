@@ -21,5 +21,15 @@ func ParseClientConfig(filename string) Config {
 	if err != nil {
 		glog.Fatalf("Failed to parse gcfg data: %s", err)
 	}
+	// checking configuation is sensible
+	if len(config.Addresses.Address) == 0 {
+		glog.Fatalf("At least one server is required")
+	}
+	if config.Parameters.Retries <= 0 {
+		glog.Fatalf("Retries must be >= 0")
+	}
+	if config.Parameters.Timeout <= 0 {
+		glog.Fatalf("Timeout must be >= 0")
+	}
 	return config
 }

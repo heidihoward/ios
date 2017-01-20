@@ -35,6 +35,11 @@ func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
 	var conn net.Conn
 	var err error
 
+	// reset invalid hint
+	if len(addrs) >= hint {
+		hint = 0
+	}
+
 	// first, try on to connect to the most likely leader
 	glog.Info("Trying to connect to ", addrs[hint])
 	conn, err = net.Dial("tcp", addrs[hint])
@@ -63,7 +68,12 @@ func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
 		}
 	}
 
-	return conn, hint + 1, err
+	// calc most likely next leader
+	hint += 1
+	if len(addrs) == hint {
+		hint = 0
+	}
+	return conn, hint, err
 }
 
 // send bytes and wait for reply, return bytes returned if succussful or error otherwise
