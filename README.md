@@ -1,6 +1,6 @@
 ![Ios project logo](../master/misc/logo.png?raw=true)
 
-Welcome to Ios, a distributed and strongly consistent key-value store, built on the Ios distributed consensus protocol. 
+Welcome to Ios, a distributed and strongly consistent key-value store, built on the Ios distributed consensus protocol.
 
 ### Installation
 
@@ -14,7 +14,7 @@ go get github.com/golang/glog
 go get gopkg.in/gcfg.v1
 go get github.com/heidi-ann/ios
 
-cd $GOPATH/github.com/heidi-ann/ios
+cd $GOPATH/src/github.com/heidi-ann/ios
 
 cd server/
 go install
@@ -22,29 +22,42 @@ cd ../client
 go install
 ```
 
-### Usage 
+### Quick start
+You can start a 1 node Ios cluster as follows:
+```
+cd $GOPATH/src/github.com/heidi-ann/ios/server
+$GOPATH/bin/server -id 0 -config example.conf -logtostderr true
+```
+This will start an Ios server with ID 0, clients can now communicate with the server over port 8080 as follows:
+```
+$ cd $GOPATH/src/github.com/heidi-ann/ios/client
+$ $GOPATH/bin/client -id=0 -config example.conf
+Starting Ios client in interactive mode.
 
-#### Server
-To start a Ios server:
-```
-$GOPATH/bin/server -id 0 -logtostderr true
-```
-This will start an Ios server with ID 0, clients can now communicate with the server over port 8080 and other servers can communicate with this server over port 8090. You can modfiy these ports as follows:
-```
-$GOPATH/bin/server -id 1 -client-port 8081  -peer-port 8091 -logtostderr true
-```
+The following commands are available:
+	get [key]: to return the value of a given key
+	update [key] [value]: to set the value of a given key
 
+Enter command: update A 1
+OK
+Enter command: get A
+1
+...
+```
+The server is using files called persistent_log_0.temp and persistent_data_0.temp to store Ios's persistent state. If these files are present when the server starts, it will restore the state from these files, if you would like to start a fresh server, make sure to use ``rm *.temp`` first.
 
-The server is using files called persistent_log_1.temp and persistent_data_1.temp to store a perisitent copy ios's state. If you would like to start a fresh server, make sure to use rm *.temp first.
+### Usage
 
 #### Client
+
 The (mode independent) client state is stored in the example.conf file. The client has three possible interfaces:
-* Test - a workload is auotmatically generated for ios. This workload is configuated using a workload.conf file. An example of this is given in test/workload.conf.
-* Interactive - requests are entered from the terminal. Requests takes the form of get A or update A B. There can be multiple commands in a single request, seperated by semi-colons
-* REST API - a http server on port 12345
+* Test - a workload is automatically generated for Ios. This workload is configured using a workload.conf file. An example of this is given in test/workload.conf.
+* Interactive - requests are entered from the terminal. Requests takes the form of either ``get [key]`` or ``update [key] [value]``. There can be multiple commands in a single request, separated by semi-colons
+* REST API - a HTTP server on port 12345
+
 Each client needs a unique id.
 
-#### Logging 
+#### Logging
 
 We use glog for logging. Adding `-logtostderr=true` when running executables prints the logging output. For more information, visit https://godoc.org/github.com/golang/glog.
 

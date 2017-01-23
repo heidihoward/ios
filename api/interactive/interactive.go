@@ -13,6 +13,13 @@ import (
 type Interative bufio.Reader
 
 func Create() *Interative {
+	fmt.Print(`Starting Ios client in interactive mode.
+
+The following commands are available:
+	get [key]: to return the value of a given key
+	update [key] [value]: to set the value of a given key
+
+`)
 	return (*Interative)(bufio.NewReader(os.Stdin))
 
 }
@@ -31,5 +38,5 @@ func (i *Interative) Next() (string, bool, bool) {
 
 func (_ *Interative) Return(str string) {
 	// , time time.Duration  "request took ", time
-	fmt.Print(str)
+	fmt.Print(str+"\n")
 }
