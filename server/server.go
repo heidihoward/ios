@@ -312,7 +312,8 @@ func main() {
 
 	// check persistent storage for commands
 	found := false
-	log := make([]msgs.Entry, 10000) //TODO: Fix this
+	log := make([]msgs.Entry, 10000) // TODO: Remove hard coded limit
+	log_length := 0
 
 	if !is_empty {
 		for {
@@ -328,9 +329,13 @@ func main() {
 				glog.Fatal("Cannot parse log update", err)
 			}
 			log[update.Index] = update.Entry
+			if log_length < update.Index {
+				log_length = update.Index
+				}
 			glog.Info("Adding for persistent storage :", update)
 		}
 	}
+	log = log[:log_length]
 
 	// check persistent storage for view
 	view := 0
@@ -439,12 +444,12 @@ func main() {
 	}()
 
 	// setting up the consensus algorithm
-	log_length := 1000
+	log_max_length := 1000
 	if conf.Options.Length > 0 {
-		log_length = conf.Options.Length
+		log_max_length = conf.Options.Length
 	}
-	cons_config := consensus.Config{*id, len(conf.Peers.Address), 
-		log_length, conf.Options.BatchInterval, conf.Options.MaxBatch}
+	cons_config := consensus.Config{*id, len(conf.Peers.Address),
+		log_max_length, conf.Options.BatchInterval, conf.Options.MaxBatch}
 	if !found {
 		glog.Info("Starting fresh consensus instance")
 		go consensus.Init(cons_io, cons_config)

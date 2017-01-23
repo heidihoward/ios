@@ -51,6 +51,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config) {
 			if nextMaster == config.ID {
 				glog.Info("Starting new master at ", config.ID)
 				(*s).View++
+				// TODO: BUG need to write to disk
 				(*s).MasterID = nextMaster
 				go RunMaster((*s).View, (*s).CommitIndex, false, io, config)
 			}

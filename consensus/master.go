@@ -67,6 +67,7 @@ func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Conf
 				glog.Info("Request handled with replication: ", req)
 			} else {
 				index++
+				glog.Info("Request assigned index: ", index)
 				ok := RunCoordinator(view, index, []msgs.ClientRequest{req}, io, config, true)
 				if !ok {
 					break
@@ -110,7 +111,7 @@ func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Conf
 					break
 				}
 		    }
-			
+
 
 		    // assign requests to coordinators
 		    if reqs_num>0 {

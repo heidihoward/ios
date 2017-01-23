@@ -60,17 +60,12 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 	new_log := make([]msgs.Entry, config.LogLength)
 	copy(new_log, log)
 	state := State{
-		View:        view,
+		View:        view+1,
 		Log:         new_log,
 		CommitIndex: -1,
 		MasterID:    mod(view, config.N),
 		LastIndex:   len(log) - 1}
-
-	// if master, start master goroutine
-	if config.ID == state.MasterID {
-		glog.Info("Starting leader module")
-		go RunMaster(view, -1, true, io, config)
-	}
+	(*io).ViewPersist <- state.View
 
 	// apply recovered requests to state machine
 	for i := 0; i <= state.LastIndex; i++ {
@@ -83,6 +78,13 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 			(*io).OutgoingRequests <- request
 		}
 	}
+
+	// if master, start master goroutine
+		if config.ID == state.MasterID {
+			glog.Info("Starting leader module")
+			go RunMaster(state.View, state.CommitIndex, false, io, config)
+		}
+
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
