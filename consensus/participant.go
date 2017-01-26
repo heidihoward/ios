@@ -103,6 +103,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			}
 			state.Log[req.Index] = req.Entry
 			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
+			_ = <-(*io).LogPersistFsync
 
 			// reply
 			reply := msgs.PrepareResponse{config.ID, true}
