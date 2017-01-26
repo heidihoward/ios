@@ -42,7 +42,7 @@ var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
 var disk_path = flag.String("disk", ".", "Path to directory to store persistent storage")
 
-func openFile(filename string) (*bufio.Writer, *bufio.Reader, bool) {
+func openFile(filename string) (*bufio.Writer, *bufio.Reader, *os.File, bool) {
 	// check if file exists already for logging
 	var is_new bool
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -62,7 +62,7 @@ func openFile(filename string) (*bufio.Writer, *bufio.Reader, bool) {
 	// create writer and reader
 	w := bufio.NewWriter(file)
 	r := bufio.NewReader(file)
-	return w, r, is_new
+	return w, r, file, is_new
 }
 
 func stateMachine() {
@@ -305,9 +305,9 @@ func main() {
 	go stateMachine()
 
 	// setting up persistent log
-	disk, disk_reader, is_empty := openFile(*disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp")
+	disk, disk_reader, disk_file, is_empty := openFile(*disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp")
 	defer disk.Flush()
-	meta_disk, meta_disk_reader, is_new := openFile(*disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp")
+	meta_disk, meta_disk_reader, _,is_new := openFile(*disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp")
 	defer meta_disk.Flush()
 
 	// check persistent storage for commands
@@ -379,6 +379,8 @@ func main() {
 				glog.Fatal(err)
 			}
 			glog.Info(n1+n2, " bytes written to persistent log")
+			disk_file.Sync()
+			cons_io.LogPersistFsync <- log
 		}
 	}()
 
