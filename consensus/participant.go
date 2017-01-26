@@ -139,7 +139,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				checkInvariant(state.Log, req.Index, req.Entry)
 			}
 			state.Log[req.Index] = req.Entry
-			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
+			// (*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 
 			// pass to state machine if ready
 			if state.CommitIndex == req.Index-1 {
