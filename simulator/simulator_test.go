@@ -9,6 +9,7 @@ import (
 )
 
 func checkRequest(t *testing.T, req msgs.ClientRequest, ios []*msgs.Io, master_id int) {
+	// send request direct to master
 	ios[master_id].IncomingRequests <- req
 
 	for id := range ios {
@@ -17,7 +18,7 @@ func checkRequest(t *testing.T, req msgs.ClientRequest, ios []*msgs.Io, master_i
 			if reply != req {
 				t.Error(reply)
 			}
-		case <-time.After(time.Millisecond):
+		case <-time.After(time.Second):
 			t.Error("Participant not responding")
 		}
 	}
@@ -39,6 +40,7 @@ func TestSimulator(t *testing.T) {
 	request1 := msgs.ClientRequest{
 		ClientID:  2,
 		RequestID: 0,
+		Replicate: true,
 		Request:   "update A 3"}
 
 	checkRequest(t, request1, ios, 0)
@@ -46,6 +48,7 @@ func TestSimulator(t *testing.T) {
 	request2 := msgs.ClientRequest{
 		ClientID:  2,
 		RequestID: 1,
+		Replicate: true,
 		Request:   "get A"}
 
 	checkRequest(t, request2, ios, 0)
@@ -53,6 +56,7 @@ func TestSimulator(t *testing.T) {
 	request3 := msgs.ClientRequest{
 		ClientID:  4,
 		RequestID: 0,
+		Replicate: true,
 		Request:   "get C"}
 
 	checkRequest(t, request3, ios, 0)
@@ -63,6 +67,7 @@ func TestSimulator(t *testing.T) {
 	request4 := msgs.ClientRequest{
 		ClientID:  4,
 		RequestID: 1,
+		Replicate: true,
 		Request:   "get B"}
 
 	checkRequest(t, request4, ios, 1)
@@ -73,6 +78,7 @@ func TestSimulator(t *testing.T) {
 	request5 := msgs.ClientRequest{
 		ClientID:  4,
 		RequestID: 2,
+		Replicate: true,
 		Request:   "update B 3"}
 
 	checkRequest(t, request5, ios, 2)

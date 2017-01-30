@@ -412,6 +412,7 @@ func (io *Io) DumpPersistentStorage() {
 		case view := <-io.ViewPersist:
 			glog.Info("Updating view to ", view)
 		case log := <-io.LogPersist:
+			io.LogPersistFsync <- log
 			glog.Info("Updating log with ", log)
 		}
 	}

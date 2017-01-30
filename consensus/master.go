@@ -64,7 +64,7 @@ func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Conf
 			// if possible, handle request without replication
 			if !req.Replicate {
 				io.OutgoingRequests <- req
-				glog.Info("Request handled with replication: ", req)
+				glog.Info("Read-only request was handled without replication: ", req)
 			} else {
 				index++
 				glog.Info("Request assigned index: ", index)
