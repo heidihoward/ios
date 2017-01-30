@@ -242,7 +242,7 @@ func main() {
 
 			// write to latency to log
 			latency := strconv.FormatInt(time.Since(startTime).Nanoseconds(), 10)
-			err = stats.Write([]string{startTime.String(), strconv.Itoa(requestID), latency, strconv.Itoa(tries)})
+			err = stats.Write([]string{string(startTime.UnixNano()), strconv.Itoa(requestID), latency, strconv.Itoa(tries)})
 			if err != nil {
 				glog.Fatal(err)
 			}
