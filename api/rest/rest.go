@@ -1,4 +1,4 @@
-// REST API for Client side Ios
+// Package rest provides a REST API for client to interact with Ios clusters.
 package rest
 
 import (

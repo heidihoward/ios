@@ -1,6 +1,5 @@
+//Package consensus implements the Unanimous local replication algorithm.
 /*
-Package consensus implements the Unanimous local replication algorithm.
-
 This is INCOMPLETE as it currently:
 	- assumes that all state is persistent
 	- master does not recovery and assumes 3 is the last index allocated

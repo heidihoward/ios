@@ -1,4 +1,4 @@
-// Interative handles terminal input and feedback
+// Package interactive provides a simple user facing terminal client for Ios.
 package interactive
 
 import (

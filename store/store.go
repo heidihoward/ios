@@ -1,3 +1,4 @@
+// Package store provides a simple key value store
 // Not safe for concurreny access
 package store
 

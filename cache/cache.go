@@ -1,4 +1,4 @@
-// Cache is a simple key value store mapping client ID's to the response to the last request sent to them
+// Package cache provides a simple key value store mapping client ID's to the last request sent to them.
 // It is safe for concurreny access
 
 // TODO: locking should be more fine grained

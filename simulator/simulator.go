@@ -1,3 +1,4 @@
+// Package simulator provides an interface with package consensus without I/O.
 package simulator
 
 import (

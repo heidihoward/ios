@@ -1,3 +1,4 @@
+// Package client provides I/O for Ios clients
 package main
 
 import (
