@@ -4,22 +4,15 @@ Welcome to Ios, a distributed and strongly consistent key-value store, built on 
 
 ### Installation
 
-Most of this project is written using Go version 1.5.3. The [Go lang site](https://golang.org/) details how to install and setup Go. Don't forget to add GOPATH to your .profile. The project has the following dependancies:
+Most of this project is written using Go version 1.6.2 The [Go lang site](https://golang.org/) details how to install and setup Go. Don't forget to add GOPATH to your .profile. The project has the following dependancies:
 * [glog](github.com/golang/glog) - logging library, in the style of glog for C++
 * [gcfg](gopkg.in/gcfg.v1) - library for parsing git-config style config files
 
-After install go:
+After installing go:
 ```
 go get github.com/golang/glog
 go get gopkg.in/gcfg.v1
-go get github.com/heidi-ann/ios
-
-cd $GOPATH/src/github.com/heidi-ann/ios
-
-cd server/
-go install
-cd ../client
-go install
+go get github.com/heidi-ann/ios/...
 ```
 
 ### Quick start
