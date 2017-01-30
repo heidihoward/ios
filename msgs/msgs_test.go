@@ -3,6 +3,7 @@ package msgs
 import (
 	"flag"
 	"github.com/golang/glog"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -13,15 +14,16 @@ func TestMakeIo(t *testing.T) {
 
 	// SAMPLE MESSAGES
 
-	request1 := ClientRequest{
+	request1 := []ClientRequest{ClientRequest{
 		ClientID:  2,
 		RequestID: 0,
-		Request:   "update A 3"}
+		Replicate: true,
+		Request:   "update A 3"}}
 
 	entry1 := Entry{
 		View:      0,
 		Committed: false,
-		Request:   request1}
+		Requests:   request1}
 
 	prepare := PrepareRequest{
 		SenderID: 0,
@@ -51,7 +53,7 @@ func TestMakeIo(t *testing.T) {
 
 	select {
 	case reply := <-(*io).Incoming.Requests.Prepare:
-		if reply != prepare {
+		if !reflect.DeepEqual(reply,prepare) {
 			t.Error(reply)
 		}
 	case <-time.After(time.Millisecond):

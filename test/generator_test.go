@@ -49,17 +49,17 @@ func checkFormat(t *testing.T, req string) {
 // check that the generator is producing valid commands
 func TestGenerate(t *testing.T) {
 	conf := ConfigAuto{
-		Commands{50, 3},
+		Commands{50, 3,0},
 		Termination{20},
 	}
 
 	gen := Generate(conf)
 
 	for i := 0; i < 100; i++ {
-		str, ok := gen.Next()
+		str, _, ok := gen.Next()
 		if !ok {
 			if conf.Termination.Requests != i {
-				t.Errorf("Generator terminated a request %d, should terminate at %d'",
+				t.Errorf("Generator terminated a request %d, should terminate at %d",
 					i, conf.Termination.Requests)
 			}
 			break
