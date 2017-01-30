@@ -38,6 +38,7 @@ func Init(io *msgs.Io, config Config) {
 		LastIndex:   -1}
 
 	// write initial term to persistent storage
+	// BUG: wait until view has been fsynced
 	(*io).ViewPersist <- 0
 
 	// if master, start master goroutine
@@ -64,6 +65,7 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 		CommitIndex: -1,
 		MasterID:    mod(view, config.N),
 		LastIndex:   len(log) - 1}
+	// BUG: wait until view has been fsynced
 	(*io).ViewPersist <- state.View
 
 	// apply recovered requests to state machine

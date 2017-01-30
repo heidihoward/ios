@@ -83,6 +83,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
+				// BUG: wait until view has been synced
 				(*io).ViewPersist <- state.View
 				state.MasterID = mod(state.View, config.N)
 			}
@@ -125,6 +126,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
+				// BUG: wait until view has been synced
 				(*io).ViewPersist <- state.View
 				state.MasterID = mod(state.View, config.N)
 			}
@@ -176,6 +178,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
+				// BUG: wait until view has been synced
 				(*io).ViewPersist <- state.View
 				state.MasterID = mod(state.View, config.N)
 			}
@@ -197,6 +200,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
+				// BUG: wait until view has been synced
 				(*io).ViewPersist <- state.View
 				state.MasterID = mod(state.View, config.N)
 			}

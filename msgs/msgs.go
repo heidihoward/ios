@@ -130,6 +130,7 @@ type Io struct {
 	OutgoingUnicast   map[int]*ProtoMsgs
 	Failure           chan int
 	ViewPersist       chan int
+	ViewPersistFsync  chan int
 	LogPersist        chan LogUpdate
 	LogPersistFsync   chan LogUpdate
 }
@@ -257,6 +258,7 @@ func MakeIo(buf int, n int) *Io {
 		OutgoingUnicast:   make(map[int]*ProtoMsgs),
 		Failure:           make(chan int, buf),
 		ViewPersist:       make(chan int, buf),
+		ViewPersistFsync:  make(chan int, buf),
 		LogPersist:        make(chan LogUpdate, buf),
 		LogPersistFsync:   make(chan LogUpdate, buf)}
 
@@ -411,6 +413,7 @@ func (io *Io) DumpPersistentStorage() {
 	for {
 		select {
 		case view := <-io.ViewPersist:
+			io.ViewPersistFsync <- view
 			glog.Info("Updating view to ", view)
 		case log := <-io.LogPersist:
 			io.LogPersistFsync <- log

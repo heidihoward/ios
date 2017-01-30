@@ -317,7 +317,7 @@ func main() {
 	// setting up persistent log
 	disk, disk_reader, disk_file, is_empty := openFile(*disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp")
 	defer disk.Flush()
-	meta_disk, meta_disk_reader, _, is_new := openFile(*disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp")
+	meta_disk, meta_disk_reader, meta_disk_file, is_new := openFile(*disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp")
 	defer meta_disk.Flush()
 
 	// check persistent storage for commands
@@ -371,6 +371,8 @@ func main() {
 			if err != nil {
 				glog.Fatal(err)
 			}
+			meta_disk_file.Sync()
+			cons_io.ViewPersistFsync <- view
 		}
 	}()
 
