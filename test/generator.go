@@ -1,4 +1,4 @@
-// Pacakge test provides clients for testing Ios's performance.
+// Package test provides clients for testing Ios's performance.
 package test
 
 import (
