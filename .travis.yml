@@ -1,0 +1,11 @@
+language: go
+
+go:
+  - 1.6
+  - 1.7.x
+
+install:
+  go get github.com/heidi-ann/ios/...
+
+script:
+  go test
