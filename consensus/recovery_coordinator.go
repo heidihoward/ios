@@ -39,7 +39,7 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 					candidate = &res.Entry
 				}
 
-				// if same view and differnt requests then panic!
+				// if same view and different requests then panic!
 				if res.Entry.View == (*candidate).View && !reflect.DeepEqual(res.Entry.Requests, candidate.Requests) {
 					glog.Fatal("Same index has been issued more then once")
 				}

@@ -70,7 +70,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 		select {
 
 		case req := <-(*io).Incoming.Requests.Prepare:
-			glog.Info("Prepare requests recieved at ", config.ID, ": ", req)
+			glog.Info("Prepare requests received at ", config.ID, ": ", req)
 			// check view
 			if req.View < state.View {
 				glog.Warning("Sender is behind")
@@ -114,7 +114,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			glog.Info("Response dispatched: ", reply)
 
 		case req := <-(*io).Incoming.Requests.Commit:
-			glog.Info("Commit requests recieved at ", config.ID, ": ", req)
+			glog.Info("Commit requests received at ", config.ID, ": ", req)
 			// check view
 			if req.View < state.View {
 				glog.Warning("Sender is behind")
@@ -164,7 +164,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			glog.Info("Response dispatched")
 
 		case req := <-(*io).Incoming.Requests.NewView:
-			glog.Info("New view requests recieved at ", config.ID, ": ", req)
+			glog.Info("New view requests received at ", config.ID, ": ", req)
 
 			// check view
 			if req.View < state.View {
@@ -185,7 +185,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			glog.Info("Response dispatched")
 
 		case req := <-(*io).Incoming.Requests.Query:
-			glog.Info("Query requests recieved at ", config.ID, ": ", req)
+			glog.Info("Query requests received at ", config.ID, ": ", req)
 
 			// check view
 			if req.View < state.View {
