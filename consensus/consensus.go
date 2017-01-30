@@ -38,7 +38,7 @@ func Init(io *msgs.Io, config Config) {
 		MasterID:    0,
 		LastIndex:   -1}
 
-	// write intial term to persistent storage
+	// write initial term to persistent storage
 	(*io).ViewPersist <- 0
 
 	// if master, start master goroutine

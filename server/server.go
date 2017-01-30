@@ -30,7 +30,7 @@ var notifyclient_mutex sync.RWMutex
 type Peer struct {
 	id      int
 	address string
-	handled bool // TOOD: replace with Mutex
+	handled bool // TODO: replace with Mutex
 }
 
 var peers []Peer
@@ -212,6 +212,11 @@ func handlePeer(cn net.Conn, init bool) {
 				break
 			}
 			err = writer.Flush()
+			if err != nil {
+				glog.Warning(err)
+				close_err <- err
+				break
+			}
 			glog.Info("Sent")
 		}
 	}()
@@ -267,6 +272,9 @@ func handleConnection(cn net.Conn) {
 		// TODO: FIX currently all server send back replies
 		glog.Info("Sending ", string(b))
 		n, err := writer.Write(b)
+		if err != nil {
+			glog.Fatal(err)
+		}
 		_, err = writer.Write([]byte("\n"))
 		if err != nil {
 			glog.Fatal(err)

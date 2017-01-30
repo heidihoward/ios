@@ -193,7 +193,7 @@ func main() {
 			startTime := time.Now()
 			tries := 0
 
-			// dispatch request until successfull
+			// dispatch request until successful
 			var reply *msgs.ClientResponse
 			for {
 				tries++

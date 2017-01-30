@@ -9,14 +9,14 @@ import (
 var noop = msgs.ClientRequest{-1, -1, true, "noop"}
 
 // RunMaster implements the Master mode
-func RunMaster(view int, commit_index int, inital bool, io *msgs.Io, config Config) {
+func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master in view ", view)
 	majority := Majority(config.N)
 
 	// determine next safe index
 	index := -1
-	if !inital {
+	if !initial {
 		// dispatch new view requests
 		req := msgs.NewViewRequest{config.ID, view}
 		(*io).OutgoingBroadcast.Requests.NewView <- req
