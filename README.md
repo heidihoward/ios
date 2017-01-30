@@ -10,8 +10,6 @@ Most of this project is written using Go version 1.6.2 The [Go lang site](https:
 
 After installing go:
 ```
-go get github.com/golang/glog
-go get gopkg.in/gcfg.v1
 go get github.com/heidi-ann/ios/...
 ```
 
