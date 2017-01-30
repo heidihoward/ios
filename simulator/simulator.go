@@ -11,7 +11,7 @@ func RunSimulator(nodes int) []*msgs.Io {
 	// setup state
 	for id := 0; id < nodes; id++ {
 		io := msgs.MakeIo(10, nodes)
-		conf := consensus.Config{id, nodes}
+		conf := consensus.Config{ID: id, N: nodes}
 		go consensus.Init(io, conf)
 		go io.DumpPersistentStorage()
 		ios[id] = io
@@ -34,7 +34,7 @@ func RunRecoverySimulator(nodes int, logs [][]msgs.Entry, views []int) []*msgs.I
 	// setup state
 	for id := 0; id < nodes; id++ {
 		io := msgs.MakeIo(10, nodes)
-		conf := consensus.Config{id, nodes}
+		conf := consensus.Config{ID: id, N: nodes}
 		go consensus.Recover(io, conf, views[id], logs[id])
 		go io.DumpPersistentStorage()
 		ios[id] = io
