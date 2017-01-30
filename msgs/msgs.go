@@ -1,3 +1,4 @@
+// Package msgs describes all I/O formatting
 package msgs
 
 import (
