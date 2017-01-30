@@ -17,11 +17,11 @@ import (
 
 // Config describes the static configuration of the consensus algorithm
 type Config struct {
-	ID        int // id of node
-	N         int // size of cluster (nodes numbered 0 to N-1)
-	LogLength int // max log size
-	BatchInterval  int // how often to batch process request in ms, 0 means no batching
-	MaxBatch int // maximum requests in a batch, unused if BatchInterval=0
+	ID            int // id of node
+	N             int // size of cluster (nodes numbered 0 to N-1)
+	LogLength     int // max log size
+	BatchInterval int // how often to batch process request in ms, 0 means no batching
+	MaxBatch      int // maximum requests in a batch, unused if BatchInterval=0
 }
 
 // Init runs the consensus algorithm.
@@ -59,7 +59,7 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 	new_log := make([]msgs.Entry, config.LogLength)
 	copy(new_log, log)
 	state := State{
-		View:        view+1,
+		View:        view + 1,
 		Log:         new_log,
 		CommitIndex: -1,
 		MasterID:    mod(view, config.N),
@@ -79,11 +79,10 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 	}
 
 	// if master, start master goroutine
-		if config.ID == state.MasterID {
-			glog.Info("Starting leader module")
-			go RunMaster(state.View, state.CommitIndex, false, io, config)
-		}
-
+	if config.ID == state.MasterID {
+		glog.Info("Starting leader module")
+		go RunMaster(state.View, state.CommitIndex, false, io, config)
+	}
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)

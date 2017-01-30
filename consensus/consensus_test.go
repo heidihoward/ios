@@ -15,7 +15,7 @@ func TestInit(t *testing.T) {
 
 	// create a node in system of 3 nodes
 	io := msgs.MakeIo(10, 3)
-	conf := Config{0, 3,1000,0,0}
+	conf := Config{0, 3, 1000, 0, 0}
 	go Init(io, conf)
 
 	// TEST 1 - SIMPLE COMMIT
@@ -30,7 +30,7 @@ func TestInit(t *testing.T) {
 	entry1 := msgs.Entry{
 		View:      0,
 		Committed: false,
-		Requests:   request1}
+		Requests:  request1}
 
 	prepare1 := msgs.PrepareRequest{
 		SenderID: 0,
@@ -48,14 +48,13 @@ func TestInit(t *testing.T) {
 	// check node tried to dispatch request correctly
 	select {
 	case log_update := <-(*io).LogPersist:
-		if !reflect.DeepEqual(log_update.Entry,entry1) {
+		if !reflect.DeepEqual(log_update.Entry, entry1) {
 			t.Error(log_update)
 		}
 		(*io).LogPersistFsync <- log_update
 	case <-time.After(time.Second):
 		t.Error("Participant not responding")
 	}
-
 
 	// check node tried to dispatch request correctly
 	select {

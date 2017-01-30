@@ -104,7 +104,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			state.Log[req.Index] = req.Entry
 			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 			last_written := <-(*io).LogPersistFsync
-			for !reflect.DeepEqual(last_written,msgs.LogUpdate{req.Index, req.Entry}) {
+			for !reflect.DeepEqual(last_written, msgs.LogUpdate{req.Index, req.Entry}) {
 				last_written = <-(*io).LogPersistFsync
 			}
 

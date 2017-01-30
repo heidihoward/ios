@@ -38,5 +38,5 @@ func (i *Interative) Next() (string, bool, bool) {
 
 func (_ *Interative) Return(str string) {
 	// , time time.Duration  "request took ", time
-	fmt.Print(str+"\n")
+	fmt.Print(str + "\n")
 }

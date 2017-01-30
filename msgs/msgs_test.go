@@ -23,7 +23,7 @@ func TestMakeIo(t *testing.T) {
 	entry1 := Entry{
 		View:      0,
 		Committed: false,
-		Requests:   request1}
+		Requests:  request1}
 
 	prepare := PrepareRequest{
 		SenderID: 0,
@@ -53,7 +53,7 @@ func TestMakeIo(t *testing.T) {
 
 	select {
 	case reply := <-(*io).Incoming.Requests.Prepare:
-		if !reflect.DeepEqual(reply,prepare) {
+		if !reflect.DeepEqual(reply, prepare) {
 			t.Error(reply)
 		}
 	case <-time.After(time.Millisecond):

@@ -90,32 +90,31 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				timeout <- true
 			}()
 
-			exit:= false
-		    for ;exit==false; {
-		    	select {
-		    	case req := <-io.IncomingRequests:
+			exit := false
+			for exit == false {
+				select {
+				case req := <-io.IncomingRequests:
 					if !req.Replicate {
 						io.OutgoingRequests <- req
 						glog.Info("Request handled without replication: ", req)
 					} else {
 						reqs[reqs_num] = req
-						glog.Info("Request ",reqs_num, " is : ", req)
+						glog.Info("Request ", reqs_num, " is : ", req)
 						reqs_num = reqs_num + 1
-						if reqs_num==config.MaxBatch {
-							exit=true
+						if reqs_num == config.MaxBatch {
+							exit = true
 							break
 						}
 					}
 				case <-timeout:
-					exit=true
+					exit = true
 					break
 				}
-		    }
+			}
 
-
-		    // assign requests to coordinators
-		    if reqs_num>0 {
-		    	glog.Info("Starting to replicate ",reqs_num, " requests")
+			// assign requests to coordinators
+			if reqs_num > 0 {
+				glog.Info("Starting to replicate ", reqs_num, " requests")
 				reqs_small := reqs[:reqs_num]
 				index++
 				ok := RunCoordinator(view, index, reqs_small, io, config, true)
@@ -127,7 +126,6 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		}
 
 	}
-
 
 	glog.Warning("Master stepping down")
 

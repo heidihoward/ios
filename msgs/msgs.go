@@ -258,7 +258,7 @@ func MakeIo(buf int, n int) *Io {
 		Failure:           make(chan int, buf),
 		ViewPersist:       make(chan int, buf),
 		LogPersist:        make(chan LogUpdate, buf),
-		LogPersistFsync:        make(chan LogUpdate, buf)}
+		LogPersistFsync:   make(chan LogUpdate, buf)}
 
 	for id := 0; id < n; id++ {
 		protomsgs := MakeProtoMsgs(buf)

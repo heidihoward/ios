@@ -67,14 +67,4 @@ sudo tcpdump -i lo0 -nnAS "(src portrange 8080-8092 or dst portrange 8080-8092) 
 
 ### Benchmarking
 
-The benchmarking scripts are as follows:
-- `all_test.sh` - run all tests
-- `batch_testing.sh` - enabling batching to test how it improves throughput
-- `failure_testing.sh` - simulating failure by kill processes (NOT WORKING)
-- `load_testing.sh` - simulating load using max rate clients
-- `major_failure_testing.sh` - simulating failure by kill the process of the master
-- `read_testing.sh` - changing read/write ratio of workload
-- `scale_testing.sh` - varying clusters size
-- `simple_testing.sh` - quick test of a simple system (START HERE)
-
-The ipython3 notebook `graph_plotting.iynp` plots the outputs of the above tests
+The benchmarking scripts for Ios can found here https://github.com/heidi-ann/consensus_eval

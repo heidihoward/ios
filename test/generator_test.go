@@ -49,7 +49,7 @@ func checkFormat(t *testing.T, req string) {
 // check that the generator is producing valid commands
 func TestGenerate(t *testing.T) {
 	conf := ConfigAuto{
-		Commands{50, 3,0},
+		Commands{50, 3, 0},
 		Termination{20},
 	}
 

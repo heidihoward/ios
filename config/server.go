@@ -10,9 +10,9 @@ type ServerConfig struct {
 		Address []string
 	}
 	Options struct {
-		Length   int
+		Length        int
 		BatchInterval int
-		MaxBatch int
+		MaxBatch      int
 	}
 }
 
