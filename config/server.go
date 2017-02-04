@@ -13,6 +13,7 @@ type ServerConfig struct {
 		Length        int
 		BatchInterval int
 		MaxBatch      int
+		DelegateReplication int
 	}
 }
 

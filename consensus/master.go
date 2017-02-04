@@ -12,6 +12,7 @@ var noop = msgs.ClientRequest{-1, -1, true, "noop"}
 func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master in view ", view)
+	glog.Info("Master is configured to delegate replication to ",config.DelegateReplication)
 	majority := Majority(config.N)
 
 	// determine next safe index
