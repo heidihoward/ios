@@ -52,6 +52,12 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		}
 
 	}
+	// store the first coordinator to ask
+	coordinator := config.ID
+	if config.DelegateReplication > 0 {
+		coordinator += 1
+	}
+
 
 	if config.BatchInterval == 0 {
 		glog.Info("Ready to handle requests. No batching enabled")
@@ -72,13 +78,22 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				// ok := RunCoordinator(view, index, []msgs.ClientRequest{req}, io, config, true)
 				entry := msgs.Entry{view, false, []msgs.ClientRequest{req}}
 				coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
-				io.OutgoingUnicast[config.ID].Requests.Coordinate <- coord
-				reply := <-(*io).Incoming.Responses.Coordinate
+				io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
+				// TODO: BUG: need to handle coordinator failure
+				// reply := <-(*io).Incoming.Responses.Coordinate
 				// TODO: check msg replies to the msg we just sent
-				if !reply.Response.Success {
-					break
+				// if !reply.Response.Success {
+				// 	break
+				// }
+				// glog.Info("Finished replicating request: ", req)
+
+				// rotate coordinator is nessacary
+				if config.DelegateReplication > 1 {
+					coordinator += 1
+					if coordinator>config.ID + config.DelegateReplication {
+						coordinator = config.ID + 1
+					}
 				}
-				glog.Info("Finished replicating request: ", req)
 			}
 
 		}
@@ -126,13 +141,21 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				// ok := RunCoordinator(view, index, reqs_small, io, config, true)
 				entry := msgs.Entry{view, false, reqs_small}
 				coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
-				io.OutgoingUnicast[config.ID+config.DelegateReplication].Requests.Coordinate <- coord
-				reply := <- io.Incoming.Responses.Coordinate
-				// TODO: check msg replies to the msg we just sent
-				if !reply.Response.Success {
-					break
-				}
+				io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
+				// reply := <- io.Incoming.Responses.Coordinate
+				// // TODO: check msg replies to the msg we just sent
+				// if !reply.Response.Success {
+				// 	break
+				// }
 				glog.Info("Finished replicating requests: ", reqs_small)
+
+				// rotate coordinator is nessacary
+				if config.DelegateReplication > 1 {
+					coordinator += 1
+					if coordinator>config.ID + config.DelegateReplication {
+						coordinator = config.ID + 1
+					}
+				}
 			}
 		}
 
