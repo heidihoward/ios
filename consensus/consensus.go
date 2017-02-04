@@ -50,6 +50,7 @@ func Init(io *msgs.Io, config Config) {
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
+	go RunCoordinator(state, io, config)
 	RunParticipant(state, io, config)
 
 }
@@ -89,6 +90,7 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
+	go RunCoordinator(state, io, config)
 	RunParticipant(state, io, config)
 
 }

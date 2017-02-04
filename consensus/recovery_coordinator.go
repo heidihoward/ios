@@ -54,6 +54,11 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 
 	// if committed, then dispatch commit
 	// if not committed, then dispatch prepare then commit
-	RunCoordinator(view, index, candidate.Requests, io, config, candidate.Committed)
+	// RunCoordinator(view, index, candidate.Requests, io, config, candidate.Committed)
+	entry := msgs.Entry{view, false, candidate.Requests}
+	coord := msgs.CoordinateRequest{config.ID, view, index, candidate.Committed, entry}
+	io.OutgoingUnicast[config.ID].Requests.Coordinate <- coord
+	 <-io.Incoming.Responses.Coordinate
+	// TODO: check msg replies to the msg we just sent
 	return true
 }

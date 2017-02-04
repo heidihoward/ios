@@ -6,13 +6,7 @@ import (
 	"reflect"
 )
 
-// returns true if successful
-func RunCoordinator(view int, index int, reqs []msgs.ClientRequest, io *msgs.Io, config Config, prepare bool) bool {
-
-	entry := msgs.Entry{
-		View:      view,
-		Committed: false,
-		Requests:  reqs}
+func DoCoordination(view int, index int, entry msgs.Entry, io *msgs.Io, config Config, prepare bool) bool {
 
 	majority := Majority(config.N)
 	// phase 1: prepare
@@ -55,4 +49,19 @@ func RunCoordinator(view int, index int, reqs []msgs.ClientRequest, io *msgs.Io,
 	}()
 
 	return true
+}
+
+// returns true if successful
+func RunCoordinator(state State, io *msgs.Io, config Config) {
+	glog.Info("Coordinator is ready to handle requests")
+
+	for {
+		req := <-(*io).Incoming.Requests.Coordinate
+		success := DoCoordination(req.View, req.Index, req.Entry, io, config, req.Prepare)
+		if success {
+			reply := msgs.CoordinateResponse{config.ID, true}
+			(*io).OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
+		}
+		// TOD0: handle failure
+	}
 }

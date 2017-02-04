@@ -96,6 +96,24 @@ type Query struct {
 	Response QueryResponse
 }
 
+type CoordinateRequest struct {
+	SenderID int
+	View     int
+	Index    int
+	Prepare  bool
+	Entry    Entry
+}
+
+type CoordinateResponse struct {
+	SenderID int
+	Success  bool
+}
+
+type Coordinate struct {
+	Request  CoordinateRequest
+	Response CoordinateResponse
+}
+
 type LogUpdate struct {
 	Index int
 	Entry Entry
@@ -108,6 +126,7 @@ type Requests struct {
 	Commit  chan CommitRequest
 	NewView chan NewViewRequest
 	Query   chan QueryRequest
+	Coordinate chan CoordinateRequest
 }
 
 type Responses struct {
@@ -115,6 +134,7 @@ type Responses struct {
 	Commit  chan Commit
 	NewView chan NewView
 	Query   chan Query
+	Coordinate chan Coordinate
 }
 
 type ProtoMsgs struct {
@@ -161,6 +181,11 @@ func (io *Io) Broadcaster() {
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Requests.Query <- r
 			}
+		case r := <-io.OutgoingBroadcast.Requests.Coordinate:
+			glog.Info("Broadcasting ", r)
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Requests.Coordinate <- r
+			}
 			// Responses
 		case r := <-io.OutgoingBroadcast.Responses.Prepare:
 			glog.Info("Broadcasting ", r)
@@ -181,6 +206,11 @@ func (io *Io) Broadcaster() {
 			glog.Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Responses.Query <- r
+			}
+		case r := <-io.OutgoingBroadcast.Responses.Coordinate:
+			glog.Info("Broadcasting ", r)
+			for id := range io.OutgoingUnicast {
+				io.OutgoingUnicast[id].Responses.Coordinate <- r
 			}
 
 		}
@@ -206,6 +236,9 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 		case r := <-from.Requests.Query:
 			glog.Info("Forwarding", r)
 			to.Requests.Query <- r
+		case r := <-from.Requests.Coordinate:
+			glog.Info("Forwarding", r)
+			to.Requests.Coordinate <- r
 			// Responses
 		case r := <-from.Responses.Prepare:
 			glog.Info("Forwarding", r)
@@ -219,6 +252,9 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 		case r := <-from.Responses.Query:
 			glog.Info("Forwarding", r)
 			to.Responses.Query <- r
+		case r := <-from.Responses.Coordinate:
+			glog.Info("Forwarding", r)
+			to.Responses.Coordinate <- r
 		}
 
 	}
@@ -241,12 +277,14 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 			make(chan PrepareRequest, buf),
 			make(chan CommitRequest, buf),
 			make(chan NewViewRequest, buf),
-			make(chan QueryRequest, buf)},
+			make(chan QueryRequest, buf),
+			make(chan CoordinateRequest, buf)},
 		Responses{
 			make(chan Prepare, buf),
 			make(chan Commit, buf),
 			make(chan NewView, buf),
-			make(chan Query, buf)}}
+			make(chan Query, buf),
+			make(chan Coordinate, buf)}}
 }
 
 func MakeIo(buf int, n int) *Io {
@@ -343,6 +381,22 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.Query <- msg
+	case 9:
+		var msg CoordinateRequest
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
+		msgch.Requests.Coordinate <- msg
+	case 10:
+		var msg Coordinate
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
+		msgch.Responses.Coordinate <- msg
 	}
 }
 
@@ -405,6 +459,18 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(8), b)
+		return snd, err
+
+	case msg := <-msgch.Requests.Coordinate:
+		glog.Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(9), b)
+		return snd, err
+
+	case msg := <-msgch.Responses.Coordinate:
+		glog.Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(10), b)
 		return snd, err
 	}
 }

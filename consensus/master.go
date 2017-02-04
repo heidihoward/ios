@@ -69,8 +69,13 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 			} else {
 				index++
 				glog.Info("Request assigned index: ", index)
-				ok := RunCoordinator(view, index, []msgs.ClientRequest{req}, io, config, true)
-				if !ok {
+				// ok := RunCoordinator(view, index, []msgs.ClientRequest{req}, io, config, true)
+				entry := msgs.Entry{view, false, []msgs.ClientRequest{req}}
+				coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
+				io.OutgoingUnicast[config.ID].Requests.Coordinate <- coord
+				reply := <-(*io).Incoming.Responses.Coordinate
+				// TODO: check msg replies to the msg we just sent
+				if !reply.Response.Success {
 					break
 				}
 				glog.Info("Finished replicating request: ", req)
@@ -118,8 +123,13 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				glog.Info("Starting to replicate ", reqs_num, " requests")
 				reqs_small := reqs[:reqs_num]
 				index++
-				ok := RunCoordinator(view, index, reqs_small, io, config, true)
-				if !ok {
+				// ok := RunCoordinator(view, index, reqs_small, io, config, true)
+				entry := msgs.Entry{view, false, reqs_small}
+				coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
+				io.OutgoingUnicast[config.ID+config.DelegateReplication].Requests.Coordinate <- coord
+				reply := <- io.Incoming.Responses.Coordinate
+				// TODO: check msg replies to the msg we just sent
+				if !reply.Response.Success {
 					break
 				}
 				glog.Info("Finished replicating requests: ", reqs_small)
