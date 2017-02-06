@@ -146,24 +146,22 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			state.Log[req.Index] = req.Entry
 			// (*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 
-			// pass to state machine if ready
-			if state.CommitIndex == req.Index-1 {
+			reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
+			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
 
-				for _, request := range req.Entry.Requests {
+			glog.Info("Response dispatched")
+
+			// pass to state machine if ready
+			for !reflect.DeepEqual(state.Log[state.CommitIndex+1],msgs.Entry{}) {
+				state.CommitIndex++
+				for _, request := range state.Log[state.CommitIndex].Requests {
 					(*io).OutgoingRequests <- request
 				}
-				state.CommitIndex++
 
-				reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
-				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
 				glog.Info("Entry Committed")
-			} else {
-
-				reply := msgs.CommitResponse{config.ID, false, state.CommitIndex}
-				(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
-				glog.Info("Entry not yet committed")
 			}
-			glog.Info("Response dispatched")
+
+
 
 		case req := <-(*io).Incoming.Requests.NewView:
 			glog.Info("New view requests received at ", config.ID, ": ", req)
