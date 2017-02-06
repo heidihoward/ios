@@ -100,7 +100,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 
 		}
 	} else {
-		glog.Info("Ready to handle request. Batch every ", config.BatchInterval, " microseconds")
+		glog.Info("Ready to handle request. Batch every ", config.BatchInterval, " milliseconds")
 		for {
 			// setup for holding requests
 			reqs := make([]msgs.ClientRequest, config.MaxBatch)
@@ -109,7 +109,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 			// start collecting requests
 			timeout := make(chan bool, 1)
 			go func() {
-				<-time.After(time.Microsecond * time.Duration(config.BatchInterval))
+				<-time.After(time.Millisecond * time.Duration(config.BatchInterval))
 				timeout <- true
 			}()
 
