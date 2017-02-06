@@ -131,11 +131,11 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			// check sender is master
-			if req.SenderID != state.MasterID {
-				glog.Warning("Sender is not master")
-				break
-			}
+			// // check sender is master
+			// if req.SenderID != state.MasterID {
+			// 	glog.Warning("Sender is not master")
+			// 	break
+			// }
 
 			// add entry
 			if req.Index > state.LastIndex {
