@@ -156,9 +156,8 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				state.CommitIndex++
 				for _, request := range state.Log[state.CommitIndex].Requests {
 					(*io).OutgoingRequests <- request
+					glog.Info("Request Committed: ",request)
 				}
-
-				glog.Info("Entry Committed")
 			}
 
 

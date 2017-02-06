@@ -213,6 +213,7 @@ func main() {
 
 				// try to establish a new connection
 				for {
+					conn.Close()
 					conn, leader, err = connect(conf.Addresses.Address, leader+1, conf.Parameters.Retries)
 					if err == nil {
 						break
