@@ -89,12 +89,12 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			}
 
 			// check sender is master
-			if req.SenderID != state.MasterID {
-				glog.Warningf("Sender (ID %d) is the not master (ID %d)", req.SenderID, state.MasterID)
-				reply := msgs.PrepareResponse{config.ID, false}
-				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.Prepare{req, reply}
-				break
-			}
+			// if req.SenderID != state.MasterID {
+			// 	glog.Warningf("Sender (ID %d) is the not master (ID %d)", req.SenderID, state.MasterID)
+			// 	reply := msgs.PrepareResponse{config.ID, false}
+			// 	(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.Prepare{req, reply}
+			// 	break
+			// }
 
 			// add entry
 			if req.Index > state.LastIndex {
