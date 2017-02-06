@@ -80,12 +80,14 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
 				io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
 				// TODO: BUG: need to handle coordinator failure
-				reply := <-(*io).Incoming.Responses.Coordinate
-				// TODO: check msg replies to the msg we just sent
-				if !reply.Response.Success {
-					break
-				}
-				// glog.Info("Finished replicating request: ", req)
+				go func() {
+					reply := <-(*io).Incoming.Responses.Coordinate
+					// TODO: check msg replies to the msg we just sent
+					if !reply.Response.Success {
+						glog.Warning("Commit unsuccessful")
+					}
+					glog.Info("Finished replicating request: ", req)
+				}()
 
 				// rotate coordinator is nessacary
 				if config.DelegateReplication > 1 {
@@ -142,13 +144,14 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				entry := msgs.Entry{view, false, reqs_small}
 				coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
 				io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
-				reply := <- io.Incoming.Responses.Coordinate
-				// TODO: check msg replies to the msg we just sent
-				if !reply.Response.Success {
-					break
-				}
-				glog.Info("Finished replicating requests: ", reqs_small)
-
+				go func() {
+					reply := <- io.Incoming.Responses.Coordinate
+					// TODO: check msg replies to the msg we just sent
+					if !reply.Response.Success {
+						glog.Warning("Commit unsuccessful")
+					}
+					glog.Info("Finished replicating requests: ", reqs_small)
+				} ()
 				// rotate coordinator is nessacary
 				if config.DelegateReplication > 1 {
 					coordinator += 1
