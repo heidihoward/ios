@@ -80,11 +80,11 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
 				io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
 				// TODO: BUG: need to handle coordinator failure
-				// reply := <-(*io).Incoming.Responses.Coordinate
+				reply := <-(*io).Incoming.Responses.Coordinate
 				// TODO: check msg replies to the msg we just sent
-				// if !reply.Response.Success {
-				// 	break
-				// }
+				if !reply.Response.Success {
+					break
+				}
 				// glog.Info("Finished replicating request: ", req)
 
 				// rotate coordinator is nessacary
@@ -142,11 +142,11 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				entry := msgs.Entry{view, false, reqs_small}
 				coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
 				io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
-				// reply := <- io.Incoming.Responses.Coordinate
-				// // TODO: check msg replies to the msg we just sent
-				// if !reply.Response.Success {
-				// 	break
-				// }
+				reply := <- io.Incoming.Responses.Coordinate
+				// TODO: check msg replies to the msg we just sent
+				if !reply.Response.Success {
+					break
+				}
 				glog.Info("Finished replicating requests: ", reqs_small)
 
 				// rotate coordinator is nessacary
