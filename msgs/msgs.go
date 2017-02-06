@@ -366,22 +366,6 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.NewView <- msg
 	case 7:
-		var msg QueryRequest
-		err := Unmarshal(b[1:], &msg)
-		if err != nil {
-			glog.Fatal("Cannot parse message", err)
-		}
-		glog.Info("Unmarshalled ", msg)
-		msgch.Requests.Query <- msg
-	case 8:
-		var msg Query
-		err := Unmarshal(b[1:], &msg)
-		if err != nil {
-			glog.Fatal("Cannot parse message", err)
-		}
-		glog.Info("Unmarshalled ", msg)
-		msgch.Responses.Query <- msg
-	case 9:
 		var msg CoordinateRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
@@ -389,7 +373,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Requests.Coordinate <- msg
-	case 10:
+	case 8:
 		var msg Coordinate
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
@@ -397,6 +381,22 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.Coordinate <- msg
+	case 9:
+		var msg QueryRequest
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
+		msgch.Requests.Query <- msg
+	case 10:
+		var msg Query
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Fatal("Cannot parse message", err)
+		}
+		glog.Info("Unmarshalled ", msg)
+		msgch.Responses.Query <- msg
 	}
 }
 
@@ -449,25 +449,25 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 		snd := appendr(byte(6), b)
 		return snd, err
 
-	case msg := <-msgch.Requests.Query:
+	case msg := <-msgch.Requests.Coordinate:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(7), b)
 		return snd, err
 
-	case msg := <-msgch.Responses.Query:
+	case msg := <-msgch.Responses.Coordinate:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(8), b)
 		return snd, err
 
-	case msg := <-msgch.Requests.Coordinate:
+	case msg := <-msgch.Requests.Query:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(9), b)
 		return snd, err
 
-	case msg := <-msgch.Responses.Coordinate:
+	case msg := <-msgch.Responses.Query:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(10), b)
