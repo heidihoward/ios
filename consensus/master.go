@@ -57,7 +57,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 	if config.DelegateReplication > 0 {
 		coordinator += 1
 	}
-
+	window_start := index
 
 	if config.BatchInterval == 0 {
 		glog.Info("Ready to handle requests. No batching enabled")
@@ -73,8 +73,14 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				io.OutgoingRequests <- req
 				glog.Info("Read-only request was handled without replication: ", req)
 			} else {
+
+				//wait for window slot
+				for index > window_start + config.WindowSize {
+					time.Sleep(100 * time.Millisecond)
+				}
 				index++
 				glog.Info("Request assigned index: ", index)
+
 				// ok := RunCoordinator(view, index, []msgs.ClientRequest{req}, io, config, true)
 				entry := msgs.Entry{view, false, []msgs.ClientRequest{req}}
 				coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
@@ -87,6 +93,12 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 						glog.Warning("Commit unsuccessful")
 					}
 					glog.Info("Finished replicating request: ", req)
+					if reply.Request.Index==window_start+1{
+						window_start += 1
+					} else {
+						// TODO: BUG: handle out-of-order commitment
+						glog.Fatal("STUB: to implement")
+					}
 				}()
 
 				// rotate coordinator is nessacary

@@ -23,6 +23,7 @@ type Config struct {
 	BatchInterval int // how often to batch process request in ms, 0 means no batching
 	MaxBatch      int // maximum requests in a batch, unused if BatchInterval=0
 	DelegateReplication  int // how many replication coordinators to delegate to when leading
+	WindowSize  int // how many requests can the master have inflight at once
 }
 
 // Init runs the consensus algorithm.

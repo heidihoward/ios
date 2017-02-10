@@ -10,10 +10,11 @@ type ServerConfig struct {
 		Address []string
 	}
 	Options struct {
-		Length        int
-		BatchInterval int
-		MaxBatch      int
+		Length        			int
+		BatchInterval 			int
+		MaxBatch      			int
 		DelegateReplication int
+		WindowSize 					int
 	}
 }
 

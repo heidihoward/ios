@@ -463,7 +463,7 @@ func main() {
 		log_max_length = conf.Options.Length
 	}
 	cons_config := consensus.Config{*id, len(conf.Peers.Address),
-		log_max_length, conf.Options.BatchInterval, conf.Options.MaxBatch, conf.Options.DelegateReplication}
+		log_max_length, conf.Options.BatchInterval, conf.Options.MaxBatch, conf.Options.DelegateReplication, conf.Options.WindowSize}
 	if !found {
 		glog.Info("Starting fresh consensus instance")
 		go consensus.Init(cons_io, cons_config)
