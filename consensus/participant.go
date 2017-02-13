@@ -146,11 +146,6 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			state.Log[req.Index] = req.Entry
 			// (*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 
-			reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
-			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
-
-			glog.Info("Response dispatched")
-
 			// pass to state machine if ready
 			for !reflect.DeepEqual(state.Log[state.CommitIndex+1],msgs.Entry{}) {
 				state.CommitIndex++
@@ -160,6 +155,10 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				}
 			}
 
+			reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
+			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
+
+			glog.Info("Response dispatched")
 
 
 		case req := <-(*io).Incoming.Requests.NewView:

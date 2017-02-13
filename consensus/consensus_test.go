@@ -15,7 +15,7 @@ func TestInit(t *testing.T) {
 
 	// create a node in system of 3 nodes
 	io := msgs.MakeIo(10, 3)
-	conf := Config{0, 3, 1000, 0, 0}
+	conf := Config{0, 3, 1000, 0, 0,0,1}
 	go Init(io, conf)
 
 	// TEST 1 - SIMPLE COMMIT
