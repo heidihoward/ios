@@ -61,7 +61,7 @@ func TestSimulator(t *testing.T) {
 
 	checkRequest(t, request3, ios, 0)
 
-	//check failure recovery
+	//check failure recovery by notifying node 1 that node 0 has failed
 	ios[1].Failure <- 0
 
 	request4 := msgs.ClientRequest{
@@ -72,7 +72,7 @@ func TestSimulator(t *testing.T) {
 
 	checkRequest(t, request4, ios, 1)
 
-	//check 2nd failure
+	//check 2nd failure by notifying node 2 that node 1 has failed
 	ios[2].Failure <- 1
 
 	request5 := msgs.ClientRequest{
