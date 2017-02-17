@@ -4,7 +4,6 @@
 [![Build Status](https://travis-ci.org/heidi-ann/ios.svg?branch=master)](https://travis-ci.org/heidi-ann/ios)
 [![Go Report Card](https://goreportcard.com/badge/github.com/heidi-ann/ios)](https://goreportcard.com/report/github.com/heidi-ann/ios)
 [![GoDoc](https://godoc.org/github.com/heidi-ann/ios?status.svg)](https://godoc.org/github.com/heidi-ann/ios)
-[![Coverage Status](https://coveralls.io/repos/github/heidi-ann/ios/badge.svg?branch=master)](https://coveralls.io/github/heidi-ann/ios?branch=master)
 
 Welcome to Ios, a distributed and strongly consistent key-value store, built upon a novel delegated and decentralised consensus protocol.
 
