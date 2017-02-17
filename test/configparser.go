@@ -5,23 +5,21 @@ import (
 	"gopkg.in/gcfg.v1"
 )
 
-type Commands struct {
-	Reads     int
-	Conflicts int
-	Interval  int
-}
-
-type Termination struct {
-	Requests int
-}
-
 type ConfigAuto struct {
-	Commands    Commands
-	Termination Termination
+	Reads     int // percentage of read requests
+	Interval  int // milliseconand delay between client request and response
+	KeySize   int // size of key for generated requests, unit is string characters
+	ValueSize int // size of value for generated requests, unit is string characters
+	Requests  int // terminate after this number of requests
+	Keys      int // number of keys to operate on
 }
 
-func ParseAuto(filename string) ConfigAuto {
-	var config ConfigAuto
+type WorkloadConfig struct {
+	Config ConfigAuto
+}
+
+func ParseAuto(filename string) WorkloadConfig {
+	var config WorkloadConfig
 	err := gcfg.ReadFileInto(&config, filename)
 	if err != nil {
 		glog.Fatalf("Failed to parse gcfg data: %s", err)

@@ -1,32 +1,26 @@
 package test
 
 import (
-	"strconv"
 	"strings"
 	"testing"
 )
 
-func checkKey(t *testing.T, str string) {
-	key, err := strconv.Atoi(str)
-	if err != nil {
-		t.Errorf("Misformatted key: '%s'", str)
+func checkKey(t *testing.T, str string, key string) {
+	if key != str {
+		t.Errorf("Invalid key: '%s' '%s'", str, key)
 	}
-	if !(key >= 0 && key <= 9) {
-		t.Errorf("Invalid key: '%s'", str)
+	if len(str)!= 8 {
+		t.Errorf("Wrong key length")
 	}
 }
 
 func checkValue(t *testing.T, str string) {
-	val, err := strconv.Atoi(str)
-	if err != nil {
-		t.Errorf("Misformatted value: '%s'", str)
-	}
-	if val != 7 {
+	if len(str) != 8 {
 		t.Errorf("Invalid value: '%s'", str)
 	}
 }
 
-func checkFormat(t *testing.T, req string) {
+func checkFormat(t *testing.T, req string, key string) {
 	request := strings.Split(strings.Trim(req, "\n"), " ")
 
 	switch request[0] {
@@ -34,13 +28,13 @@ func checkFormat(t *testing.T, req string) {
 		if len(request) != 3 {
 			t.Errorf("Misformatted update request: '%s'", req)
 		}
-		checkKey(t, request[1])
+		checkKey(t, request[1],key)
 		checkValue(t, request[2])
 	case "get":
 		if len(request) != 2 {
 			t.Errorf("Misformatted get request: '%s'", req)
 		}
-		checkKey(t, request[1])
+		checkKey(t, request[1],key)
 	default:
 		t.Errorf("Request is neither get or update: '%s'", req)
 	}
@@ -48,23 +42,23 @@ func checkFormat(t *testing.T, req string) {
 
 // check that the generator is producing valid commands
 func TestGenerate(t *testing.T) {
-	conf := ConfigAuto{
-		Commands{50, 3, 0},
-		Termination{20},
-	}
+	conf := WorkloadConfig{ConfigAuto{50, 0, 8 ,8, 20, 1}}
 
 	gen := Generate(conf)
-
+	key := ""
 	for i := 0; i < 100; i++ {
 		str, _, ok := gen.Next()
 		if !ok {
-			if conf.Termination.Requests != i {
+			if conf.Config.Requests != i {
 				t.Errorf("Generator terminated a request %d, should terminate at %d",
-					i, conf.Termination.Requests)
+					i, conf.Config.Requests)
 			}
 			break
 		}
-		checkFormat(t, str)
+		if i==0 {
+			key=strings.Split(strings.Trim(str, "\n"), " ")[1]
+		}
+		checkFormat(t, str, key)
 	}
 
 }
