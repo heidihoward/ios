@@ -66,6 +66,7 @@ func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
 
 			//if unsuccessful
 			glog.Warning(err)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 
