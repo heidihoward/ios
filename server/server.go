@@ -38,8 +38,6 @@ type Peer struct {
 var peers []Peer
 var peers_mutex sync.RWMutex
 
-var client_port = flag.Int("client-port", 8080, "port to listen on for clients")
-var peer_port = flag.Int("peer-port", 8090, "port to listen on for peers")
 var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
 var disk_path = flag.String("disk", ".", "Path to directory to store persistent storage")
@@ -342,7 +340,7 @@ func main() {
 			if log_length < update.Index {
 				log_length = update.Index
 			}
-			glog.Info("Adding for persistent storage :", update)
+			glog.Info("Adding from persistent storage :", update)
 		}
 	}
 	log = log[:log_length]
@@ -398,7 +396,8 @@ func main() {
 
 	// set up client server
 	glog.Info("Starting up client server")
-	listeningPort := ":" + strconv.Itoa(*client_port)
+	client_port := strings.Split(conf.Clients.Address[*id],":")[1]
+	listeningPort := ":" + client_port
 	ln, err := net.Listen("tcp", listeningPort)
 	if err != nil {
 		glog.Fatal(err)
@@ -425,7 +424,8 @@ func main() {
 
 	//set up peer server
 	glog.Info("Starting up peer server")
-	listeningPort = ":" + strconv.Itoa(*peer_port)
+	peer_port := strings.Split(conf.Peers.Address[*id],":")[1]
+	listeningPort = ":" + peer_port
 	lnPeers, err := net.Listen("tcp", listeningPort)
 	if err != nil {
 		glog.Fatal(err)

@@ -6,23 +6,6 @@ import (
 	"reflect"
 )
 
-type State struct {
-	View        int // local view number
-	Log         []msgs.Entry
-	CommitIndex int
-	MasterID    int
-	LastIndex   int
-}
-
-func mod(x int, y int) int {
-	dif := x - y
-	if dif < y {
-		return x
-	} else {
-		return mod(dif, y)
-	}
-}
-
 // check protocol invariant
 func checkInvariant(log []msgs.Entry, index int, nxtEntry msgs.Entry) {
 	prevEntry := log[index]
@@ -48,10 +31,15 @@ func MonitorMaster(s *State, io *msgs.Io, config Config) {
 		if failed == (*s).MasterID {
 			nextMaster := mod((*s).View+1, config.N)
 			glog.Warningf("Master (ID:%d) failed, next up is ID:%d", (*s).MasterID, nextMaster)
+			(*s).MasterID = nextMaster
 			if nextMaster == config.ID {
 				glog.Info("Starting new master at ", config.ID)
 				(*s).View++
-				// TODO: BUG need to write to disk
+				(*io).ViewPersist <- (*s).View
+				written := <-(*io).ViewPersistFsync
+				if written != (*s).View {
+					glog.Fatal("Did not persistent view change")
+				}
 				(*s).MasterID = nextMaster
 				go RunMaster((*s).View, (*s).CommitIndex, false, io, config)
 			}
@@ -83,7 +71,10 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				// BUG: wait until view has been synced
+				written := <-(*io).ViewPersistFsync
+				if written != state.View {
+					glog.Fatal("Did not persistent view change")
+				}
 				(*io).ViewPersist <- state.View
 				state.MasterID = mod(state.View, config.N)
 			}
@@ -126,8 +117,11 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				// BUG: wait until view has been synced
 				(*io).ViewPersist <- state.View
+				written := <-(*io).ViewPersistFsync
+				if written != state.View {
+					glog.Fatal("Did not persistent view change")
+				}
 				state.MasterID = mod(state.View, config.N)
 			}
 
@@ -174,8 +168,11 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				// BUG: wait until view has been synced
 				(*io).ViewPersist <- state.View
+				written := <-(*io).ViewPersistFsync
+				if written != state.View {
+					glog.Fatal("Did not persistent view change")
+				}
 				state.MasterID = mod(state.View, config.N)
 			}
 
@@ -196,8 +193,11 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				// BUG: wait until view has been synced
 				(*io).ViewPersist <- state.View
+				written := <-(*io).ViewPersistFsync
+				if written != state.View {
+					glog.Fatal("Did not persistent view change")
+				}
 				state.MasterID = mod(state.View, config.N)
 			}
 

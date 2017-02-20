@@ -1,13 +1,4 @@
 //Package consensus implements the Unanimous local replication algorithm.
-/*
-This is INCOMPLETE as it currently:
-	- assumes that all state is persistent
-	- master does not recovery and assumes 3 is the last index allocated
-	- master does all of its own coordination
-	- master handles only 1 request at a time
-	- log size is limited to 1000 entries
-*/
-
 package consensus
 
 import (
@@ -26,6 +17,15 @@ type Config struct {
 	WindowSize  int // how many requests can the master have inflight at once
 }
 
+type State struct {
+	View        int // local view number (persistent)
+	Log         []msgs.Entry // log entries, index from 0 (persistent)
+	CommitIndex int // index of the last entry applied to the state machine, -1 means no entries have been applied yet
+	MasterID    int // ID of the current master, calculated from View
+	LastIndex   int // index of the last entry in the log, -1 means that the log has no entries
+}
+
+
 // Init runs the consensus algorithm.
 // It will not return until the application is terminated.
 func Init(io *msgs.Io, config Config) {
@@ -40,8 +40,12 @@ func Init(io *msgs.Io, config Config) {
 		LastIndex:   -1}
 
 	// write initial term to persistent storage
-	// BUG: wait until view has been fsynced
+	// TODO: if not master then we need not wait until view has been fsynced
 	(*io).ViewPersist <- 0
+	written := <-(*io).ViewPersistFsync
+	if written != 0 {
+		glog.Fatal("Did not persistent view change")
+	}
 
 	// if master, start master goroutine
 	if config.ID == 0 {
@@ -62,14 +66,13 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 
 	new_log := make([]msgs.Entry, config.LogLength)
 	copy(new_log, log)
+	// restore previous state
 	state := State{
-		View:        view + 1,
+		View:        view,
 		Log:         new_log,
 		CommitIndex: -1,
 		MasterID:    mod(view, config.N),
 		LastIndex:   len(log) - 1}
-	// BUG: wait until view has been fsynced
-	(*io).ViewPersist <- state.View
 
 	// apply recovered requests to state machine
 	for i := 0; i <= state.LastIndex; i++ {
@@ -83,10 +86,9 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 		}
 	}
 
-	// if master, start master goroutine
-	if config.ID == state.MasterID {
-		glog.Info("Starting leader module")
-		go RunMaster(state.View, state.CommitIndex, false, io, config)
+	//  do not start leader without view change
+	if state.MasterID==config.ID {
+			io.Failure <- config.ID
 	}
 
 	// operator as normal node

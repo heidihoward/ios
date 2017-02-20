@@ -42,7 +42,17 @@ func TestInit(t *testing.T) {
 		SenderID: 0,
 		Success:  true}
 
-	time.After(time.Second)
+  // check view update is persisted
+	select {
+	case view_update := <-(*io).ViewPersist:
+			if view_update != 0 {
+				t.Error(view_update)
+			}
+			(*io).ViewPersistFsync <- view_update
+		case <-time.After(time.Second):
+			t.Error("Participant not responding")
+		}
+
 	(*io).Incoming.Requests.Prepare <- prepare1
 
 	// check node tried to dispatch request correctly

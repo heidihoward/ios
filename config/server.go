@@ -9,6 +9,9 @@ type ServerConfig struct {
 	Peers struct {
 		Address []string
 	}
+	Clients struct {
+			Address []string
+		}
 	Options struct {
 		Length        			int
 		BatchInterval 			int
