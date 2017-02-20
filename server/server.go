@@ -142,7 +142,7 @@ func checkPeer() {
 				go handlePeer(cn, true)
 			}
 		} else {
-			glog.Info("Peer ", i, " is currently connected")
+			//glog.Info("Peer ", i, " is currently connected")
 		}
 	}
 }
@@ -453,7 +453,7 @@ func main() {
 	go func() {
 		for {
 			checkPeer()
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 		}
 	}()
 
