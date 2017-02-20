@@ -106,7 +106,12 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 
 	// CONSENESUS ALGORITHM HERE
 	glog.Info("Passing request to consensus algorithm")
-	cons_io.IncomingRequests <- req
+	if req.ForceViewChange {
+			cons_io.IncomingRequestsForced <- req
+	} else {
+			cons_io.IncomingRequests <- req
+	}
+
 
 	// wait for reply
 	notifyclient_mutex.Lock()

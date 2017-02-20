@@ -25,6 +25,7 @@ func TestInit(t *testing.T) {
 		ClientID:  2,
 		RequestID: 0,
 		Replicate: true,
+		ForceViewChange: false,
 		Request:   "update A 3"}}
 
 	entry1 := msgs.Entry{

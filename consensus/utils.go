@@ -12,3 +12,8 @@ func mod(x int, y int) int {
 		return mod(dif, y)
 	}
 }
+
+func next(view int, id int, n int) int {
+	round := view/n
+	return (round+1)*n + id
+}

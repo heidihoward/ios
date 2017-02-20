@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var noop = msgs.ClientRequest{-1, -1, true, "noop"}
+var noop = msgs.ClientRequest{-1, -1, true, false, "noop"}
 
 // RunMaster implements the Master mode
 func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Config) {

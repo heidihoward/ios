@@ -183,15 +183,6 @@ func main() {
 			}
 			glog.Info("Request ", requestID, " is: ", text)
 
-			// encode as request
-			req := msgs.ClientRequest{
-				*id, requestID, replicate, text}
-			b, err := msgs.Marshal(req)
-			if err != nil {
-				glog.Fatal(err)
-			}
-			glog.Info(string(b))
-
 			startTime := time.Now()
 			tries := 0
 
@@ -199,6 +190,20 @@ func main() {
 			var reply *msgs.ClientResponse
 			for {
 				tries++
+				force := false
+				if tries > 1 {
+					force = true
+				}
+
+				// encode as request
+				req := msgs.ClientRequest{
+					*id, requestID, replicate, force,text}
+				b, err := msgs.Marshal(req)
+				if err != nil {
+					glog.Fatal(err)
+				}
+				glog.Info(string(b))
+
 				replyBytes, err := dispatcher(b, conn, rd, timeout)
 				if err == nil {
 
@@ -214,7 +219,7 @@ func main() {
 
 				// try to establish a new connection
 				for {
-					conn.Close()
+					//conn.Close()
 					conn, leader, err = connect(conf.Addresses.Address, leader+1, conf.Parameters.Retries)
 					if err == nil {
 						break

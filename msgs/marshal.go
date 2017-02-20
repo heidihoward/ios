@@ -27,7 +27,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg PrepareRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Requests.Prepare <- msg
@@ -35,7 +35,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg CommitRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Requests.Commit <- msg
@@ -43,7 +43,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg Prepare
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.Prepare <- msg
@@ -51,7 +51,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg Commit
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.Commit <- msg
@@ -59,7 +59,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg NewViewRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Requests.NewView <- msg
@@ -67,7 +67,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg NewView
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.NewView <- msg
@@ -75,7 +75,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg CoordinateRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Requests.Coordinate <- msg
@@ -83,7 +83,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg Coordinate
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.Coordinate <- msg
@@ -91,7 +91,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg QueryRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Requests.Query <- msg
@@ -99,10 +99,12 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg Query
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Fatal("Cannot parse message", err)
+			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.Query <- msg
+	default:
+    glog.Warning("Cannot parse message")
 	}
 }
 
