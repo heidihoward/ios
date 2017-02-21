@@ -25,45 +25,7 @@ func checkInvariant(log []msgs.Entry, index int, nxtEntry msgs.Entry) {
 
 // PROTOCOL BODY
 
-func MonitorMaster(s *State, io *msgs.Io, config Config) {
-	for {
-		select {
-		case failed := <-io.Failure:
-			if failed == (*s).MasterID {
-				nextMaster := mod((*s).View+1, config.N)
-				glog.Warningf("Master (ID:%d) failed, next up is ID:%d", (*s).MasterID, nextMaster)
-				(*s).MasterID = nextMaster
-				if nextMaster == config.ID {
-					glog.Info("Starting new master at ", config.ID)
-					(*s).View++
-					(*io).ViewPersist <- (*s).View
-					written := <-(*io).ViewPersistFsync
-					if written != (*s).View {
-						glog.Fatal("Did not persistent view change")
-					}
-					(*s).MasterID = nextMaster
-					RunMaster((*s).View, (*s).CommitIndex, false, io, config)
-				}
-			}
-
-		case req := <- io.IncomingRequestsForced:
-			glog.Warning("Forcing view change")
-			s.View = next(s.View, config.ID,config.N)
-			(*io).ViewPersist <- (*s).View
-			written := <-(*io).ViewPersistFsync
-			if written != (*s).View {
-				glog.Fatal("Did not persistent view change")
-			}
-			(*s).MasterID = config.ID
-			io.IncomingRequests <- req
-			RunMaster((*s).View, (*s).CommitIndex, false, io, config)
-		}
-	}
-}
-
-func RunParticipant(state State, io *msgs.Io, config Config) {
-	go MonitorMaster(&state, io, config)
-
+func RunParticipant(state *State, io *msgs.Io, config Config) {
 	glog.Info("Ready for requests")
 	for {
 

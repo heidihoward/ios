@@ -13,6 +13,7 @@ type ClientRequest struct {
 type ClientResponse struct {
 	ClientID  int
 	RequestID int
+	Success bool
 	Response  string
 }
 

@@ -52,7 +52,7 @@ func DoCoordination(view int, index int, entry msgs.Entry, io *msgs.Io, config C
 }
 
 // returns true if successful
-func RunCoordinator(state State, io *msgs.Io, config Config) {
+func RunCoordinator(state *State, io *msgs.Io, config Config) {
 	glog.Info("Coordinator is ready to handle requests")
 
 	for {

@@ -8,6 +8,53 @@ import (
 
 var noop = msgs.ClientRequest{-1, -1, true, false, "noop"}
 
+func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
+
+	// if initial master, start master goroutine
+	if config.ID == 0 && new {
+		glog.Info("Starting leader module")
+		RunMaster(0, -1, true, io, config)
+	}
+
+	for {
+		select {
+		case failed := <-io.Failure:
+			if failed == (*s).MasterID {
+				nextMaster := mod((*s).View+1, config.N)
+				glog.Warningf("Master (ID:%d) failed, next up is ID:%d", (*s).MasterID, nextMaster)
+				(*s).MasterID = nextMaster
+				if nextMaster == config.ID {
+					glog.Info("Starting new master at ", config.ID)
+					(*s).View++
+					(*io).ViewPersist <- (*s).View
+					written := <-(*io).ViewPersistFsync
+					if written != (*s).View {
+						glog.Fatal("Did not persistent view change")
+					}
+					(*s).MasterID = nextMaster
+					RunMaster((*s).View, (*s).CommitIndex, false, io, config)
+				}
+			}
+
+		case req := <- io.IncomingRequestsForced:
+			glog.Warning("Forcing view change")
+			s.View = next(s.View, config.ID,config.N)
+			(*io).ViewPersist <- (*s).View
+			written := <-(*io).ViewPersistFsync
+			if written != (*s).View {
+				glog.Fatal("Did not persistent view change")
+			}
+			(*s).MasterID = config.ID
+			io.IncomingRequests <- req
+			RunMaster((*s).View, (*s).CommitIndex, false, io, config)
+
+		case req := <- io.IncomingRequests:
+			glog.Warning("Request recieved by non-master server", req)
+			io.OutgoingRequestsFailed <- req
+		}
+	}
+}
+
 // RunMaster implements the Master mode
 func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Config) {
 	// setup

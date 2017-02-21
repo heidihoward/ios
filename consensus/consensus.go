@@ -47,16 +47,11 @@ func Init(io *msgs.Io, config Config) {
 		glog.Fatal("Did not persistent view change")
 	}
 
-	// if master, start master goroutine
-	if config.ID == 0 {
-		glog.Info("Starting leader module")
-		go RunMaster(0, -1, true, io, config)
-	}
-
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
-	go RunCoordinator(state, io, config)
-	RunParticipant(state, io, config)
+	go RunCoordinator(&state, io, config)
+	go MonitorMaster(&state, io, config, true)
+	RunParticipant(&state, io, config)
 
 }
 
@@ -93,7 +88,8 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
-	go RunCoordinator(state, io, config)
-	RunParticipant(state, io, config)
+	go RunCoordinator(&state, io, config)
+	go MonitorMaster(&state, io, config, false)
+	RunParticipant(&state, io, config)
 
 }

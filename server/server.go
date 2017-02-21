@@ -67,23 +67,34 @@ func openFile(filename string) (*bufio.Writer, *bufio.Reader, *os.File, bool) {
 
 func stateMachine() {
 	for {
-		req := <-cons_io.OutgoingRequests
-		glog.Info("Request has been safely replicated by consensus algorithm", req)
+		var req msgs.ClientRequest
+		var reply msgs.ClientResponse
 
-		// check if request already applied
-		found, reply := c.Check(req)
-		if found {
-			glog.Info("Request found in cache and thus cannot be applied")
-		} else {
-			// apply request
-			output := keyval.Process(req.Request)
-			//keyval.Print()
+		select {
+		case req = <-cons_io.OutgoingRequests:
+			glog.Info("Request has been safely replicated by consensus algorithm", req)
 
-			// write response to request cache
+			// check if request already applied
+			var found bool
+			found, reply = c.Check(req)
+			if found {
+				glog.Info("Request found in cache and thus cannot be applied")
+			} else {
+				// apply request
+				output := keyval.Process(req.Request)
+				//keyval.Print()
+
+				// write response to request cache
+				reply = msgs.ClientResponse{
+					req.ClientID, req.RequestID, true, output}
+				c.Add(reply)
+			}
+		case req = <- cons_io.OutgoingRequestsFailed:
+			glog.Info("Request could not been safely replicated by consensus algorithm", req)
 			reply = msgs.ClientResponse{
-				req.ClientID, req.RequestID, output}
-			c.Add(reply)
+				req.ClientID, req.RequestID, false, ""}
 		}
+
 
 		// if any handleRequests are waiting on this reply, then reply to them
 		notifyclient_mutex.Lock()

@@ -211,6 +211,10 @@ func main() {
 					reply = new(msgs.ClientResponse)
 					err = msgs.Unmarshal(replyBytes, reply)
 
+				  if err == nil && !reply.Success {
+						errors.New("request marked by server as unsuccessful")
+					}
+
 					if err == nil {
 						break
 					}
