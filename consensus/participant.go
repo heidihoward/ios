@@ -42,7 +42,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config) {
 						glog.Fatal("Did not persistent view change")
 					}
 					(*s).MasterID = nextMaster
-					go RunMaster((*s).View, (*s).CommitIndex, false, io, config)
+					RunMaster((*s).View, (*s).CommitIndex, false, io, config)
 				}
 			}
 
@@ -56,7 +56,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config) {
 			}
 			(*s).MasterID = config.ID
 			io.IncomingRequests <- req
-			go RunMaster((*s).View, (*s).CommitIndex, false, io, config)
+			RunMaster((*s).View, (*s).CommitIndex, false, io, config)
 		}
 	}
 }
@@ -92,14 +92,6 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			// check sender is master
-			// if req.SenderID != state.MasterID {
-			// 	glog.Warningf("Sender (ID %d) is the not master (ID %d)", req.SenderID, state.MasterID)
-			// 	reply := msgs.PrepareResponse{config.ID, false}
-			// 	(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.Prepare{req, reply}
-			// 	break
-			// }
-
 			// add entry
 			if req.Index > state.LastIndex {
 				state.LastIndex = req.Index
@@ -115,34 +107,11 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 
 			// reply
 			reply := msgs.PrepareResponse{config.ID, true}
-			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Prepare <- msgs.Prepare{req, reply}
+			(io.OutgoingUnicast[req.SenderID]).Responses.Prepare <- msgs.Prepare{req, reply}
 			glog.Info("Response dispatched: ", reply)
 
 		case req := <-(*io).Incoming.Requests.Commit:
 			glog.Info("Commit requests received at ", config.ID, ": ", req)
-			// check view
-			if req.View < state.View {
-				glog.Warning("Sender is behind")
-				break
-
-			}
-
-			if req.View > state.View {
-				glog.Warning("Participant is behind")
-				state.View = req.View
-				(*io).ViewPersist <- state.View
-				written := <-(*io).ViewPersistFsync
-				if written != state.View {
-					glog.Fatal("Did not persistent view change")
-				}
-				state.MasterID = mod(state.View, config.N)
-			}
-
-			// // check sender is master
-			// if req.SenderID != state.MasterID {
-			// 	glog.Warning("Sender is not master")
-			// 	break
-			// }
 
 			// add entry
 			if req.Index > state.LastIndex {
@@ -151,7 +120,7 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 				checkInvariant(state.Log, req.Index, req.Entry)
 			}
 			state.Log[req.Index] = req.Entry
-			// (*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
+			io.LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 
 			// pass to state machine if ready
 			for !reflect.DeepEqual(state.Log[state.CommitIndex+1],msgs.Entry{}) {
@@ -163,10 +132,8 @@ func RunParticipant(state State, io *msgs.Io, config Config) {
 			}
 
 			reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
-			(*(*io).OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
-
+			(io.OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
 			glog.Info("Response dispatched")
-
 
 		case req := <-(*io).Incoming.Requests.NewView:
 			glog.Info("New view requests received at ", config.ID, ": ", req)

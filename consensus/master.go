@@ -61,7 +61,11 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 
 	for {
 		glog.Info("Ready to handle request")
-		req1 := <-io.IncomingRequests
+		var req1 msgs.ClientRequest
+		select {
+		case req1 = <-io.IncomingRequests:
+		case req1 = <-io.IncomingRequestsForced:
+		}
 		glog.Info("Request received: ", req1)
 		var reqs []msgs.ClientRequest
 

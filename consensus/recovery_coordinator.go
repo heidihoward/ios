@@ -16,12 +16,14 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 
 	// collect responses
 	var candidate *msgs.Entry
+	replied := make([]bool,config.N) //check only one response is received per sender, index= node ID
 
-	for n := 0; n < majority; n++ {
+	for n := 0; n < majority; {
 		msg := <-(*io).Incoming.Responses.Query
-		if msg.Request == query {
+		if msg.Request == query && !replied[msg.Response.SenderID] && msg.Response.View==view {
 			res := msg.Response
-			// TODO: check term and sender
+			replied[msg.Response.SenderID] = true
+
 			if res.Present {
 				// if committed, then done
 				if res.Entry.Committed {
@@ -41,7 +43,10 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 
 				// if same view and different requests then panic!
 				if res.Entry.View == (*candidate).View && !reflect.DeepEqual(res.Entry.Requests, candidate.Requests) {
-					glog.Fatal("Same index has been issued more then once")
+					glog.Fatal("Same index has been issued more then once", res.Entry.Requests, candidate.Requests )
+
+				// update count
+				n++
 				}
 			}
 		}

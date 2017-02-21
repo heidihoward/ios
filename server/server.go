@@ -138,11 +138,11 @@ func checkPeer() {
 		failed := !peers[i].handled
 		peers_mutex.RUnlock()
 		if failed {
-			glog.Info("Peer ", i, " is not currently connected")
+			//glog.Info("Peer ", i, " is not currently connected")
 			cn, err := net.Dial("tcp", peers[i].address)
 
 			if err != nil {
-				glog.Warning(err)
+				//glog.Warning(err)
 			} else {
 				go handlePeer(cn, true)
 			}
@@ -325,7 +325,7 @@ func main() {
 
 	// check persistent storage for commands
 	found := false
-	log := make([]msgs.Entry, 10000) // TODO: Remove hard coded limit
+	log := make([]msgs.Entry, conf.Options.Length) // TODO: Remove hard coded limit
 	log_length := 0
 
 	if !is_empty {

@@ -41,7 +41,7 @@ type Prepare struct {
 
 type CommitRequest struct {
 	SenderID int
-	View     int
+	View     int // TODO: remove view
 	Index    int
 	Entry    Entry
 }

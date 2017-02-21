@@ -95,7 +95,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		}
 		glog.Info("Unmarshalled ", msg)
 		msgch.Requests.Query <- msg
-	case 10:
+	case 0:
 		var msg Query
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
@@ -104,7 +104,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		glog.Info("Unmarshalled ", msg)
 		msgch.Responses.Query <- msg
 	default:
-    glog.Warning("Cannot parse message")
+    glog.Warning("Cannot parse message", string(b))
 	}
 }
 
@@ -178,7 +178,7 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 	case msg := <-msgch.Responses.Query:
 		glog.Info("Marshalling ", msg)
 		b, err := Marshal(msg)
-		snd := appendr(byte(10), b)
+		snd := appendr(byte(0), b)
 		return snd, err
 	}
 }
