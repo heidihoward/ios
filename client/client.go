@@ -212,7 +212,7 @@ func main() {
 					err = msgs.Unmarshal(replyBytes, reply)
 
 				  if err == nil && !reply.Success {
-						errors.New("request marked by server as unsuccessful")
+						err = errors.New("request marked by server as unsuccessful")
 					}
 
 					if err == nil {
