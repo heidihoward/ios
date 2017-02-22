@@ -55,58 +55,77 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 	}
 }
 
+// RunRecovery executes the recovery phase of leadership election,
+// Returns if it was successful and the view start index
+func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,int) {
+	majority := Majority(config.N)
+	// dispatch new view requests
+	req := msgs.NewViewRequest{config.ID, view}
+	(*io).OutgoingBroadcast.Requests.NewView <- req
+
+	// collect responses
+	glog.Info("Waiting for ", majority, " new view responses")
+	start_index := commit_index
+
+	for i := 0; i < majority; {
+		msg := <-(*io).Incoming.Responses.NewView
+		// check msg replies to the msg we just sent
+		if msg.Request == req {
+			res := msg.Response
+			if msg.Response.View != view {
+				glog.Warning("New view failed, stepping down from master")
+				return false, 0
+			}
+			glog.Info("Received ", res)
+			if res.Index > start_index {
+				start_index = res.Index
+			}
+			i++
+			glog.Info("Successful new view received, waiting for ", majority-i, " more")
+		}
+	}
+
+	glog.Info("Start index is ", start_index)
+
+	// recover entries
+	for curr_index := commit_index + 1; curr_index <= start_index; curr_index++ {
+		RunRecoveryCoordinator(view, curr_index, io, config)
+	}
+	return true, start_index
+}
+
 // RunMaster implements the Master mode
 func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master in view ", view)
 	glog.Info("Master is configured to delegate replication to ",config.DelegateReplication)
-	majority := Majority(config.N)
 
 	// determine next safe index
 	index := -1
+
 	if !initial {
-		// dispatch new view requests
-		req := msgs.NewViewRequest{config.ID, view}
-		(*io).OutgoingBroadcast.Requests.NewView <- req
-
-		// collect responses
-		glog.Info("Waiting for ", majority, " new view responses")
-		min_index := commit_index
-		// TODO: FEATURE add option to wait longer
-
-		for i := 0; i < majority; {
-			msg := <-(*io).Incoming.Responses.NewView
-			// check msg replies to the msg we just sent
-			if msg.Request == req {
-				res := msg.Response
-				glog.Info("Received ", res)
-				if res.Index > index {
-					index = res.Index
-				} else if res.Index < min_index {
-					min_index = res.Index
-				}
-				i++
-				// TODO: BUG need to check view
-				glog.Info("Successful new view received, waiting for ", majority-i, " more")
-			}
-
+		var success bool
+		success, index = RunRecovery(view,commit_index,io,config)
+		if !success {
+			glog.Warning("Recovery failed")
+			return
 		}
-		glog.Info("Index is ", index)
-
-		// recover entries
-		for curr_index := commit_index + 1; curr_index <= index; curr_index++ {
-			RunRecoveryCoordinator(view, curr_index, io, config)
-		}
-
 	}
+
 	// store the first coordinator to ask
 	coordinator := config.ID
 	if config.DelegateReplication > 0 {
 		coordinator += 1
 	}
 	window_start := index
+	step_down := false
 
 	for {
+
+		if step_down {
+			break
+		}
+
 		glog.Info("Ready to handle request")
 		var req1 msgs.ClientRequest
 		select {
@@ -118,8 +137,10 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 
 		//wait for window slot
 		//TOOD: replace with better mechanism then polling
+
 		for index > window_start + config.WindowSize {
-			time.Sleep(10 * time.Millisecond)
+			glog.Warning("Request querying for replication window")
+			time.Sleep(100 * time.Millisecond)
 		}
 
 		if config.BatchInterval == 0 || config.MaxBatch == 1 {
@@ -162,11 +183,14 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
 		io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
 		// TODO: BUG: need to handle coordinator failure
+
 		go func() {
 			reply := <-(*io).Incoming.Responses.Coordinate
 			// TODO: check msg replies to the msg we just sent
 			if !reply.Response.Success {
 				glog.Warning("Commit unsuccessful")
+				step_down = true
+				return
 			}
 			glog.Info("Finished replicating request: ", reqs)
 			if reply.Request.Index==window_start+1{

@@ -23,7 +23,7 @@ func DoCoordination(view int, index int, entry msgs.Entry, io *msgs.Io, config C
 			if reflect.DeepEqual(msg.Request, prepare) {
 				glog.Info("Received ", msg)
 				if !msg.Response.Success {
-					glog.Warning("Master is stepping down")
+					glog.Warning("Coordinator is stepping down")
 					return false
 				}
 				i++
@@ -58,10 +58,8 @@ func RunCoordinator(state *State, io *msgs.Io, config Config) {
 	for {
 		req := <-(*io).Incoming.Requests.Coordinate
 		success := DoCoordination(req.View, req.Index, req.Entry, io, config, req.Prepare)
-		if success {
-			reply := msgs.CoordinateResponse{config.ID, true}
-			(*io).OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
-		}
+		reply := msgs.CoordinateResponse{config.ID, success}
+		(*io).OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
 		// TOD0: handle failure
 	}
 }

@@ -57,9 +57,9 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 			// add entry
 			if req.Index > state.LastIndex {
 				state.LastIndex = req.Index
-			} else {
-				checkInvariant(state.Log, req.Index, req.Entry)
 			}
+			checkInvariant(state.Log, req.Index, req.Entry)
+			
 			state.Log[req.Index] = req.Entry
 			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 			last_written := <-(*io).LogPersistFsync
@@ -102,9 +102,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 
 			// check view
 			if req.View < state.View {
-				glog.Warning("Sender is behind")
-				break
-
+				glog.Warning("Sender of NewView is behind, message view ",req.View, " local view is ",state.View)
 			}
 
 			if req.View > state.View {
