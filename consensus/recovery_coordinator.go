@@ -16,11 +16,26 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 
 	// collect responses
 	var candidate *msgs.Entry
-	replied := make([]bool,config.N) //check only one response is received per sender, index= node ID
+	replied := make([]bool,config.N)
+	//check only one response is received per sender, index= node ID
+	for id := 0; id<config.N; id ++ {
+		replied[id] = false
+	}
 
 	for n := 0; n < majority; {
 		msg := <-(*io).Incoming.Responses.Query
-		if msg.Request == query && !replied[msg.Response.SenderID] && msg.Response.View==view {
+		if msg.Request == query && !replied[msg.Response.SenderID] {
+
+			// check view
+			if msg.Response.View < view {
+				glog.Fatal("Reply view is < current view, this should not have occured")
+			}
+
+			if view < msg.Response.View {
+				glog.Warning("Stepping down from recovery coordinator")
+				return false
+			}
+
 			res := msg.Response
 			replied[msg.Response.SenderID] = true
 
@@ -49,6 +64,8 @@ func RunRecoveryCoordinator(view int, index int, io *msgs.Io, config Config) boo
 				n++
 				}
 			}
+		} else {
+			glog.Warning("This should be occuring")
 		}
 	}
 

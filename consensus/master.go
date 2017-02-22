@@ -49,7 +49,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 			RunMaster((*s).View, (*s).CommitIndex, false, io, config)
 
 		case req := <- io.IncomingRequests:
-			glog.Warning("Request recieved by non-master server", req)
+			glog.Warning("Request recieved by non-master server ", req)
 			io.OutgoingRequestsFailed <- req
 		}
 	}
@@ -85,13 +85,17 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 		}
 	}
 
-	glog.Info("Start index is ", start_index)
+	glog.Info("Start index of view ",view," is ", start_index)
 
 	// recover entries
+	result := true
 	for curr_index := commit_index + 1; curr_index <= start_index; curr_index++ {
-		RunRecoveryCoordinator(view, curr_index, io, config)
+		result = RunRecoveryCoordinator(view, curr_index, io, config)
+		if !result {
+			return result, start_index
+		}
 	}
-	return true, start_index
+	return result, start_index
 }
 
 // RunMaster implements the Master mode
@@ -197,7 +201,8 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				window_start += 1
 			} else {
 				// TODO: BUG: handle out-of-order commitment
-				glog.Fatal("STUB: to implement")
+				glog.Warning("STUB: to implement")
+				window_start += 1
 			}
 		}()
 
