@@ -88,13 +88,11 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 	glog.Info("Start index of view ",view," is ", start_index)
 
 	// recover entries
-	result := true
-	for curr_index := commit_index + 1; curr_index <= start_index; curr_index++ {
-		result = RunRecoveryCoordinator(view, curr_index, io, config)
-		if !result {
-			return result, start_index
-		}
+	result := RunRecoveryCoordinator(view, commit_index + 1, start_index, io, config)
+	if !result {
+		return result, start_index
 	}
+
 	return result, start_index
 }
 

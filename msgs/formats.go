@@ -77,14 +77,15 @@ type NewView struct {
 type QueryRequest struct {
 	SenderID int
 	View     int
-	Index    int
+	StartIndex    int
+	EndIndex int
 }
 
 type QueryResponse struct {
 	SenderID int
 	View     int
 	Present  bool
-	Entry    Entry
+	Entries    []Entry
 }
 
 type Query struct {

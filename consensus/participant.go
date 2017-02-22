@@ -59,7 +59,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.LastIndex = req.Index
 			}
 			checkInvariant(state.Log, req.Index, req.Entry)
-			
+
 			state.Log[req.Index] = req.Entry
 			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 			last_written := <-(*io).LogPersistFsync
@@ -141,8 +141,8 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			present := state.LastIndex >= req.Index
-			reply := msgs.QueryResponse{config.ID, state.View, present, state.Log[req.Index]}
+			present := state.LastIndex >= req.EndIndex
+			reply := msgs.QueryResponse{config.ID, state.View, present, state.Log[req.StartIndex:req.EndIndex]}
 			(*io).OutgoingUnicast[req.SenderID].Responses.Query <- msgs.Query{req, reply}
 		}
 	}
