@@ -7,7 +7,6 @@ import (
 	"github.com/golang/glog"
 	"os"
 	"strings"
-	//"time"
 )
 
 type Interative bufio.Reader

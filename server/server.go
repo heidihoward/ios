@@ -115,19 +115,23 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 		return res // FAST PASS
 	}
 
-	// CONSENESUS ALGORITHM HERE
-	glog.Info("Passing request to consensus algorithm")
-	if req.ForceViewChange {
-			cons_io.IncomingRequestsForced <- req
-	} else {
-			cons_io.IncomingRequests <- req
+	// check is request is already in progress
+	if notifyclient[req] == nil {
+		// CONSENESUS ALGORITHM HERE
+		glog.Info("Passing request to consensus algorithm")
+		if req.ForceViewChange {
+				cons_io.IncomingRequestsForced <- req
+		} else {
+				cons_io.IncomingRequests <- req
+		}
+
+		// wait for reply
+		notifyclient_mutex.Lock()
+		notifyclient[req] = make(chan msgs.ClientResponse)
+		notifyclient_mutex.Unlock()
 	}
 
 
-	// wait for reply
-	notifyclient_mutex.Lock()
-	notifyclient[req] = make(chan msgs.ClientResponse)
-	notifyclient_mutex.Unlock()
 	reply := <-notifyclient[req]
 
 	// check reply

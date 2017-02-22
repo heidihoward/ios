@@ -13,6 +13,7 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 	"github.com/heidi-ann/ios/test"
 	"io"
+	"math/rand"
 	"net"
 	"os"
 	"os/signal"
@@ -30,7 +31,7 @@ var config_file = flag.String("config", "example.conf", "Client configuration fi
 var auto_file = flag.String("auto", "../test/workload.conf", "If workload is automatically generated, configure file for workload")
 var stat_file = flag.String("stat", "latency.csv", "File to write stats to")
 var mode = flag.String("mode", "interactive", "interactive, rest or test")
-var id = flag.Int("id", -1, "ID of client (must be unique)")
+var id = flag.Int("id", -1, "ID of client (must be unique) or random number will be generated")
 
 func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
 	var conn net.Conn
@@ -132,7 +133,9 @@ func main() {
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	// TODO: find a better way to handle required flags
 	if *id == -1 {
-		glog.Fatal("ID must be provided")
+		rand.Seed(time.Now().UTC().UnixNano())
+		*id = rand.Int()
+		glog.Info("ID was not provided, ID ",*id," has been assigned")
 	}
 
 	glog.Info("Starting up client ", *id)

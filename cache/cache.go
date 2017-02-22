@@ -7,6 +7,7 @@ package cache
 import (
 	"github.com/heidi-ann/ios/msgs"
 	"sync"
+	"github.com/golang/glog"
 )
 
 type Cache struct {
@@ -23,11 +24,17 @@ func (c *Cache) Check(req msgs.ClientRequest) (bool, msgs.ClientResponse) {
 	c.RLock()
 	last := c.m[req.ClientID]
 	c.RUnlock()
+	if last.RequestID > req.RequestID {
+		glog.Fatal("Request has already been applied and overwritten in request cache")
+	}
 	return req.RequestID == last.RequestID, last
 }
 
 func (c *Cache) Add(res msgs.ClientResponse) {
 	c.Lock()
+	if c.m[res.ClientID].RequestID + 1 != res.RequestID {
+		glog.Fatal("Requests must be added to request cache in order")
+	}
 	c.m[res.ClientID] = res
 	c.Unlock()
 }
