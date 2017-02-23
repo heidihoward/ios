@@ -7,7 +7,7 @@ func Majority(n int) int {
 func mod(x int, y int) int {
 	dif := x - y
 	if dif < y {
-		return x
+		return dif
 	} else {
 		return mod(dif, y)
 	}

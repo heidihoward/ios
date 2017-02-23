@@ -21,11 +21,11 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 		case failed := <-io.Failure:
 			if failed == (*s).MasterID {
 				nextMaster := mod((*s).View+1, config.N)
-				glog.Warningf("Master (ID:%d) failed, next up is ID:%d", (*s).MasterID, nextMaster)
+				glog.Warningf("Master (ID:%d,View:%d) failed, next up is ID:%d in View:%d", (*s).MasterID, (*s).View, nextMaster, (*s).View+1)
 				(*s).MasterID = nextMaster
 				if nextMaster == config.ID {
-					glog.Info("Starting new master at ", config.ID)
 					(*s).View++
+					glog.Info("Starting new master in view ",(*s).View," at ", config.ID)
 					(*io).ViewPersist <- (*s).View
 					written := <-(*io).ViewPersistFsync
 					if written != (*s).View {
@@ -56,7 +56,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 }
 
 // RunRecovery executes the recovery phase of leadership election,
-// Returns if it was successful and the view start index
+// Returns if it was successful and the previous view's end index
 func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,int) {
 	majority := Majority(config.N)
 	// dispatch new view requests
@@ -65,7 +65,7 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 
 	// collect responses
 	glog.Info("Waiting for ", majority, " new view responses")
-	start_index := commit_index
+	end_index := commit_index
 
 	for i := 0; i < majority; {
 		msg := <-(*io).Incoming.Responses.NewView
@@ -77,23 +77,19 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 				return false, 0
 			}
 			glog.Info("Received ", res)
-			if res.Index > start_index {
-				start_index = res.Index
+			if res.Index > end_index {
+				end_index = res.Index
 			}
 			i++
 			glog.Info("Successful new view received, waiting for ", majority-i, " more")
 		}
 	}
 
-	glog.Info("Start index of view ",view," is ", start_index)
+	glog.Info("End index of the previous views is ", end_index)
 
 	// recover entries
-	result := RunRecoveryCoordinator(view, commit_index + 1, start_index, io, config)
-	if !result {
-		return result, start_index
-	}
-
-	return result, start_index
+	result := RunRecoveryCoordinator(view, commit_index + 1, end_index, io, config)
+	return result, end_index
 }
 
 // RunMaster implements the Master mode
@@ -125,6 +121,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 	for {
 
 		if step_down {
+			glog.Warning("Master stepping down due to coordinator step down")
 			break
 		}
 

@@ -29,48 +29,52 @@ func RunRecoveryCoordinator(view int, start_index int, end_index int, io *msgs.I
 
 		for n := 0; n < majority; {
 			msg := <-(*io).Incoming.Responses.Query
-			if msg.Request == query && !replied[msg.Response.SenderID] {
+			if msg.Request == query {
 
-				// check view
-				if msg.Response.View < view {
-					glog.Fatal("Reply view is < current view, this should not have occured")
-				}
-
-				if view < msg.Response.View {
-					glog.Warning("Stepping down from recovery coordinator")
-					return false
-				}
-
-				res := msg.Response
-				replied[msg.Response.SenderID] = true
-
-				if res.Present {
-					// if committed, then done
-					if res.Entries[0].Committed {
-						candidate = &res.Entries[0]
-						break
+				// check this is not a duplicate
+				if replied[msg.Response.SenderID] {
+					glog.Warning("Response already recieved from ",msg.Response.SenderID)
+				} else {
+					// check view
+					if msg.Response.View < view {
+						glog.Fatal("Reply view is < current view, this should not have occured")
 					}
 
-					// if first entry, then new candidate
-					if candidate == nil {
-						candidate = &res.Entries[0]
+					if view < msg.Response.View {
+						glog.Warning("Stepping down from recovery coordinator")
+						return false
 					}
 
-					// if higher view then candidate then new candidate
-					if res.Entries[0].View > (*candidate).View {
-						candidate = &res.Entries[0]
+					res := msg.Response
+					replied[msg.Response.SenderID] = true
+
+					if res.Present {
+						// if committed, then done
+						if res.Entries[0].Committed {
+							candidate = &res.Entries[0]
+							break
+						}
+
+						// if first entry, then new candidate
+						if candidate == nil {
+							candidate = &res.Entries[0]
+						}
+
+						// if higher view then candidate then new candidate
+						if res.Entries[0].View > (*candidate).View {
+							candidate = &res.Entries[0]
+						}
+
+						// if same view and different requests then panic!
+						if res.Entries[0].View == (*candidate).View && !reflect.DeepEqual(res.Entries[0].Requests, candidate.Requests) {
+							glog.Fatal("Same index has been issued more then once", res.Entries[0].Requests, candidate.Requests )
+						}
+					} else {
+						glog.Info("Log entry at index ",index," on node ID ",msg.Response.SenderID," is missing")
 					}
-
-					// if same view and different requests then panic!
-					if res.Entries[0].View == (*candidate).View && !reflect.DeepEqual(res.Entries[0].Requests, candidate.Requests) {
-						glog.Fatal("Same index has been issued more then once", res.Entries[0].Requests, candidate.Requests )
-
 					// update count
 					n++
-					}
 				}
-			} else {
-				glog.Warning("Umm... this should not be occuring")
 			}
 		}
 
@@ -78,6 +82,8 @@ func RunRecoveryCoordinator(view int, start_index int, end_index int, io *msgs.I
 		if candidate == nil {
 			candidate = &msgs.Entry{view, false, []msgs.ClientRequest{noop}}
 		}
+
+		glog.Info("Entry at index ", index, " is ", candidate)
 
 		// if committed, then dispatch commit
 		// if not committed, then dispatch prepare then commit
@@ -87,6 +93,8 @@ func RunRecoveryCoordinator(view int, start_index int, end_index int, io *msgs.I
 		io.OutgoingUnicast[config.ID].Requests.Coordinate <- coord
 		 <-io.Incoming.Responses.Coordinate
 		// TODO: check msg replies to the msg we just sent
+		glog.Info("Recovery completed for index ",index)
 	}
+	glog.Info("Recovery completed for indexes ", start_index," to ",end_index)
 	return true
 }

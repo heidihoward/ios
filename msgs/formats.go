@@ -77,8 +77,8 @@ type NewView struct {
 type QueryRequest struct {
 	SenderID int
 	View     int
-	StartIndex    int
-	EndIndex int
+	StartIndex    int // (inclusive)
+	EndIndex int //(exclusive)
 }
 
 type QueryResponse struct {

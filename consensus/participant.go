@@ -95,7 +95,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 
 			reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
 			(io.OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
-			glog.Info("Response dispatched")
+			glog.Info("Commit response dispatched")
 
 		case req := <-(*io).Incoming.Requests.NewView:
 			glog.Info("New view requests received at ", config.ID, ": ", req)
@@ -141,7 +141,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			present := state.LastIndex >= req.EndIndex
+			present := state.LastIndex >= req.EndIndex -1
 			reply := msgs.QueryResponse{config.ID, state.View, present, state.Log[req.StartIndex:req.EndIndex]}
 			(*io).OutgoingUnicast[req.SenderID].Responses.Query <- msgs.Query{req, reply}
 		}
