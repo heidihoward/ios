@@ -88,7 +88,7 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 	glog.Info("End index of the previous views is ", end_index)
 
 	// recover entries
-	result := RunRecoveryCoordinator(view, commit_index + 1, end_index, io, config)
+	result := RunRecoveryCoordinator(view, commit_index + 1, end_index + 1, io, config)
 	return result, end_index
 }
 
