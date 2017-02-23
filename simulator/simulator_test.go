@@ -75,7 +75,7 @@ func TestSimulator(t *testing.T) {
 		Request:   "get B"}
 
 	checkRequest(t, request4, ios, 1)
-
+	
 	//check 2nd failure by notifying node 2 that node 1 has failed
 	ios[2].Failure <- 1
 

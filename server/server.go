@@ -231,6 +231,7 @@ func handlePeer(cn net.Conn, init bool) {
 				close_err <- err
 				break
 			}
+			// TODO: BUG need to retry packet
 			err = writer.Flush()
 			if err != nil {
 				glog.Warning(err)
