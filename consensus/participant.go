@@ -141,8 +141,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			present := state.LastIndex >= req.EndIndex -1
-			reply := msgs.QueryResponse{config.ID, state.View, present, state.Log[req.StartIndex:req.EndIndex]}
+			reply := msgs.QueryResponse{config.ID, state.View, state.Log[req.StartIndex:req.EndIndex]}
 			(*io).OutgoingUnicast[req.SenderID].Responses.Query <- msgs.Query{req, reply}
 		}
 	}

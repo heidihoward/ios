@@ -84,7 +84,6 @@ type QueryRequest struct {
 type QueryResponse struct {
 	SenderID int
 	View     int
-	Present  bool
 	Entries    []Entry
 }
 
