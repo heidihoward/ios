@@ -71,7 +71,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.Log[req.StartIndex + i] = req.Entries[i]
 			}
 			// add entries to the log (persistent storage)
-			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries}
+			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
 			io.LogPersist <- logUpdate
 			// TODO: find a better way to handle out-of-order log updates
 			last_written := <-io.LogPersistFsync
@@ -103,7 +103,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 			for i := 0; i < req.EndIndex - req.StartIndex; i++ {
 				state.Log[req.StartIndex + i] = req.Entries[i]
 			}
-			io.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries}
+			io.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, true}
 
 			// pass requests to state machine if ready
 			for state.Log[state.CommitIndex+1].Committed {

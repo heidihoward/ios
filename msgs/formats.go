@@ -116,4 +116,5 @@ type LogUpdate struct {
 	StartIndex int
 	EndIndex int
 	Entries []Entry
+	Sync bool
 }

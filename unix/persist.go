@@ -133,8 +133,11 @@ func SetupPersistentStorage(logFile string, dataFile string, io *msgs.Io, MaxLen
 				glog.Fatal(err)
 			}
 			glog.Info(n1+n2, " bytes written to persistent log")
-			logStorage.Fd.Sync()
-			io.LogPersistFsync <- log
+      if log.Sync {
+        logStorage.Fd.Sync()
+        io.LogPersistFsync <- log
+      }
+
 		}
 	}()
 
