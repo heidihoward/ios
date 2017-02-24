@@ -1,6 +1,9 @@
 package store
 
-import "testing"
+import (
+	"testing"
+	"reflect"
+	)
 
 func TestProcess(t *testing.T) {
 	store := New()
@@ -17,5 +20,19 @@ func TestProcess(t *testing.T) {
 		if got != c.res {
 			t.Errorf("%s returned %s but %s was expected", c.req, got, c.res)
 		}
+	}
+}
+
+func TestRestoreSnapshot(t *testing.T) {
+	var store Store
+	store = map[string]string{
+			"A": "0",
+			"B": "0",
+			"C": "0",
+	}
+  snapshot := store.MakeSnapshot()
+	restore := RestoreSnapshot(snapshot)
+	if !reflect.DeepEqual(store,*restore) {
+		t.Error("orginal store and restored store are not the same", store, *restore)
 	}
 }

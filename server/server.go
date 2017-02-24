@@ -314,7 +314,8 @@ func main() {
 	// set up persistent storage
 	logFile := *disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp"
 	dataFile := *disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
-	found, view, log := unix.SetupPersistentStorage(logFile, dataFile, cons_io, conf.Options.Length)
+	snapFile := *disk_path + "/persistent_snapshot_" + strconv.Itoa(*id) + ".temp"
+	found, view, log := unix.SetupPersistentStorage(logFile, dataFile, snapFile, cons_io, conf.Options.Length)
 
 	// set up client server
 	glog.Info("Starting up client server")
@@ -385,13 +386,13 @@ func main() {
 		log_max_length = conf.Options.Length
 	}
 	cons_config := consensus.Config{*id, len(conf.Peers.Address),
-		log_max_length, conf.Options.BatchInterval, conf.Options.MaxBatch, conf.Options.DelegateReplication, conf.Options.WindowSize}
+		log_max_length, conf.Options.BatchInterval, conf.Options.MaxBatch, conf.Options.DelegateReplication, conf.Options.WindowSize,  conf.Options.SnapshotInterval}
 	if !found {
 		glog.Info("Starting fresh consensus instance")
-		go consensus.Init(cons_io, cons_config)
+		go consensus.Init(cons_io, cons_config, keyval)
 	} else {
 		glog.Info("Restoring consensus instance")
-		go consensus.Recover(cons_io, cons_config, view, log)
+		go consensus.Recover(cons_io, cons_config, view, log, keyval)
 	}
 	//go cons_io.DumpPersistentStorage()
 

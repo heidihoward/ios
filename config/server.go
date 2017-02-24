@@ -18,6 +18,7 @@ type ServerConfig struct {
 		MaxBatch      			int
 		DelegateReplication int
 		WindowSize 					int
+		SnapshotInterval    int
 	}
 }
 

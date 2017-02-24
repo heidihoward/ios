@@ -28,6 +28,7 @@ func openFile(filename string) FileHandler {
 	}
 
 	// open file
+  // TODO: consider using O_SYNC for write ahead logging
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		glog.Fatal(err)
@@ -93,7 +94,22 @@ func restoreView(viewFile FileHandler) (bool, int) {
   }
 }
 
-func SetupPersistentStorage(logFile string, dataFile string, io *msgs.Io, MaxLength int) (bool, int, []msgs.Entry) {
+func restoreSnapshot(snapFile FileHandler) (bool, index, *store.Store) {
+  if snapFile.IsNew {
+    return false, -1, store.New()
+  }
+
+  b, err := snapFile.R.ReadBytes(byte('\n'))
+  if err != nil {
+    glog.Warning("Snapshot corrupted, ignoring snapshot")
+    return false, -1, store.New()
+  }
+  found = true
+  index, _ = strconv.Atoi(string(b))
+  // TODO: fnish
+}
+
+func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, []msgs.Entry) {
 	// setting up persistent log
 	logStorage := openFile(logFile)
 	dataStorage := openFile(dataFile)
@@ -102,6 +118,7 @@ func SetupPersistentStorage(logFile string, dataFile string, io *msgs.Io, MaxLen
 	_, log := restoreLog(logStorage,MaxLength)
 	// check persistent storage for view
 	found, view := restoreView(dataStorage)
+  // TODO: check for snapshot
 
 	// write view updates to persistent storage
 	go func() {
@@ -140,6 +157,25 @@ func SetupPersistentStorage(logFile string, dataFile string, io *msgs.Io, MaxLen
 
 		}
 	}()
+  // write state machine snapshots to persistent storage
+  go func() {
+    for {
+      snap := <-io.SnapshotPersist
+      glog.Info("Saving state machine snapshot upto index", snap.Index,
+      " of size ",len(snap.Bytes))
+      file, err := os.OpenFile(snapFile, os.O_RDWR|os.O_CREATE, 0777)
+      if err != nil {
+        glog.Fatal(err)
+      }
+
+      _, err = file.Write([]byte(strconv.Itoa(snap.Index)))
+			_, err = file.Write([]byte("\n"))
+      _, err = file.Write([]byte(snap.Bytes))
+			if err != nil {
+				glog.Fatal(err)
+			}
+    }
+  }()
 
   return found, view, log
 }

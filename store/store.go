@@ -5,16 +5,22 @@ package store
 import (
 	"github.com/golang/glog"
 	"strings"
+	"encoding/json"
 )
 
 type Store map[string]string
 
 func New() *Store {
 	var s Store
-	s = map[string]string{
-		"A": "0",
-		"B": "0",
-		"C": "0",
+	s = map[string]string{}
+	return &s
+}
+
+func RestoreSnapshot(snap []byte) *Store {
+	var s Store
+	err := json.Unmarshal(snap, &s)
+	if err != nil {
+		glog.Fatal("Unable to restore from snapshot: ",err)
 	}
 	return &s
 }
@@ -64,4 +70,12 @@ func (s *Store) Print() {
 	for key, value := range *s {
 		glog.Info("(", key, value, ")")
 	}
+}
+
+func (s *Store) MakeSnapshot() []byte {
+	b, err := json.Marshal(s)
+	if err != nil {
+		glog.Fatal("Unable to snapshot store: ",err)
+	}
+	return b
 }

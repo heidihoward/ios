@@ -4,6 +4,7 @@ package consensus
 import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
+	"github.com/heidi-ann/ios/store"
 )
 
 // Config describes the static configuration of the consensus algorithm
@@ -15,6 +16,7 @@ type Config struct {
 	MaxBatch      int // maximum requests in a batch, unused if BatchInterval=0
 	DelegateReplication  int // how many replication coordinators to delegate to when leading
 	WindowSize  int // how many requests can the master have inflight at once
+	SnapshotInterval int // how often to record state machine snapshots
 }
 
 type State struct {
@@ -23,12 +25,14 @@ type State struct {
 	CommitIndex int // index of the last entry applied to the state machine, -1 means no entries have been applied yet
 	MasterID    int // ID of the current master, calculated from View
 	LastIndex   int // index of the last entry in the log, -1 means that the log has no entries
+	LastSnapshot int // index of the last state machine snapshot
+	StateMachine *store.Store
 }
 
 
 // Init runs the consensus algorithm.
 // It will not return until the application is terminated.
-func Init(io *msgs.Io, config Config) {
+func Init(io *msgs.Io, config Config, keyval *store.Store) {
 
 	// setup
 	glog.Infof("Starting node %d of %d", config.ID, config.N)
@@ -37,7 +41,9 @@ func Init(io *msgs.Io, config Config) {
 		Log:         make([]msgs.Entry, config.LogLength),
 		CommitIndex: -1,
 		MasterID:    0,
-		LastIndex:   -1}
+		LastIndex:   -1,
+		LastSnapshot:  0,
+		StateMachine:  keyval}
 
 	// write initial term to persistent storage
 	// TODO: if not master then we need not wait until view has been fsynced
@@ -55,7 +61,7 @@ func Init(io *msgs.Io, config Config) {
 
 }
 
-func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
+func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry, keyval *store.Store) {
 	// setup
 	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N,len(log))
 
@@ -67,7 +73,9 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 		Log:         new_log,
 		CommitIndex: -1,
 		MasterID:    mod(view, config.N),
-		LastIndex:   len(log) - 1}
+		LastIndex:   len(log) - 1,
+		LastSnapshot: 0,
+		StateMachine:  keyval}
 
 	// apply recovered requests to state machine
 	for i := 0; i <= state.LastIndex; i++ {

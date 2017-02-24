@@ -41,6 +41,7 @@ type Io struct {
 	ViewPersistFsync  chan int
 	LogPersist        chan LogUpdate
 	LogPersistFsync   chan LogUpdate
+	SnapshotPersist       chan Snapshot
 }
 
 // TODO: find a more generic method
@@ -178,7 +179,8 @@ func MakeIo(buf int, n int) *Io {
 		ViewPersist:       make(chan int, buf),
 		ViewPersistFsync:  make(chan int, buf),
 		LogPersist:        make(chan LogUpdate, buf),
-		LogPersistFsync:   make(chan LogUpdate, buf)}
+		LogPersistFsync:   make(chan LogUpdate, buf),
+		SnapshotPersist:   make(chan Snapshot, buf)}
 
 	for id := 0; id < n; id++ {
 		protomsgs := MakeProtoMsgs(buf)

@@ -118,3 +118,8 @@ type LogUpdate struct {
 	Entries []Entry
 	Sync bool
 }
+
+type Snapshot struct {
+	Index int
+	Bytes []byte
+}
