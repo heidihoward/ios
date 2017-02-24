@@ -65,7 +65,7 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 
 	// collect responses
 	glog.Info("Waiting for ", majority, " new view responses")
-	end_index := commit_index
+	endIndex := commit_index
 
 	for i := 0; i < majority; {
 		msg := <-(*io).Incoming.Responses.NewView
@@ -77,19 +77,24 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 				return false, 0
 			}
 			glog.Info("Received ", res)
-			if res.Index > end_index {
-				end_index = res.Index
+			if res.Index > endIndex {
+				endIndex = res.Index
 			}
 			i++
 			glog.Info("Successful new view received, waiting for ", majority-i, " more")
 		}
 	}
 
-	glog.Info("End index of the previous views is ", end_index)
+	glog.Info("End index of the previous views is ", endIndex)
+
+	if commit_index == endIndex {
+		glog.Info("New master is up to date, No recovery coordination is required")
+		return true, endIndex
+	}
 
 	// recover entries
-	result := RunRecoveryCoordinator(view, commit_index + 1, end_index + 1, io, config)
-	return result, end_index
+	result := RunRecoveryCoordinator(view, commit_index + 1, endIndex+1, io, config)
+	return result, endIndex
 }
 
 // RunMaster implements the Master mode
@@ -177,9 +182,9 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		index++
 		glog.Info("Request assigned index: ", index)
 
-		// ok := RunCoordinator(view, index, []msgs.ClientRequest{req}, io, config, true)
-		entry := msgs.Entry{view, false, reqs}
-		coord := msgs.CoordinateRequest{config.ID, view, index, true, entry}
+		// dispatch to coordinator
+		entries := []msgs.Entry{msgs.Entry{view, false, reqs}}
+		coord := msgs.CoordinateRequest{config.ID, view, index,index+1, true, entries}
 		io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
 		// TODO: BUG: need to handle coordinator failure
 
@@ -192,7 +197,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				return
 			}
 			glog.Info("Finished replicating request: ", reqs)
-			if reply.Request.Index==window_start+1{
+			if reply.Request.StartIndex==window_start+1{
 				window_start += 1
 			} else {
 				// TODO: BUG: handle out-of-order commitment

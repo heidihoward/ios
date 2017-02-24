@@ -26,8 +26,9 @@ type Entry struct {
 type PrepareRequest struct {
 	SenderID int
 	View     int
-	Index    int
-	Entry    Entry
+	StartIndex    int // inclusive
+	EndIndex int // exclusive
+	Entries    []Entry
 }
 
 type PrepareResponse struct {
@@ -42,9 +43,9 @@ type Prepare struct {
 
 type CommitRequest struct {
 	SenderID int
-	View     int // TODO: remove view
-	Index    int
-	Entry    Entry
+	StartIndex  int
+	EndIndex int
+	Entries    []Entry
 }
 
 type CommitResponse struct {
@@ -77,8 +78,8 @@ type NewView struct {
 type QueryRequest struct {
 	SenderID int
 	View     int
-	StartIndex    int // (inclusive)
-	EndIndex int //(exclusive)
+	StartIndex    int // inclusive
+	EndIndex int // exclusive
 }
 
 type QueryResponse struct {
@@ -95,9 +96,10 @@ type Query struct {
 type CoordinateRequest struct {
 	SenderID int
 	View     int
-	Index    int
+	StartIndex    int //inclusive
+	EndIndex	int //exclusive
 	Prepare  bool
-	Entry    Entry
+	Entries   []Entry
 }
 
 type CoordinateResponse struct {
@@ -111,6 +113,7 @@ type Coordinate struct {
 }
 
 type LogUpdate struct {
-	Index int
-	Entry Entry
+	StartIndex int
+	EndIndex int
+	Entries []Entry
 }

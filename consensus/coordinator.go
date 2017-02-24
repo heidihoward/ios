@@ -6,12 +6,18 @@ import (
 	"reflect"
 )
 
-func DoCoordination(view int, index int, entry msgs.Entry, io *msgs.Io, config Config, prepare bool) bool {
+func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry, io *msgs.Io, config Config, prepare bool) bool {
 
 	majority := Majority(config.N)
-	// phase 1: prepare
+	// PHASE 2: prepare
 	if prepare {
-		prepare := msgs.PrepareRequest{config.ID, view, index, entry}
+
+		// check that committed is not set
+		for i := 0; i < endIndex - startIndex; i++ {
+			entries[i].Committed = false
+		}
+
+		prepare := msgs.PrepareRequest{config.ID, view, startIndex, endIndex, entries}
 		glog.Info("Starting prepare phase", prepare)
 		(*io).OutgoingBroadcast.Requests.Prepare <- prepare
 
@@ -32,11 +38,16 @@ func DoCoordination(view int, index int, entry msgs.Entry, io *msgs.Io, config C
 		}
 	}
 
-	// phase 2: commit
-	entry.Committed = true
-	commit := msgs.CommitRequest{config.ID, view, index, entry}
+	// PHASE 3: commit
+	// set committed so requests will be applied to state machines
+	for i := 0; i < endIndex - startIndex; i++ {
+		entries[i].Committed = true
+	}
+	// dispatch commit requests to all
+	commit := msgs.CommitRequest{config.ID, startIndex, endIndex, entries}
 	glog.Info("Starting commit phase", commit)
 	(*io).OutgoingBroadcast.Requests.Commit <- commit
+
 	// TODO: handle replies properly
 	go func() {
 		for i := 0; i < majority; {
@@ -57,7 +68,7 @@ func RunCoordinator(state *State, io *msgs.Io, config Config) {
 
 	for {
 		req := <-(*io).Incoming.Requests.Coordinate
-		success := DoCoordination(req.View, req.Index, req.Entry, io, config, req.Prepare)
+		success := DoCoordination(req.View, req.StartIndex, req.EndIndex, req.Entries, io, config, req.Prepare)
 		reply := msgs.CoordinateResponse{config.ID, success}
 		(*io).OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
 		// TOD0: handle failure

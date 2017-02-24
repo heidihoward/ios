@@ -28,16 +28,17 @@ func TestInit(t *testing.T) {
 		ForceViewChange: false,
 		Request:   "update A 3"}}
 
-	entry1 := msgs.Entry{
+	entries1 := []msgs.Entry{msgs.Entry{
 		View:      0,
 		Committed: false,
-		Requests:  request1}
+		Requests:  request1}}
 
 	prepare1 := msgs.PrepareRequest{
 		SenderID: 0,
 		View:     0,
-		Index:    0,
-		Entry:    entry1}
+		StartIndex:    0,
+		EndIndex: 1,
+		Entries:    entries1}
 
 	prepare1_res := msgs.PrepareResponse{
 		SenderID: 0,
@@ -59,7 +60,7 @@ func TestInit(t *testing.T) {
 	// check node tried to dispatch request correctly
 	select {
 	case log_update := <-(*io).LogPersist:
-		if !reflect.DeepEqual(log_update.Entry, entry1) {
+		if !reflect.DeepEqual(log_update.Entries, entries1) {
 			t.Error(log_update)
 		}
 		(*io).LogPersistFsync <- log_update
@@ -78,12 +79,12 @@ func TestInit(t *testing.T) {
 	}
 
 	// tell node to commit update A 3
-	entry1.Committed = true
+	entries1[0].Committed = true
 	commit1 := msgs.CommitRequest{
 		SenderID: 0,
-		View:     0,
-		Index:    0,
-		Entry:    entry1}
+		StartIndex: 0,
+		EndIndex: 1,
+		Entries:    entries1}
 
 	commit1_res := msgs.CommitResponse{
 		SenderID:    0,

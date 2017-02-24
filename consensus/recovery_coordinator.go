@@ -8,18 +8,18 @@ import (
 
 // returns true if successful
 // start index is inclusive and end index is exclusive
-func RunRecoveryCoordinator(view int, start_index int, end_index int, io *msgs.Io, config Config) bool {
+func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io, config Config) bool {
 	majority := Majority(config.N)
-	glog.Info("Starting recovery for indexes ", start_index," to ",end_index)
+	glog.Info("Starting recovery for indexes ", startIndex," to ",endIndex)
 
 	// dispatch query to all
-	query := msgs.QueryRequest{config.ID, view, start_index, end_index}
+	query := msgs.QueryRequest{config.ID, view, startIndex, endIndex}
 	(*io).OutgoingBroadcast.Requests.Query <- query
 
 	// collect responses
 	noop_entry := msgs.Entry{0, false, []msgs.ClientRequest{noop}}
-	candidates := make([]msgs.Entry,end_index-start_index)
-	for i := 0;i <end_index-start_index; i++ {
+	candidates := make([]msgs.Entry,endIndex-startIndex)
+	for i := 0;i <endIndex-startIndex; i++ {
 		candidates[i] = noop_entry
 	}
 
@@ -50,7 +50,7 @@ func RunRecoveryCoordinator(view int, start_index int, end_index int, io *msgs.I
 				res := msg.Response
 				replied[msg.Response.SenderID] = true
 
-				for i := 0; i <end_index-start_index; i++ {
+				for i := 0; i <endIndex-startIndex; i++ {
 					if !reflect.DeepEqual(res.Entries[i],msgs.Entry{}) {
 						// if committed, then done
 						if res.Entries[i].Committed {
@@ -83,17 +83,17 @@ func RunRecoveryCoordinator(view int, start_index int, end_index int, io *msgs.I
 	}
 	glog.Info("New view phase is finished")
 
-	// if committed, then dispatch commit
-	// if not committed, then dispatch prepare then commit
-
-	for i := 0; i <end_index-start_index; i++ {
-		entry := msgs.Entry{view, false, candidates[i].Requests}
-		coord := msgs.CoordinateRequest{config.ID, view, start_index+i, candidates[i].Committed, entry}
-		io.OutgoingUnicast[config.ID].Requests.Coordinate <- coord
-		 <-io.Incoming.Responses.Coordinate
-		// TODO: check msg replies to the msg we just sent
+	// set the next view and marked as uncommitted
+	// TODO: add shortcut to skip prepare phase is entries are already committed.
+	for i := 0; i <endIndex-startIndex; i++ {
+		candidates[i] = msgs.Entry{view, false, candidates[i].Requests}
 	}
 
-	glog.Info("Recovery completed for indexes ", start_index," to ",end_index)
+	coord := msgs.CoordinateRequest{config.ID, view, startIndex, endIndex, true, candidates}
+	io.OutgoingUnicast[config.ID].Requests.Coordinate <- coord
+	 <-io.Incoming.Responses.Coordinate
+	// TODO: check msg replies to the msg we just sent
+
+	glog.Info("Recovery completed for indexes ", startIndex," to ",endIndex)
 	return true
 }

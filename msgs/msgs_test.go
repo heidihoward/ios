@@ -20,16 +20,17 @@ func TestMakeIo(t *testing.T) {
 		Replicate: true,
 		Request:   "update A 3"}}
 
-	entry1 := Entry{
+	entries1 := []Entry{Entry{
 		View:      0,
 		Committed: false,
-		Requests:  request1}
+		Requests:  request1}}
 
 	prepare := PrepareRequest{
 		SenderID: 0,
 		View:     0,
-		Index:    0,
-		Entry:    entry1}
+		StartIndex:    0,
+		EndIndex: 1,
+		Entries:    entries1}
 
 	prepare_res := PrepareResponse{
 		SenderID: 0,

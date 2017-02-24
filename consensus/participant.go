@@ -11,15 +11,17 @@ func checkInvariant(log []msgs.Entry, index int, nxtEntry msgs.Entry) {
 	prevEntry := log[index]
 
 	// if no entry, then no problem
-	if !reflect.DeepEqual(prevEntry, msgs.Entry{}) {
-		// if committed, request never changes
-		if prevEntry.Committed && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
-			glog.Fatal("Committed entry is being overwritten at ", prevEntry, nxtEntry, index)
-		}
-		// each index is allocated once per term
-		if prevEntry.View == nxtEntry.View && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
-			glog.Fatal("Index has been reallocated at ", prevEntry, nxtEntry, index)
-		}
+	if reflect.DeepEqual(prevEntry, msgs.Entry{}) {
+		return
+	}
+
+	// if committed, request never changes
+	if prevEntry.Committed && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
+		glog.Fatal("Committed entry is being overwritten at ", prevEntry, nxtEntry, index)
+	}
+	// each index is allocated once per term
+	if prevEntry.View == nxtEntry.View && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
+		glog.Fatal("Index has been reallocated at ", prevEntry, nxtEntry, index)
 	}
 }
 
@@ -54,20 +56,32 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			// add entry
-			if req.Index > state.LastIndex {
-				state.LastIndex = req.Index
-			}
-			checkInvariant(state.Log, req.Index, req.Entry)
-
-			state.Log[req.Index] = req.Entry
-			(*io).LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
-			last_written := <-(*io).LogPersistFsync
-			for !reflect.DeepEqual(last_written, msgs.LogUpdate{req.Index, req.Entry}) {
-				last_written = <-(*io).LogPersistFsync
+			// check that no committed entires will be overwritten
+			for i := 0; i < req.EndIndex - req.StartIndex; i++ {
+				checkInvariant(state.Log, i+req.StartIndex, req.Entries[i])
 			}
 
-			// reply
+			// update LastIndex
+			if req.EndIndex -1 > state.LastIndex {
+				state.LastIndex = req.EndIndex -1
+			}
+
+			// add enties to the log (in-memory)
+			for i := 0; i < req.EndIndex - req.StartIndex; i++ {
+				state.Log[req.StartIndex + i] = req.Entries[i]
+			}
+			// add entries to the log (persistent storage)
+			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries}
+			io.LogPersist <- logUpdate
+			// TODO: find a better way to handle out-of-order log updates
+			last_written := <-io.LogPersistFsync
+			for !reflect.DeepEqual(last_written, logUpdate) {
+				last_written = <-io.LogPersistFsync
+			}
+
+			// TODO: add implicit commits from window_size
+
+			// reply to coordinator
 			reply := msgs.PrepareResponse{config.ID, true}
 			(io.OutgoingUnicast[req.SenderID]).Responses.Prepare <- msgs.Prepare{req, reply}
 			glog.Info("Response dispatched: ", reply)
@@ -75,24 +89,32 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 		case req := <-(*io).Incoming.Requests.Commit:
 			glog.Info("Commit requests received at ", config.ID, ": ", req)
 
-			// add entry
-			if req.Index > state.LastIndex {
-				state.LastIndex = req.Index
-			} else {
-				checkInvariant(state.Log, req.Index, req.Entry)
+			// check that no committed entires will be overwritten
+			for i := 0; i < req.EndIndex - req.StartIndex; i++ {
+				checkInvariant(state.Log, i+req.StartIndex, req.Entries[i])
 			}
-			state.Log[req.Index] = req.Entry
-			io.LogPersist <- msgs.LogUpdate{req.Index, req.Entry}
 
-			// pass to state machine if ready
-			for !reflect.DeepEqual(state.Log[state.CommitIndex+1],msgs.Entry{}) {
-				state.CommitIndex++
-				for _, request := range state.Log[state.CommitIndex].Requests {
-					(*io).OutgoingRequests <- request
+			// update LastIndex
+			if req.EndIndex -1 > state.LastIndex {
+				state.LastIndex = req.EndIndex -1
+			}
+
+			// add enties to the log (in-memory)
+			for i := 0; i < req.EndIndex - req.StartIndex; i++ {
+				state.Log[req.StartIndex + i] = req.Entries[i]
+			}
+			io.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries}
+
+			// pass requests to state machine if ready
+			for state.Log[state.CommitIndex+1].Committed {
+				for _, request := range state.Log[state.CommitIndex+1].Requests {
+					io.OutgoingRequests <- request
 					glog.Info("Request Committed: ",request)
 				}
+				state.CommitIndex++
 			}
 
+			// reply to coordinator
 			reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
 			(io.OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
 			glog.Info("Commit response dispatched")

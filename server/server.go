@@ -348,7 +348,7 @@ func main() {
 		for {
 			b, err := disk_reader.ReadBytes(byte('\n'))
 			if err != nil {
-				glog.Info("No more commands in persistent storage")
+				glog.Info("No more commands in persistent storage, ",log_length," log entries were recovered")
 				break
 			}
 			found = true
@@ -357,9 +357,12 @@ func main() {
 			if err != nil {
 				glog.Fatal("Cannot parse log update", err)
 			}
-			log[update.Index] = update.Entry
-			if log_length < update.Index {
-				log_length = update.Index
+			// add enties to the log (in-memory)
+			for i := 0; i < update.EndIndex - update.StartIndex; i++ {
+				log[update.StartIndex + i] = update.Entries[i]
+			}
+			if log_length < update.EndIndex {
+				log_length = update.EndIndex
 			}
 			glog.Info("Adding from persistent storage :", update)
 		}
@@ -380,7 +383,7 @@ func main() {
 		}
 	}
 
-	// write updates to persistent storage
+	// write view updates to persistent storage
 	go func() {
 		for {
 			view := <-cons_io.ViewPersist
@@ -394,7 +397,7 @@ func main() {
 			cons_io.ViewPersistFsync <- view
 		}
 	}()
-
+	// write log updates to persistent storage
 	go func() {
 		for {
 			log := <-cons_io.LogPersist

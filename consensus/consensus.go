@@ -57,7 +57,7 @@ func Init(io *msgs.Io, config Config) {
 
 func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 	// setup
-	glog.Infof("Restarting node %d of %d", config.ID, config.N)
+	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N,len(log))
 
 	new_log := make([]msgs.Entry, config.LogLength)
 	copy(new_log, log)
@@ -80,6 +80,7 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry) {
 			(*io).OutgoingRequests <- request
 		}
 	}
+	glog.Info("Recovered ",state.CommitIndex + 1," committed entries")
 
 	//  do not start leader without view change
 	if state.MasterID==config.ID {
