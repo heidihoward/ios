@@ -10,6 +10,7 @@ import (
 	"github.com/heidi-ann/ios/config"
 	"github.com/heidi-ann/ios/consensus"
 	"github.com/heidi-ann/ios/msgs"
+	"github.com/heidi-ann/ios/unix"
 	"github.com/heidi-ann/ios/store"
 	"io"
 	"net"
@@ -41,29 +42,6 @@ var peers_mutex sync.RWMutex
 var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
 var disk_path = flag.String("disk", ".", "Path to directory to store persistent storage")
-
-func openFile(filename string) (*bufio.Writer, *bufio.Reader, *os.File, bool) {
-	// check if file exists already for logging
-	var is_new bool
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		glog.Info("Creating and opening file: ", filename)
-		is_new = true
-	} else {
-		glog.Info("Opening file: ", filename)
-		is_new = false
-	}
-
-	// open file
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
-	if err != nil {
-		glog.Fatal(err)
-	}
-
-	// create writer and reader
-	w := bufio.NewWriter(file)
-	r := bufio.NewReader(file)
-	return w, r, file, is_new
-}
 
 func stateMachine() {
 	for {
@@ -333,90 +311,10 @@ func main() {
 	notifyclient_mutex = sync.RWMutex{}
 	go stateMachine()
 
-	// setting up persistent log
-	disk, disk_reader, disk_file, is_empty := openFile(*disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp")
-	defer disk.Flush()
-	meta_disk, meta_disk_reader, meta_disk_file, is_new := openFile(*disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp")
-	defer meta_disk.Flush()
-
-	// check persistent storage for commands
-	found := false
-	log := make([]msgs.Entry, conf.Options.Length) // TODO: Remove hard coded limit
-	log_length := 0
-
-	if !is_empty {
-		for {
-			b, err := disk_reader.ReadBytes(byte('\n'))
-			if err != nil {
-				glog.Info("No more commands in persistent storage, ",log_length," log entries were recovered")
-				break
-			}
-			found = true
-			var update msgs.LogUpdate
-			err = msgs.Unmarshal(b, &update)
-			if err != nil {
-				glog.Fatal("Cannot parse log update", err)
-			}
-			// add enties to the log (in-memory)
-			for i := 0; i < update.EndIndex - update.StartIndex; i++ {
-				log[update.StartIndex + i] = update.Entries[i]
-			}
-			if log_length < update.EndIndex {
-				log_length = update.EndIndex
-			}
-			glog.Info("Adding from persistent storage :", update)
-		}
-	}
-	log = log[:log_length]
-
-	// check persistent storage for view
-	view := 0
-	if !is_new {
-		for {
-			b, err := meta_disk_reader.ReadBytes(byte('\n'))
-			if err != nil {
-				glog.Info("No more view updates in persistent storage")
-				break
-			}
-			found = true
-			view, _ = strconv.Atoi(string(b))
-		}
-	}
-
-	// write view updates to persistent storage
-	go func() {
-		for {
-			view := <-cons_io.ViewPersist
-			glog.Info("Updating view to ", view)
-			_, err := meta_disk.Write([]byte(strconv.Itoa(view)))
-			_, err = meta_disk.Write([]byte("\n"))
-			if err != nil {
-				glog.Fatal(err)
-			}
-			meta_disk_file.Sync()
-			cons_io.ViewPersistFsync <- view
-		}
-	}()
-	// write log updates to persistent storage
-	go func() {
-		for {
-			log := <-cons_io.LogPersist
-			glog.Info("Updating log with ", log)
-			b, err := msgs.Marshal(log)
-			if err != nil {
-				glog.Fatal(err)
-			}
-			// write to persistent storage
-			n1, err := disk.Write(b)
-			n2, err := disk.Write([]byte("\n"))
-			if err != nil {
-				glog.Fatal(err)
-			}
-			glog.Info(n1+n2, " bytes written to persistent log")
-			disk_file.Sync()
-			cons_io.LogPersistFsync <- log
-		}
-	}()
+	// set up persistent storage
+	logFile := *disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp"
+	dataFile := *disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
+	found, view, log := unix.SetupPersistentStorage(logFile, dataFile, cons_io, conf.Options.Length)
 
 	// set up client server
 	glog.Info("Starting up client server")
@@ -505,8 +403,6 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigs
-	disk.Flush()
-	meta_disk.Flush()
 	glog.Flush()
 	glog.Warning("Shutting down due to ", sig)
 }
