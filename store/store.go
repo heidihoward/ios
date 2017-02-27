@@ -6,6 +6,7 @@ import (
 	"github.com/golang/glog"
 	"strings"
 	"encoding/json"
+	"strconv"
 )
 
 type Store map[string]string
@@ -36,6 +37,13 @@ func (s *Store) execute(req string) string {
 		glog.Infof("Updating %s to %s", request[1], request[2])
 		(*s)[request[1]] = request[2]
 		return "OK"
+	case "exists":
+		if len(request) != 2 {
+			return "request not recognised"
+		}
+		glog.Infof("Checking if %s exists", request[1])
+		_, exists := (*s)[request[1]]
+		return strconv.FormatBool(exists)
 	case "get":
 		if len(request) != 2 {
 			return "request not recognised"
@@ -47,6 +55,25 @@ func (s *Store) execute(req string) string {
 		} else {
 			return "key not found"
 		}
+	case "delete":
+		if len(request) != 2 {
+			return "request not recognised"
+		}
+		glog.Infof("Deleting %s", request[1])
+		delete(*s,request[1])
+		return "OK"
+	case "count":
+		if len(request) != 1 {
+			return "request not recognised"
+		}
+		glog.Infof("Counting size of key-value store")
+		return strconv.Itoa(len(*s))
+	case "print":
+		if len(request) != 1 {
+			return "request not recognised"
+		}
+		glog.Infof("Printing key-value store")
+		return s.Print()
 	default:
 		return "request not recognised"
 	}
@@ -66,10 +93,12 @@ func (s *Store) Process(req string) string {
 	return reply
 }
 
-func (s *Store) Print() {
+func (s *Store) Print() string {
+	str := ""
 	for key, value := range *s {
-		glog.Info("(", key, value, ")")
+		str +=  key+", "+value+ "\n"
 	}
+	return str
 }
 
 func (s *Store) MakeSnapshot() []byte {
