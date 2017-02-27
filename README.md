@@ -25,17 +25,21 @@ go get github.com/heidi-ann/ios/...
 You can start a 1 node Ios cluster as follows:
 ```
 cd $GOPATH/src/github.com/heidi-ann/ios/server
-$GOPATH/bin/server -id 0 -config example.conf -logtostderr true
+$GOPATH/bin/server -id 0 
 ```
 This will start an Ios server with ID 0, clients can now communicate with the server over port 8080 as follows:
 ```
 $ cd $GOPATH/src/github.com/heidi-ann/ios/client
-$ $GOPATH/bin/client -id=0 -config example.conf
+$ $GOPATH/bin/client
 Starting Ios client in interactive mode.
 
 The following commands are available:
 	get [key]: to return the value of a given key
-	update [key] [value]: to set the value of a given key
+	exists [key]: to test if a given key is present
+	update [key] [value]: to set the value of a given key, if key already exists then overwrite
+	delete [key]: to remove a key value pair if present
+	count: to return the number of keys
+	print: to return all key value pairs
 
 Enter command: update A 1
 OK
