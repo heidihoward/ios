@@ -302,7 +302,6 @@ func main() {
 	defer glog.Warning("Shutting down server ", *id)
 
 	//set up state machine
-	keyval = store.New()
 	c = cache.Create()
 	// setup IO
 	cons_io = msgs.MakeIo(2000, len(conf.Peers.Address))
@@ -315,7 +314,8 @@ func main() {
 	logFile := *disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp"
 	dataFile := *disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
 	snapFile := *disk_path + "/persistent_snapshot_" + strconv.Itoa(*id) + ".temp"
-	found, view, log := unix.SetupPersistentStorage(logFile, dataFile, snapFile, cons_io, conf.Options.Length)
+	found, view, log, index, snapshot := unix.SetupPersistentStorage(logFile, dataFile, snapFile, cons_io, conf.Options.Length)
+	keyval = snapshot
 
 	// set up client server
 	glog.Info("Starting up client server")
@@ -392,7 +392,7 @@ func main() {
 		go consensus.Init(cons_io, cons_config, keyval)
 	} else {
 		glog.Info("Restoring consensus instance")
-		go consensus.Recover(cons_io, cons_config, view, log, keyval)
+		go consensus.Recover(cons_io, cons_config, view, log, keyval, index)
 	}
 	//go cons_io.DumpPersistentStorage()
 

@@ -25,14 +25,14 @@ func (c *Cache) Check(req msgs.ClientRequest) (bool, msgs.ClientResponse) {
 	last := c.m[req.ClientID]
 	c.RUnlock()
 	if last.RequestID > req.RequestID {
-		glog.Fatal("Request has already been applied and overwritten in request cache")
+		glog.Fatal("Request has already been applied to state machine and overwritten in request cache")
 	}
 	return req.RequestID == last.RequestID, last
 }
 
 func (c *Cache) Add(res msgs.ClientResponse) {
 	c.Lock()
-	if c.m[res.ClientID].RequestID + 1 != res.RequestID {
+	if c.m[res.ClientID].RequestID != 0 && c.m[res.ClientID].RequestID + 1 != res.RequestID {
 		glog.Fatal("Requests must be added to request cache in order")
 	}
 	c.m[res.ClientID] = res

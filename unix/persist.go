@@ -6,6 +6,8 @@ import (
   "github.com/heidi-ann/ios/msgs"
   "os"
   "strconv"
+  "github.com/heidi-ann/ios/store"
+  "strings"
 )
 
 type FileHandler struct {
@@ -94,31 +96,49 @@ func restoreView(viewFile FileHandler) (bool, int) {
   }
 }
 
-func restoreSnapshot(snapFile FileHandler) (bool, index, *store.Store) {
+func restoreSnapshot(snapFile FileHandler) (bool, int, *store.Store) {
   if snapFile.IsNew {
     return false, -1, store.New()
   }
 
+  // fetching index from snapshot file
   b, err := snapFile.R.ReadBytes(byte('\n'))
   if err != nil {
-    glog.Warning("Snapshot corrupted, ignoring snapshot")
+    glog.Warning("Snapshot corrupted, ignoring snapshot", err)
     return false, -1, store.New()
   }
-  found = true
-  index, _ = strconv.Atoi(string(b))
-  // TODO: fnish
+  index, err := strconv.Atoi(strings.Trim(string(b),"\n"))
+  if err != nil {
+    glog.Warning("Snapshot corrupted, ignoring snapshot", err)
+    return false, -1, store.New()
+  }
+
+  // fetch state machine snapshot form shapshot file
+  snap, err := snapFile.R.ReadBytes(byte('\n'))
+  if err != nil {
+    glog.Warning("Snapshot corrupted, ignoring snapshot",err)
+    return false, -1, store.New()
+  }
+  return true, index, store.RestoreSnapshot(snap)
 }
 
-func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, []msgs.Entry) {
+func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, []msgs.Entry, int, *store.Store) {
 	// setting up persistent log
 	logStorage := openFile(logFile)
 	dataStorage := openFile(dataFile)
+  snapStorage := openFile(snapFile)
 
-	// check persistent storage for commands
-	_, log := restoreLog(logStorage,MaxLength)
-	// check persistent storage for view
-	found, view := restoreView(dataStorage)
-  // TODO: check for snapshot
+	// check persistent storage for commands & view
+	foundLog, log := restoreLog(logStorage,MaxLength)
+	foundView, view := restoreView(dataStorage)
+  if foundLog && !foundView {
+    glog.Fatal("Log is present but view is not, this should not occur")
+  }
+  // check persistent storage for snapshots
+  foundSnapshot, index, store := restoreSnapshot(snapStorage)
+  if foundSnapshot && !foundView && !foundLog{
+    glog.Fatal("Snapshot is present but view/log is not, this should not occur")
+  }
 
 	// write view updates to persistent storage
 	go func() {
@@ -171,11 +191,12 @@ func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io
       _, err = file.Write([]byte(strconv.Itoa(snap.Index)))
 			_, err = file.Write([]byte("\n"))
       _, err = file.Write([]byte(snap.Bytes))
+			_, err = file.Write([]byte("\n"))
 			if err != nil {
 				glog.Fatal(err)
 			}
     }
   }()
 
-  return found, view, log
+  return foundView, view, log, index, store
 }

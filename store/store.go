@@ -31,14 +31,14 @@ func (s *Store) execute(req string) string {
 	switch request[0] {
 	case "update":
 		if len(request) != 3 {
-			return "not reconised"
+			return "not recognised"
 		}
 		glog.Infof("Updating %s to %s", request[1], request[2])
 		(*s)[request[1]] = request[2]
 		return "OK"
 	case "get":
 		if len(request) != 2 {
-			return "not reconised"
+			return "request not recognised"
 		}
 		glog.Infof("Getting %s", request[1])
 		value, ok := (*s)[request[1]]
@@ -48,7 +48,7 @@ func (s *Store) execute(req string) string {
 			return "key not found"
 		}
 	default:
-		return "not reconised"
+		return "request not recognised"
 	}
 }
 

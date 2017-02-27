@@ -61,7 +61,7 @@ func Init(io *msgs.Io, config Config, keyval *store.Store) {
 
 }
 
-func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry, keyval *store.Store) {
+func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry, keyval *store.Store, snapshotIndex int) {
 	// setup
 	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N,len(log))
 
@@ -71,14 +71,14 @@ func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry, keyval *sto
 	state := State{
 		View:        view,
 		Log:         new_log,
-		CommitIndex: -1,
+		CommitIndex: snapshotIndex,
 		MasterID:    mod(view, config.N),
 		LastIndex:   len(log) - 1,
-		LastSnapshot: 0,
+		LastSnapshot: snapshotIndex,
 		StateMachine:  keyval}
 
 	// apply recovered requests to state machine
-	for i := 0; i <= state.LastIndex; i++ {
+	for i := snapshotIndex +1; i <= state.LastIndex; i++ {
 		if !state.Log[i].Committed {
 			break
 		}
