@@ -17,6 +17,7 @@ type Config struct {
 	DelegateReplication  int // how many replication coordinators to delegate to when leading
 	WindowSize  int // how many requests can the master have inflight at once
 	SnapshotInterval int // how often to record state machine snapshots
+	Quorum       QuorumSys // 
 }
 
 type State struct {
@@ -26,7 +27,7 @@ type State struct {
 	MasterID    int // ID of the current master, calculated from View
 	LastIndex   int // index of the last entry in the log, -1 means that the log has no entries
 	LastSnapshot int // index of the last state machine snapshot
-	StateMachine *store.Store
+	StateMachine *store.Store // ref to current state machine
 }
 
 

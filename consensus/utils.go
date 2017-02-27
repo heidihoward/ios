@@ -1,9 +1,5 @@
 package consensus
 
-func Majority(n int) int {
-	return (n / 2) + 1
-}
-
 func mod(x int, y int) int {
 	if x < y {
 		return x

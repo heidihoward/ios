@@ -7,8 +7,6 @@ import (
 )
 
 func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry, io *msgs.Io, config Config, prepare bool) bool {
-
-	majority := Majority(config.N)
 	// PHASE 2: prepare
 	if prepare {
 
@@ -22,8 +20,8 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 		(*io).OutgoingBroadcast.Requests.Prepare <- prepare
 
 		// collect responses
-		glog.Info("Waiting for ", majority, " prepare responses")
-		for i := 0; i < majority; {
+		glog.Info("Waiting for ", config.Quorum.ReplicateSize, " prepare responses")
+		for replied := make([]bool,config.N); !config.Quorum.checkReplicationQuorum(replied); {
 			msg := <-(*io).Incoming.Responses.Prepare
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, prepare) {
@@ -32,8 +30,8 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 					glog.Warning("Coordinator is stepping down")
 					return false
 				}
-				i++
-				glog.Info("Successful response received, waiting for ", majority-i, " more")
+				replied[msg.Response.SenderID] = true
+				glog.Info("Successful response received, waiting for more")
 			}
 		}
 	}
@@ -50,12 +48,13 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 
 	// TODO: handle replies properly
 	go func() {
-		for i := 0; i < majority; {
+		for replied := make([]bool,config.N); config.Quorum.checkReplicationQuorum(replied); {
 			msg := <-(*io).Incoming.Responses.Commit
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, commit) {
 				glog.Info("Received ", msg)
 			}
+			replied[msg.Response.SenderID] = true
 		}
 	}()
 

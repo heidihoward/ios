@@ -58,16 +58,15 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 // RunRecovery executes the recovery phase of leadership election,
 // Returns if it was successful and the previous view's end index
 func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,int) {
-	majority := Majority(config.N)
 	// dispatch new view requests
 	req := msgs.NewViewRequest{config.ID, view}
 	(*io).OutgoingBroadcast.Requests.NewView <- req
 
 	// collect responses
-	glog.Info("Waiting for ", majority, " new view responses")
+	glog.Info("Waiting for ", config.Quorum.RecoverySize, " new view responses")
 	endIndex := commit_index
 
-	for i := 0; i < majority; {
+	for replied := make([]bool,config.N); !config.Quorum.checkRecoveryQuorum(replied); {
 		msg := <-(*io).Incoming.Responses.NewView
 		// check msg replies to the msg we just sent
 		if msg.Request == req {
@@ -80,8 +79,8 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 			if res.Index > endIndex {
 				endIndex = res.Index
 			}
-			i++
-			glog.Info("Successful new view received, waiting for ", majority-i, " more")
+			replied[msg.Response.SenderID] = true
+			glog.Info("Successful new view received, waiting for more")
 		}
 	}
 

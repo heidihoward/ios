@@ -9,7 +9,6 @@ import (
 // returns true if successful
 // start index is inclusive and end index is exclusive
 func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io, config Config) bool {
-	majority := Majority(config.N)
 	glog.Info("Starting recovery for indexes ", startIndex," to ",endIndex)
 
 	// dispatch query to all
@@ -24,12 +23,9 @@ func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 	}
 
 	//check only one response is received per sender, index= node ID
-	replied := make([]bool,config.N)
-	for id := 0; id<config.N; id ++ {
-		replied[id] = false
-	}
 
-	for n := 0; n < majority; {
+
+	for replied := make([]bool,config.N); !config.Quorum.checkRecoveryQuorum(replied); {
 		msg := <-(*io).Incoming.Responses.Query
 		if msg.Request == query {
 
@@ -76,8 +72,6 @@ func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 						glog.Info("Log entry at index ",i," on node ID ",msg.Response.SenderID," is missing")
 					}
 				}
-			// update count
-			n++
 			}
 		}
 	}

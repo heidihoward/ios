@@ -19,6 +19,7 @@ type ServerConfig struct {
 		DelegateReplication int
 		WindowSize 					int
 		SnapshotInterval    int
+		QuorumSystem        string
 	}
 }
 
