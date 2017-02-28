@@ -6,25 +6,6 @@ import (
 	"reflect"
 )
 
-// check protocol invariant
-func checkInvariant(log []msgs.Entry, index int, nxtEntry msgs.Entry) {
-	prevEntry := log[index]
-
-	// if no entry, then no problem
-	if reflect.DeepEqual(prevEntry, msgs.Entry{}) {
-		return
-	}
-
-	// if committed, request never changes
-	if prevEntry.Committed && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
-		glog.Fatal("Committed entry is being overwritten at ", prevEntry, nxtEntry, index)
-	}
-	// each index is allocated once per term
-	if prevEntry.View == nxtEntry.View && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
-		glog.Fatal("Index has been reallocated at ", prevEntry, nxtEntry, index)
-	}
-}
-
 // PROTOCOL BODY
 
 func RunParticipant(state *State, io *msgs.Io, config Config) {
@@ -56,20 +37,8 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			// check that no committed entires will be overwritten
-			for i := 0; i < req.EndIndex - req.StartIndex; i++ {
-				checkInvariant(state.Log, i+req.StartIndex, req.Entries[i])
-			}
-
-			// update LastIndex
-			if req.EndIndex -1 > state.LastIndex {
-				state.LastIndex = req.EndIndex -1
-			}
-
 			// add enties to the log (in-memory)
-			for i := 0; i < req.EndIndex - req.StartIndex; i++ {
-				state.Log[req.StartIndex + i] = req.Entries[i]
-			}
+			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
 			// add entries to the log (persistent storage)
 			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, true}
 			io.LogPersist <- logUpdate
@@ -89,25 +58,13 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 		case req := <-(*io).Incoming.Requests.Commit:
 			glog.Info("Commit requests received at ", config.ID, ": ", req)
 
-			// check that no committed entires will be overwritten
-			for i := 0; i < req.EndIndex - req.StartIndex; i++ {
-				checkInvariant(state.Log, i+req.StartIndex, req.Entries[i])
-			}
-
-			// update LastIndex
-			if req.EndIndex -1 > state.LastIndex {
-				state.LastIndex = req.EndIndex -1
-			}
-
 			// add enties to the log (in-memory)
-			for i := 0; i < req.EndIndex - req.StartIndex; i++ {
-				state.Log[req.StartIndex + i] = req.Entries[i]
-			}
+			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
 			io.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
 
 			// pass requests to state machine if ready
-			for state.Log[state.CommitIndex+1].Committed {
-				for _, request := range state.Log[state.CommitIndex+1].Requests {
+			for state.Log.GetEntry(state.CommitIndex+1).Committed {
+				for _, request := range state.Log.GetEntry(state.CommitIndex+1).Requests {
 					io.OutgoingRequests <- request
 					glog.Info("Request Committed: ",request)
 				}
@@ -144,7 +101,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			reply := msgs.NewViewResponse{config.ID, state.View, state.LastIndex}
+			reply := msgs.NewViewResponse{config.ID, state.View, state.Log.LastIndex}
 			(*io).OutgoingUnicast[req.SenderID].Responses.NewView <- msgs.NewView{req, reply}
 			glog.Info("Response dispatched")
 
@@ -169,7 +126,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			reply := msgs.QueryResponse{config.ID, state.View, state.Log[req.StartIndex:req.EndIndex]}
+			reply := msgs.QueryResponse{config.ID, state.View, state.Log.GetEntries(req.StartIndex,req.EndIndex)}
 			(*io).OutgoingUnicast[req.SenderID].Responses.Query <- msgs.Query{req, reply}
 		}
 	}

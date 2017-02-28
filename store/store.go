@@ -1,5 +1,6 @@
 // Package store provides a simple key value store
 // Not safe for concurreny access
+// TODO: replace map with https://github.com/orcaman/concurrent-map
 package store
 
 import (

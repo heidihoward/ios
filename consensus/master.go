@@ -141,7 +141,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		//wait for window slot
 		//TOOD: replace with better mechanism then polling
 
-		for index > window_start + config.WindowSize {
+		for index >= window_start + config.WindowSize {
 			glog.Warning("Request querying for replication window")
 			time.Sleep(100 * time.Millisecond)
 		}

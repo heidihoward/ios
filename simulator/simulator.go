@@ -30,7 +30,7 @@ func RunSimulator(nodes int) []*msgs.Io {
 }
 
 // same as RunSimulator except where the log in persistent storage is given
-func RunRecoverySimulator(nodes int, logs [][]msgs.Entry, views []int) []*msgs.Io {
+func RunRecoverySimulator(nodes int, logs []*consensus.Log, views []int) []*msgs.Io {
 	ios := make([]*msgs.Io, nodes)
 	store := store.New()
 	// setup state

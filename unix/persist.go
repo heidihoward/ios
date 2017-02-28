@@ -7,6 +7,7 @@ import (
   "os"
   "strconv"
   "github.com/heidi-ann/ios/store"
+  "github.com/heidi-ann/ios/consensus"
   "strings"
 )
 
@@ -42,20 +43,19 @@ func openFile(filename string) FileHandler {
 	return FileHandler{filename, is_new, w, r, file}
 }
 
-func restoreLog(logFile FileHandler, MaxLength int) (bool, []msgs.Entry) {
+func restoreLog(logFile FileHandler, MaxLength int) (bool, *consensus.Log) {
 
   if logFile.IsNew {
-    return false, []msgs.Entry{}
+    return false, consensus.NewLog(MaxLength)
   }
 
   found := false
-  log := make([]msgs.Entry, MaxLength)
-  logLength := 0
+  log := consensus.NewLog(MaxLength)
 
   for {
     b, err := logFile.R.ReadBytes(byte('\n'))
     if err != nil {
-      glog.Info("No more commands in persistent storage, ",logLength," log entries were recovered")
+      glog.Info("No more commands in persistent storage, ",log.LastIndex," log entries were recovered")
       break
     }
     found = true
@@ -65,16 +65,11 @@ func restoreLog(logFile FileHandler, MaxLength int) (bool, []msgs.Entry) {
       glog.Fatal("Cannot parse log update", err)
     }
     // add enties to the log (in-memory)
-    for i := 0; i < update.EndIndex - update.StartIndex; i++ {
-      log[update.StartIndex + i] = update.Entries[i]
-    }
-    if logLength < update.EndIndex {
-      logLength = update.EndIndex
-    }
+    log.AddEntries(update.StartIndex, update.EndIndex, update.Entries)
     glog.Info("Adding from persistent storage :", update)
   }
 
-  return found, log[:logLength]
+  return found, log
 }
 
 func restoreView(viewFile FileHandler) (bool, int) {
@@ -122,7 +117,7 @@ func restoreSnapshot(snapFile FileHandler) (bool, int, *store.Store) {
   return true, index, store.RestoreSnapshot(snap)
 }
 
-func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, []msgs.Entry, int, *store.Store) {
+func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, *consensus.Log, int, *store.Store) {
 	// setting up persistent log
 	logStorage := openFile(logFile)
 	dataStorage := openFile(dataFile)

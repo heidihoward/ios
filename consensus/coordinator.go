@@ -48,7 +48,7 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 
 	// TODO: handle replies properly
 	go func() {
-		for replied := make([]bool,config.N); config.Quorum.checkReplicationQuorum(replied); {
+		for replied := make([]bool,config.N); !config.Quorum.checkReplicationQuorum(replied); {
 			msg := <-(*io).Incoming.Responses.Commit
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, commit) {
@@ -63,13 +63,14 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 
 // returns true if successful
 func RunCoordinator(state *State, io *msgs.Io, config Config) {
-	glog.Info("Coordinator is ready to handle requests")
 
 	for {
+		glog.Info("Coordinator is ready to handle request")
 		req := <-(*io).Incoming.Requests.Coordinate
 		success := DoCoordination(req.View, req.StartIndex, req.EndIndex, req.Entries, io, config, req.Prepare)
 		reply := msgs.CoordinateResponse{config.ID, success}
 		(*io).OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
+		glog.Info("Coordinator is finished handling request")
 		// TOD0: handle failure
 	}
 }

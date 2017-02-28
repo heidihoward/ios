@@ -17,15 +17,14 @@ type Config struct {
 	DelegateReplication  int // how many replication coordinators to delegate to when leading
 	WindowSize  int // how many requests can the master have inflight at once
 	SnapshotInterval int // how often to record state machine snapshots
-	Quorum       QuorumSys // 
+	Quorum       QuorumSys //
 }
 
 type State struct {
 	View        int // local view number (persistent)
-	Log         []msgs.Entry // log entries, index from 0 (persistent)
+	Log         *Log // log entries, index from 0 (persistent)
 	CommitIndex int // index of the last entry applied to the state machine, -1 means no entries have been applied yet
 	MasterID    int // ID of the current master, calculated from View
-	LastIndex   int // index of the last entry in the log, -1 means that the log has no entries
 	LastSnapshot int // index of the last state machine snapshot
 	StateMachine *store.Store // ref to current state machine
 }
@@ -39,10 +38,9 @@ func Init(io *msgs.Io, config Config, keyval *store.Store) {
 	glog.Infof("Starting node %d of %d", config.ID, config.N)
 	state := State{
 		View:        0,
-		Log:         make([]msgs.Entry, config.LogLength),
+		Log:         NewLog(config.LogLength),
 		CommitIndex: -1,
 		MasterID:    0,
-		LastIndex:   -1,
 		LastSnapshot:  0,
 		StateMachine:  keyval}
 
@@ -62,30 +60,27 @@ func Init(io *msgs.Io, config Config, keyval *store.Store) {
 
 }
 
-func Recover(io *msgs.Io, config Config, view int, log []msgs.Entry, keyval *store.Store, snapshotIndex int) {
+func Recover(io *msgs.Io, config Config, view int, log *Log, keyval *store.Store, snapshotIndex int) {
 	// setup
-	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N,len(log))
+	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
 
-	new_log := make([]msgs.Entry, config.LogLength)
-	copy(new_log, log)
 	// restore previous state
 	state := State{
 		View:        view,
-		Log:         new_log,
+		Log:         log,
 		CommitIndex: snapshotIndex,
 		MasterID:    mod(view, config.N),
-		LastIndex:   len(log) - 1,
 		LastSnapshot: snapshotIndex,
 		StateMachine:  keyval}
 
 	// apply recovered requests to state machine
-	for i := snapshotIndex +1; i <= state.LastIndex; i++ {
-		if !state.Log[i].Committed {
+	for i := snapshotIndex +1; i <= state.Log.LastIndex; i++ {
+		if !state.Log.GetEntry(i).Committed {
 			break
 		}
 		state.CommitIndex = i
 
-		for _, request := range state.Log[i].Requests {
+		for _, request := range state.Log.GetEntry(i).Requests {
 			(*io).OutgoingRequests <- request
 		}
 	}

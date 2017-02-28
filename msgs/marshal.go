@@ -30,7 +30,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Requests.Prepare <- msg
+		select {
+		case msgch.Requests.Prepare <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 2:
 		var msg CommitRequest
 		err := Unmarshal(b[1:], &msg)
@@ -38,7 +42,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Requests.Commit <- msg
+		select {
+		case msgch.Requests.Commit <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 3:
 		var msg Prepare
 		err := Unmarshal(b[1:], &msg)
@@ -46,7 +54,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Responses.Prepare <- msg
+		select {
+		case msgch.Responses.Prepare <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 4:
 		var msg Commit
 		err := Unmarshal(b[1:], &msg)
@@ -54,7 +66,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Responses.Commit <- msg
+		select {
+		case msgch.Responses.Commit <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 5:
 		var msg NewViewRequest
 		err := Unmarshal(b[1:], &msg)
@@ -62,7 +78,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Requests.NewView <- msg
+		select {
+		case msgch.Requests.NewView <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 6:
 		var msg NewView
 		err := Unmarshal(b[1:], &msg)
@@ -70,7 +90,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Responses.NewView <- msg
+		select {
+		case msgch.Responses.NewView <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 7:
 		var msg CoordinateRequest
 		err := Unmarshal(b[1:], &msg)
@@ -78,7 +102,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Requests.Coordinate <- msg
+		select {
+		case msgch.Requests.Coordinate <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 8:
 		var msg Coordinate
 		err := Unmarshal(b[1:], &msg)
@@ -86,7 +114,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Responses.Coordinate <- msg
+		select {
+		case msgch.Responses.Coordinate <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 9:
 		var msg QueryRequest
 		err := Unmarshal(b[1:], &msg)
@@ -94,7 +126,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Requests.Query <- msg
+		select {
+		case msgch.Requests.Query <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 0:
 		var msg Query
 		err := Unmarshal(b[1:], &msg)
@@ -102,7 +138,11 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.Info("Unmarshalled ", msg)
-		msgch.Responses.Query <- msg
+		select {
+		case msgch.Responses.Query <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	default:
     glog.Warning("Cannot parse message", string(b))
 	}

@@ -268,7 +268,6 @@ func handleConnection(cn net.Conn) {
 		glog.Info(string(b))
 
 		// send reply
-		// TODO: FIX currently all server send back replies
 		glog.Info("Sending ", string(b))
 		n, err := writer.Write(b)
 		if err != nil {
