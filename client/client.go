@@ -186,26 +186,25 @@ func main() {
 			}
 			glog.Info("Request ", requestID, " is: ", text)
 
+			// prepare request
+			req := msgs.ClientRequest{
+				*id, requestID, replicate, false,text}
+			b, err := msgs.Marshal(req)
+			if err != nil {
+				glog.Fatal(err)
+			}
+			glog.Info(string(b))
+
 			startTime := time.Now()
 			tries := 0
+			var reply *msgs.ClientResponse
 
 			// dispatch request until successful
-			var reply *msgs.ClientResponse
 			for {
 				tries++
-				force := false
 				if tries > 1 {
-					force = true
+					req.ForceViewChange = true
 				}
-
-				// encode as request
-				req := msgs.ClientRequest{
-					*id, requestID, replicate, force,text}
-				b, err := msgs.Marshal(req)
-				if err != nil {
-					glog.Fatal(err)
-				}
-				glog.Info(string(b))
 
 				replyBytes, err := dispatcher(b, conn, rd, timeout)
 				if err == nil {
@@ -217,8 +216,8 @@ func main() {
 				  if err == nil && !reply.Success {
 						err = errors.New("request marked by server as unsuccessful")
 					}
-
-					if err == nil {
+					if err == nil && reply.Success {
+						glog.Info("request was Successful", reply)
 						break
 					}
 				}
@@ -252,6 +251,9 @@ func main() {
 			if reply.RequestID != requestID {
 				glog.Fatal("Response received has wrong RequestID: expected ",
 					requestID, " ,received ", reply.RequestID)
+			}
+			if !reply.Success {
+				glog.Fatal("Response marked as unsuccessful but not retried")
 			}
 
 			// write to latency to log

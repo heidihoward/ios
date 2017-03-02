@@ -275,6 +275,9 @@ func main() {
 	if *id == -1 {
 		glog.Fatal("ID is required")
 	}
+	if *id >= len(conf.Peers.Address) {
+		glog.Fatal("Node ID is ",*id," but is configured with a ",len(conf.Peers.Address)," node cluster")
+	}
 
 	glog.Info("Starting server ", *id)
 	defer glog.Warning("Shutting down server ", *id)
@@ -282,7 +285,7 @@ func main() {
 	// setup IO
 	cons_io = msgs.MakeIo(2000, len(conf.Peers.Address))
 
-	notifyclient = make(map[msgs.ClientRequest](chan msgs.ClientResponse))
+	notifyclient = make(map[int](chan msgs.ClientResponse))
 	notifyclient_mutex = sync.RWMutex{}
 	go stateMachine()
 
