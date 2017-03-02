@@ -1,11 +1,11 @@
-package store
+package app
 
 import (
 	"testing"
 	"reflect"
 	)
 
-func TestProcess(t *testing.T) {
+func Testprocess(t *testing.T) {
 	store := New()
 
 	cases := []struct {
@@ -23,7 +23,7 @@ func TestProcess(t *testing.T) {
 	}
 }
 
-func TestRestoreSnapshot(t *testing.T) {
+func TestrestoreSnapshot(t *testing.T) {
 	var store Store
 	store = map[string]string{
 			"A": "0",

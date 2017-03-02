@@ -40,15 +40,23 @@ func NewLog (maxLength int) *Log {
   return &Log{make([]msgs.Entry, maxLength),-1,0, maxLength}
 }
 
+func RestoreLog (maxLength int, startIndex int) *Log {
+  return &Log{make([]msgs.Entry, maxLength),startIndex,startIndex, maxLength}
+}
+
 
 func (l *Log) AddEntries(startIndex int, endIndex int, entries []msgs.Entry) {
   // check correct number of entries has been given
   if len(entries) != endIndex - startIndex {
     glog.Fatal("Wrong number of log entries provided")
   }
+	// check indexes are accessible
+	if startIndex < l.AbsoluteIndex {
+		return
+	}
   // check indexes are accessible
-  if startIndex < l.AbsoluteIndex || endIndex > l.AbsoluteIndex + l.MaxLength -1 {
-    glog.Fatal("Log index is outside bounds")
+  if endIndex > l.AbsoluteIndex + l.MaxLength -1 {
+    glog.Fatal("Log index is too large, please snapshot log")
   }
   // add entries and check invariants
   for i := 0; i < len(entries); i++ {
@@ -66,9 +74,17 @@ func (l *Log) AddEntry(index int, entry msgs.Entry) {
 }
 
 func (l *Log) GetEntries(startIndex int,endIndex int) []msgs.Entry {
+	// check indexes are accessible
+	if startIndex < l.AbsoluteIndex || endIndex > l.AbsoluteIndex + l.MaxLength -1 {
+		glog.Fatal("Trying to access log out of bounds")
+	}
   return l.LogEntries[startIndex-l.AbsoluteIndex:endIndex-l.AbsoluteIndex]
 }
 
 func (l *Log) GetEntry(index int) msgs.Entry {
+	// check indexes are accessible
+	if index < l.AbsoluteIndex || index > l.AbsoluteIndex + l.MaxLength -1 {
+		glog.Fatal("Trying to access log out of bounds")
+	}
   return l.LogEntries[index-l.AbsoluteIndex]
 }

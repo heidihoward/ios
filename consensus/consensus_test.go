@@ -4,7 +4,7 @@ import (
 	"flag"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
-	"github.com/heidi-ann/ios/store"
+	"github.com/heidi-ann/ios/app"
 	"reflect"
 	"testing"
 	"time"
@@ -16,7 +16,7 @@ func TestInit(t *testing.T) {
 
 	// create a node in system of 3 nodes
 	io := msgs.MakeIo(10, 3)
-	store := store.New()
+	store := app.NewStore()
 	conf := Config{0, 3, 1000, 0, 0,0,1, 100}
 	go Init(io, conf,store)
 

@@ -6,7 +6,7 @@ import (
   "github.com/heidi-ann/ios/msgs"
   "os"
   "strconv"
-  "github.com/heidi-ann/ios/store"
+	"github.com/heidi-ann/ios/app"
   "github.com/heidi-ann/ios/consensus"
   "strings"
 )
@@ -43,14 +43,14 @@ func openFile(filename string) FileHandler {
 	return FileHandler{filename, is_new, w, r, file}
 }
 
-func restoreLog(logFile FileHandler, MaxLength int) (bool, *consensus.Log) {
+func restoreLog(logFile FileHandler, MaxLength int, snapshotIndex int) (bool, *consensus.Log) {
 
   if logFile.IsNew {
     return false, consensus.NewLog(MaxLength)
   }
 
   found := false
-  log := consensus.NewLog(MaxLength)
+  log := consensus.RestoreLog(MaxLength,snapshotIndex)
 
   for {
     b, err := logFile.R.ReadBytes(byte('\n'))
@@ -91,49 +91,51 @@ func restoreView(viewFile FileHandler) (bool, int) {
   }
 }
 
-func restoreSnapshot(snapFile FileHandler) (bool, int, *store.Store) {
+func restoreSnapshot(snapFile FileHandler) (bool, int, *app.StateMachine) {
   if snapFile.IsNew {
-    return false, -1, store.New()
+    return false, -1, app.New()
   }
 
   // fetching index from snapshot file
   b, err := snapFile.R.ReadBytes(byte('\n'))
   if err != nil {
     glog.Warning("Snapshot corrupted, ignoring snapshot", err)
-    return false, -1, store.New()
+    return false, -1, app.New()
   }
   index, err := strconv.Atoi(strings.Trim(string(b),"\n"))
   if err != nil {
     glog.Warning("Snapshot corrupted, ignoring snapshot", err)
-    return false, -1, store.New()
+    return false, -1, app.New()
   }
 
-  // fetch state machine snapshot form shapshot file
-  snap, err := snapFile.R.ReadBytes(byte('\n'))
+	// fetch state machine snapshot from shapshot file
+	snapshot, err := snapFile.R.ReadBytes(byte('\n'))
   if err != nil {
     glog.Warning("Snapshot corrupted, ignoring snapshot",err)
-    return false, -1, store.New()
+    return false, -1, app.New()
   }
-  return true, index, store.RestoreSnapshot(snap)
+  return true, index, app.RestoreSnapshot(snapshot)
 }
 
-func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, *consensus.Log, int, *store.Store) {
+func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	// setting up persistent log
 	logStorage := openFile(logFile)
 	dataStorage := openFile(dataFile)
   snapStorage := openFile(snapFile)
 
-	// check persistent storage for commands & view
-	foundLog, log := restoreLog(logStorage,MaxLength)
+	// check persistent storage for view
 	foundView, view := restoreView(dataStorage)
-  if foundLog && !foundView {
-    glog.Fatal("Log is present but view is not, this should not occur")
-  }
   // check persistent storage for snapshots
-  foundSnapshot, index, store := restoreSnapshot(snapStorage)
-  if foundSnapshot && !foundView && !foundLog{
-    glog.Fatal("Snapshot is present but view/log is not, this should not occur")
-  }
+  foundSnapshot, index, state := restoreSnapshot(snapStorage)
+	// check persistent storage for commands
+	foundLog, log := restoreLog(logStorage,MaxLength,index)
+
+	if foundLog && !foundView {
+		glog.Fatal("Log is present but view is not, this should not occur")
+	}
+	if foundSnapshot && !foundView && !foundLog{
+		glog.Fatal("Snapshot is present but view/log is not, this should not occur")
+	}
 
 	// write view updates to persistent storage
 	go func() {
@@ -176,7 +178,7 @@ func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io
   go func() {
     for {
       snap := <-io.SnapshotPersist
-      glog.Info("Saving state machine snapshot upto index", snap.Index,
+      glog.Info("Saving request cache and state machine snapshot upto index", snap.Index,
       " of size ",len(snap.Bytes))
       file, err := os.OpenFile(snapFile, os.O_RDWR|os.O_CREATE, 0777)
       if err != nil {
@@ -193,5 +195,5 @@ func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io
     }
   }()
 
-  return foundView, view, log, index, store
+  return foundView, view, log, index, state
 }

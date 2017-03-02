@@ -1,29 +1,19 @@
 // Package store provides a simple key value store
 // Not safe for concurreny access
 // TODO: replace map with https://github.com/orcaman/concurrent-map
-package store
+package app
 
 import (
 	"github.com/golang/glog"
 	"strings"
-	"encoding/json"
 	"strconv"
 )
 
 type Store map[string]string
 
-func New() *Store {
+func newStore() *Store {
 	var s Store
 	s = map[string]string{}
-	return &s
-}
-
-func RestoreSnapshot(snap []byte) *Store {
-	var s Store
-	err := json.Unmarshal(snap, &s)
-	if err != nil {
-		glog.Fatal("Unable to restore from snapshot: ",err)
-	}
 	return &s
 }
 
@@ -74,13 +64,13 @@ func (s *Store) execute(req string) string {
 			return "request not recognised"
 		}
 		glog.Infof("Printing key-value store")
-		return s.Print()
+		return s.print()
 	default:
 		return "request not recognised"
 	}
 }
 
-func (s *Store) Process(req string) string {
+func (s *Store) process(req string) string {
 	reqs := strings.Split(strings.Trim(req, "\n"), "; ")
 	var reply string
 
@@ -94,18 +84,10 @@ func (s *Store) Process(req string) string {
 	return reply
 }
 
-func (s *Store) Print() string {
+func (s *Store) print() string {
 	str := ""
 	for key, value := range *s {
 		str +=  key+", "+value+ "\n"
 	}
 	return str
-}
-
-func (s *Store) MakeSnapshot() []byte {
-	b, err := json.Marshal(s)
-	if err != nil {
-		glog.Fatal("Unable to snapshot store: ",err)
-	}
-	return b
 }

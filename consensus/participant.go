@@ -65,7 +65,8 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 			// pass requests to state machine if ready
 			for state.Log.GetEntry(state.CommitIndex+1).Committed {
 				for _, request := range state.Log.GetEntry(state.CommitIndex+1).Requests {
-					io.OutgoingRequests <- request
+					reply := state.StateMachine.Apply(request)
+					io.OutgoingResponses <- reply
 					glog.Info("Request Committed: ",request)
 				}
 				state.CommitIndex++

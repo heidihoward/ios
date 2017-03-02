@@ -6,12 +6,11 @@ import (
 	"bufio"
 	"flag"
 	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/cache"
+	"github.com/heidi-ann/ios/app"
 	"github.com/heidi-ann/ios/config"
 	"github.com/heidi-ann/ios/consensus"
 	"github.com/heidi-ann/ios/msgs"
 	"github.com/heidi-ann/ios/unix"
-	"github.com/heidi-ann/ios/store"
 	"io"
 	"net"
 	"os"
@@ -23,8 +22,7 @@ import (
 	"time"
 )
 
-var keyval *store.Store
-var c *cache.Cache
+var application *app.StateMachine
 var cons_io *msgs.Io
 
 var notifyclient map[msgs.ClientRequest](chan msgs.ClientResponse)
@@ -49,30 +47,12 @@ func stateMachine() {
 		var reply msgs.ClientResponse
 
 		select {
-		case req = <-cons_io.OutgoingRequests:
-			glog.Info("Request has been safely replicated by consensus algorithm", req)
-
-			// check if request already applied
-			var found bool
-			found, reply = c.Check(req)
-			if found {
-				glog.Info("Request found in cache and thus cannot be applied")
-			} else {
-				// apply request
-				output := keyval.Process(req.Request)
-				//keyval.Print()
-
-				// write response to request cache
-				reply = msgs.ClientResponse{
-					req.ClientID, req.RequestID, true, output}
-				c.Add(reply)
-			}
+		case reply = <-cons_io.OutgoingResponses:
 		case req = <- cons_io.OutgoingRequestsFailed:
 			glog.Info("Request could not been safely replicated by consensus algorithm", req)
 			reply = msgs.ClientResponse{
 				req.ClientID, req.RequestID, false, ""}
 		}
-
 
 		// if any handleRequests are waiting on this reply, then reply to them
 		notifyclient_mutex.Lock()
@@ -87,8 +67,7 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	glog.Info("Handling ", req.Request)
 
 	// check if already applied
-	found, res := c.Check(req)
-	if found {
+	if found, res := application.Check(req); found {
 		glog.Info("Request found in cache")
 		return res // FAST PASS
 	}
@@ -300,8 +279,6 @@ func main() {
 	glog.Info("Starting server ", *id)
 	defer glog.Warning("Shutting down server ", *id)
 
-	//set up state machine
-	c = cache.Create()
 	// setup IO
 	cons_io = msgs.MakeIo(2000, len(conf.Peers.Address))
 
@@ -313,8 +290,8 @@ func main() {
 	logFile := *disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp"
 	dataFile := *disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
 	snapFile := *disk_path + "/persistent_snapshot_" + strconv.Itoa(*id) + ".temp"
-	found, view, log, index, snapshot := unix.SetupPersistentStorage(logFile, dataFile, snapFile, cons_io, conf.Options.Length)
-	keyval = snapshot
+	found, view, log, index, state := unix.SetupPersistentStorage(logFile, dataFile, snapFile, cons_io, conf.Options.Length)
+	application = state
 
 	// set up client server
 	glog.Info("Starting up client server")
@@ -389,10 +366,10 @@ func main() {
 		log_max_length, conf.Options.BatchInterval, conf.Options.MaxBatch, conf.Options.DelegateReplication, conf.Options.WindowSize,  conf.Options.SnapshotInterval, quorum}
 	if !found {
 		glog.Info("Starting fresh consensus instance")
-		go consensus.Init(cons_io, cons_config, keyval)
+		go consensus.Init(cons_io, cons_config, state)
 	} else {
 		glog.Info("Restoring consensus instance")
-		go consensus.Recover(cons_io, cons_config, view, log, keyval, index)
+		go consensus.Recover(cons_io, cons_config, view, log, state, index)
 	}
 	//go cons_io.DumpPersistentStorage()
 

@@ -4,7 +4,7 @@ package consensus
 import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
-	"github.com/heidi-ann/ios/store"
+	"github.com/heidi-ann/ios/app"
 )
 
 // Config describes the static configuration of the consensus algorithm
@@ -26,13 +26,13 @@ type State struct {
 	CommitIndex int // index of the last entry applied to the state machine, -1 means no entries have been applied yet
 	MasterID    int // ID of the current master, calculated from View
 	LastSnapshot int // index of the last state machine snapshot
-	StateMachine *store.Store // ref to current state machine
+	StateMachine *app.StateMachine // ref to current state machine
 }
 
 
 // Init runs the consensus algorithm.
 // It will not return until the application is terminated.
-func Init(io *msgs.Io, config Config, keyval *store.Store) {
+func Init(io *msgs.Io, config Config, app *app.StateMachine) {
 
 	// setup
 	glog.Infof("Starting node %d of %d", config.ID, config.N)
@@ -42,7 +42,7 @@ func Init(io *msgs.Io, config Config, keyval *store.Store) {
 		CommitIndex: -1,
 		MasterID:    0,
 		LastSnapshot:  0,
-		StateMachine:  keyval}
+		StateMachine:  app}
 
 	// write initial term to persistent storage
 	// TODO: if not master then we need not wait until view has been fsynced
@@ -60,7 +60,7 @@ func Init(io *msgs.Io, config Config, keyval *store.Store) {
 
 }
 
-func Recover(io *msgs.Io, config Config, view int, log *Log, keyval *store.Store, snapshotIndex int) {
+func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int) {
 	// setup
 	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
 
@@ -71,7 +71,7 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, keyval *store.Store
 		CommitIndex: snapshotIndex,
 		MasterID:    mod(view, config.N),
 		LastSnapshot: snapshotIndex,
-		StateMachine:  keyval}
+		StateMachine:  app}
 
 	// apply recovered requests to state machine
 	for i := snapshotIndex +1; i <= state.Log.LastIndex; i++ {
@@ -81,7 +81,8 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, keyval *store.Store
 		state.CommitIndex = i
 
 		for _, request := range state.Log.GetEntry(i).Requests {
-			(*io).OutgoingRequests <- request
+			reply := state.StateMachine.Apply(request)
+			(*io).OutgoingResponses <- reply
 		}
 	}
 	glog.Info("Recovered ",state.CommitIndex + 1," committed entries")
