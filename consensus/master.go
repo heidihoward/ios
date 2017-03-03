@@ -57,14 +57,14 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 
 // RunRecovery executes the recovery phase of leadership election,
 // Returns if it was successful and the previous view's end index
-func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool, int) {
+func RunRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, int) {
 	// dispatch new view requests
 	req := msgs.NewViewRequest{config.ID, view}
 	(*io).OutgoingBroadcast.Requests.NewView <- req
 
 	// collect responses
 	glog.Info("Waiting for ", config.Quorum.RecoverySize, " new view responses")
-	endIndex := commit_index
+	endIndex := commitIndex
 
 	for replied := make([]bool, config.N); !config.Quorum.checkRecoveryQuorum(replied); {
 		msg := <-(*io).Incoming.Responses.NewView
@@ -86,18 +86,18 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool, 
 
 	glog.Info("End index of the previous views is ", endIndex)
 
-	if commit_index == endIndex {
+	if commitIndex == endIndex {
 		glog.Info("New master is up to date, No recovery coordination is required")
 		return true, endIndex
 	}
 
 	// recover entries
-	result := RunRecoveryCoordinator(view, commit_index+1, endIndex+1, io, config)
+	result := RunRecoveryCoordinator(view, commitIndex+1, endIndex+1, io, config)
 	return result, endIndex
 }
 
 // RunMaster implements the Master mode
-func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Config) {
+func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master in view ", view)
 	glog.Info("Master is configured to delegate replication to ", config.DelegateReplication)
@@ -107,7 +107,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 
 	if !initial {
 		var success bool
-		success, index = RunRecovery(view, commit_index, io, config)
+		success, index = RunRecovery(view, commitIndex, io, config)
 		if !success {
 			glog.Warning("Recovery failed")
 			return
@@ -119,12 +119,12 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 	if config.DelegateReplication > 0 {
 		coordinator += 1
 	}
-	window_start := index
-	step_down := false
+	windowStart := index
+	stepDown := false
 
 	for {
 
-		if step_down {
+		if stepDown {
 			glog.Warning("Master stepping down due to coordinator step down")
 			break
 		}
@@ -141,7 +141,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		//wait for window slot
 		//TOOD: replace with better mechanism then polling
 
-		for index >= window_start+config.WindowSize {
+		for index >= windowStart+config.WindowSize {
 			glog.Warning("Request querying for replication window")
 			time.Sleep(100 * time.Millisecond)
 		}
@@ -153,18 +153,18 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		} else {
 			glog.Info("Ready to handle more requests. Batch every ", config.BatchInterval, " milliseconds")
 			// setup for holding requests
-			reqs_all := make([]msgs.ClientRequest, config.MaxBatch)
-			reqs_num := 1
-			reqs_all[0] = req1
+			reqsAll := make([]msgs.ClientRequest, config.MaxBatch)
+			reqsNum := 1
+			reqsAll[0] = req1
 
 			exit := false
 			for exit == false {
 				select {
 				case req := <-io.IncomingRequests:
-					reqs_all[reqs_num] = req
-					glog.Info("Request ", reqs_num, " is : ", req)
-					reqs_num = reqs_num + 1
-					if reqs_num == config.MaxBatch {
+					reqsAll[reqsNum] = req
+					glog.Info("Request ", reqsNum, " is : ", req)
+					reqsNum = reqsNum + 1
+					if reqsNum == config.MaxBatch {
 						exit = true
 						break
 					}
@@ -174,8 +174,8 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				}
 			}
 			// this batch is ready
-			glog.Info("Starting to replicate ", reqs_num, " requests")
-			reqs = reqs_all[:reqs_num]
+			glog.Info("Starting to replicate ", reqsNum, " requests")
+			reqs = reqsAll[:reqsNum]
 		}
 
 		index++
@@ -192,16 +192,16 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 			// TODO: check msg replies to the msg we just sent
 			if !reply.Response.Success {
 				glog.Warning("Commit unsuccessful")
-				step_down = true
+				stepDown = true
 				return
 			}
 			glog.Info("Finished replicating request: ", reqs)
-			if reply.Request.StartIndex == window_start+1 {
-				window_start += 1
+			if reply.Request.StartIndex == windowStart+1 {
+				windowStart += 1
 			} else {
 				// TODO: BUG: handle out-of-order commitment
 				glog.Warning("STUB: to implement")
-				window_start += 1
+				windowStart += 1
 			}
 		}()
 

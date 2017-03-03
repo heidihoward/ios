@@ -9,9 +9,9 @@ import (
 	"time"
 )
 
-func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientResponse, ios []*msgs.Io, master_id int) {
+func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientResponse, ios []*msgs.Io, masterID int) {
 	// send request direct to master
-	ios[master_id].IncomingRequests <- req
+	ios[masterID].IncomingRequests <- req
 
 	for id := range ios {
 		select {

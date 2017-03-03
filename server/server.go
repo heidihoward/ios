@@ -18,7 +18,7 @@ import (
 
 var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
-var disk_path = flag.String("disk", ".", "Path to directory to store persistent storage")
+var diskPath = flag.String("disk", ".", "Path to directory to store persistent storage")
 
 func main() {
 	// set up logging
@@ -40,9 +40,9 @@ func main() {
 	IO := msgs.MakeIo(2000, len(conf.Peers.Address))
 
 	// setup persistent storage
-	logFile := *disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp"
-	dataFile := *disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
-	snapFile := *disk_path + "/persistent_snapshot_" + strconv.Itoa(*id) + ".temp"
+	logFile := *diskPath + "/persistent_log_" + strconv.Itoa(*id) + ".temp"
+	dataFile := *diskPath + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
+	snapFile := *diskPath + "/persistent_snapshot_" + strconv.Itoa(*id) + ".temp"
 	found, view, log, index, state := unix.SetupPersistentStorage(logFile, dataFile, snapFile, IO, conf.Options.Length)
 
 	// setup peers & clients

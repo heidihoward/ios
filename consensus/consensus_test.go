@@ -42,17 +42,17 @@ func TestInit(t *testing.T) {
 		EndIndex:   1,
 		Entries:    entries1}
 
-	prepare1_res := msgs.PrepareResponse{
+	prepare1Res := msgs.PrepareResponse{
 		SenderID: 0,
 		Success:  true}
 
 	// check view update is persisted
 	select {
-	case view_update := <-(*io).ViewPersist:
-		if view_update != 0 {
-			t.Error(view_update)
+	case viewUpdate := <-(*io).ViewPersist:
+		if viewUpdate != 0 {
+			t.Error(viewUpdate)
 		}
-		(*io).ViewPersistFsync <- view_update
+		(*io).ViewPersistFsync <- viewUpdate
 	case <-time.After(time.Second):
 		t.Error("Participant not responding")
 	}
@@ -61,11 +61,11 @@ func TestInit(t *testing.T) {
 
 	// check node tried to dispatch request correctly
 	select {
-	case log_update := <-(*io).LogPersist:
-		if !reflect.DeepEqual(log_update.Entries, entries1) {
-			t.Error(log_update)
+	case logUpdate := <-(*io).LogPersist:
+		if !reflect.DeepEqual(logUpdate.Entries, entries1) {
+			t.Error(logUpdate)
 		}
-		(*io).LogPersistFsync <- log_update
+		(*io).LogPersistFsync <- logUpdate
 	case <-time.After(time.Second):
 		t.Error("Participant not responding")
 	}
@@ -73,7 +73,7 @@ func TestInit(t *testing.T) {
 	// check node tried to dispatch request correctly
 	select {
 	case reply := <-(*io).OutgoingUnicast[0].Responses.Prepare:
-		if reply.Response != prepare1_res {
+		if reply.Response != prepare1Res {
 			t.Error(reply)
 		}
 	case <-time.After(time.Second):
@@ -88,7 +88,7 @@ func TestInit(t *testing.T) {
 		EndIndex:   1,
 		Entries:    entries1}
 
-	commit1_res := msgs.CommitResponse{
+	commit1Res := msgs.CommitResponse{
 		SenderID:    0,
 		Success:     true,
 		CommitIndex: 0}
@@ -98,7 +98,7 @@ func TestInit(t *testing.T) {
 	// check node replies correctly
 	select {
 	case reply := <-(*io).OutgoingUnicast[0].Responses.Commit:
-		if reply.Response != commit1_res {
+		if reply.Response != commit1Res {
 			t.Error(reply)
 		}
 	case <-time.After(time.Second):

@@ -43,9 +43,9 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, true}
 			io.LogPersist <- logUpdate
 			// TODO: find a better way to handle out-of-order log updates
-			last_written := <-io.LogPersistFsync
-			for !reflect.DeepEqual(last_written, logUpdate) {
-				last_written = <-io.LogPersistFsync
+			lastWritten := <-io.LogPersistFsync
+			for !reflect.DeepEqual(lastWritten, logUpdate) {
+				lastWritten = <-io.LogPersistFsync
 			}
 
 			// TODO: add implicit commits from window_size

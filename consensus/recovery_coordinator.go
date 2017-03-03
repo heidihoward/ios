@@ -16,10 +16,10 @@ func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 	(*io).OutgoingBroadcast.Requests.Query <- query
 
 	// collect responses
-	noop_entry := msgs.Entry{0, false, []msgs.ClientRequest{noop}}
+	noopEntry := msgs.Entry{0, false, []msgs.ClientRequest{noop}}
 	candidates := make([]msgs.Entry, endIndex-startIndex)
 	for i := 0; i < endIndex-startIndex; i++ {
-		candidates[i] = noop_entry
+		candidates[i] = noopEntry
 	}
 
 	//check only one response is received per sender, index= node ID
@@ -54,7 +54,7 @@ func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 						}
 
 						// if first entry, then new candidate
-						if reflect.DeepEqual(candidates[i], noop_entry) {
+						if reflect.DeepEqual(candidates[i], noopEntry) {
 							candidates[i] = res.Entries[i]
 						}
 
