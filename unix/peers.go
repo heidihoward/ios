@@ -20,7 +20,7 @@ type Peer struct {
 var peers []Peer
 var peers_mutex sync.RWMutex
 var id int
-var io *msgs.Io
+var IO *msgs.Io
 
 // iterative through peers and check there is a handler for each
 // try to create one if not
@@ -101,7 +101,7 @@ func handlePeer(cn net.Conn, init bool) {
 				break
 			}
 			glog.Infof("Read from peer %d: ", peer_id, string(text))
-			io.Incoming.BytesToProtoMsg(text)
+			IO.Incoming.BytesToProtoMsg(text)
 
 		}
 	}()
@@ -110,7 +110,7 @@ func handlePeer(cn net.Conn, init bool) {
 		for {
 			// send reply
 			glog.Infof("Ready to send message to %d", peer_id)
-			b, err := io.OutgoingUnicast[peer_id].ProtoMsgToBytes()
+			b, err := IO.OutgoingUnicast[peer_id].ProtoMsgToBytes()
 			if err != nil {
 				glog.Fatal("Could not marshal message")
 			}
@@ -141,13 +141,13 @@ func handlePeer(cn net.Conn, init bool) {
 	peers_mutex.Lock()
 	peers[peer_id].handled = false
 	peers_mutex.Unlock()
-	io.Failure <- peer_id
+	IO.Failure <- peer_id
 	cn.Close()
 }
 
 func SetupPeers(localId int, addresses []string, msgIo *msgs.Io) {
   id = localId
-  io = msgIo
+  IO = msgIo
   //set up peer state
   peers = make([]Peer, len(addresses))
   for i := range addresses {
@@ -169,8 +169,8 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io) {
   peers_mutex.Lock()
   peers[id].handled = true
   peers_mutex.Unlock()
-  from := &(io.Incoming)
-  go from.Forward(io.OutgoingUnicast[id])
+  from := &(IO.Incoming)
+  go from.Forward(IO.OutgoingUnicast[id])
 
   // handle for incoming peers
   go func() {
