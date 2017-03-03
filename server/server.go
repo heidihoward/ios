@@ -5,7 +5,6 @@ package main
 import (
 	"flag"
 	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/app"
 	"github.com/heidi-ann/ios/config"
 	"github.com/heidi-ann/ios/consensus"
 	"github.com/heidi-ann/ios/msgs"
@@ -17,19 +16,19 @@ import (
 	"syscall"
 )
 
-var application *app.StateMachine
-var cons_io *msgs.Io
-
 var id = flag.Int("id", -1, "server ID")
 var config_file = flag.String("config", "example.conf", "Server configuration file")
 var disk_path = flag.String("disk", ".", "Path to directory to store persistent storage")
-
 
 func main() {
 	// set up logging
 	flag.Parse()
 	defer glog.Flush()
+	glog.Info("Starting server ", *id)
+	defer glog.Warning("Shutting down server ", *id)
 
+
+	// parse configuration
 	conf := config.ParseServerConfig(*config_file)
 	if *id == -1 {
 		glog.Fatal("ID is required")
@@ -38,45 +37,40 @@ func main() {
 		glog.Fatal("Node ID is ",*id," but is configured with a ",len(conf.Peers.Address)," node cluster")
 	}
 
-	glog.Info("Starting server ", *id)
-	defer glog.Warning("Shutting down server ", *id)
-
 	// setup IO
-	cons_io = msgs.MakeIo(2000, len(conf.Peers.Address))
+	IO := msgs.MakeIo(2000, len(conf.Peers.Address))
 
-
-
-	// set up persistent storage
+	// setup persistent storage
 	logFile := *disk_path + "/persistent_log_" + strconv.Itoa(*id) + ".temp"
 	dataFile := *disk_path + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
 	snapFile := *disk_path + "/persistent_snapshot_" + strconv.Itoa(*id) + ".temp"
-	found, view, log, index, state := unix.SetupPersistentStorage(logFile, dataFile, snapFile, cons_io, conf.Options.Length)
-	application = state
+	found, view, log, index, state := unix.SetupPersistentStorage(logFile, dataFile, snapFile, IO, conf.Options.Length)
 
-
-
-	// setup peers
-	unix.SetupPeers(*id, conf.Clients.Address, cons_io)
-	// setup Clients
+	// setup peers & clients
+	unix.SetupPeers(*id, conf.Peers.Address, IO)
 	unix.SetupClients(strings.Split(conf.Clients.Address[*id],":")[1], state)
 
-
-	// setting up the consensus algorithm
-	log_max_length := 1000
-	if conf.Options.Length > 0 {
-		log_max_length = conf.Options.Length
-	}
+	// configure consensus algorithms
 	quorum := consensus.NewQuorum(conf.Options.QuorumSystem,len(conf.Peers.Address))
-	cons_config := consensus.Config{*id, len(conf.Peers.Address),
-		log_max_length, conf.Options.BatchInterval, conf.Options.MaxBatch, conf.Options.DelegateReplication, conf.Options.WindowSize,  conf.Options.SnapshotInterval, quorum}
+	configuration := consensus.Config{
+		*id,
+		len(conf.Peers.Address),
+		conf.Options.Length,
+		conf.Options.BatchInterval,
+		conf.Options.MaxBatch,
+		conf.Options.DelegateReplication,
+		conf.Options.WindowSize,
+		conf.Options.SnapshotInterval,
+		quorum}
+
+	// setup consensus algorithm
 	if !found {
 		glog.Info("Starting fresh consensus instance")
-		go consensus.Init(cons_io, cons_config, state)
+		go consensus.Init(IO, configuration, state)
 	} else {
 		glog.Info("Restoring consensus instance")
-		go consensus.Recover(cons_io, cons_config, view, log, state, index)
+		go consensus.Recover(IO, configuration, view, log, state, index)
 	}
-	//go cons_io.DumpPersistentStorage()
 
 	// tidy up
 	glog.Info("Setup complete")
