@@ -10,14 +10,14 @@ type ServerConfig struct {
 		Address []string
 	}
 	Clients struct {
-			Address []string
-		}
+		Address []string
+	}
 	Options struct {
-		Length        			int
-		BatchInterval 			int
-		MaxBatch      			int
+		Length              int
+		BatchInterval       int
+		MaxBatch            int
 		DelegateReplication int
-		WindowSize 					int
+		WindowSize          int
 		SnapshotInterval    int
 		QuorumSystem        string
 	}

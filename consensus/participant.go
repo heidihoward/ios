@@ -63,17 +63,17 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 			io.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
 
 			// pass requests to state machine if ready
-			for state.Log.GetEntry(state.CommitIndex+1).Committed {
-				for _, request := range state.Log.GetEntry(state.CommitIndex+1).Requests {
+			for state.Log.GetEntry(state.CommitIndex + 1).Committed {
+				for _, request := range state.Log.GetEntry(state.CommitIndex + 1).Requests {
 					reply := state.StateMachine.Apply(request)
-					io.OutgoingResponses <- msgs.Client{request,reply}
-					glog.Info("Request Committed: ",request)
+					io.OutgoingResponses <- msgs.Client{request, reply}
+					glog.Info("Request Committed: ", request)
 				}
 				state.CommitIndex++
 			}
 
 			// check if its time for another snapshot
-			if state.LastSnapshot + config.SnapshotInterval <= state.CommitIndex {
+			if state.LastSnapshot+config.SnapshotInterval <= state.CommitIndex {
 				io.SnapshotPersist <- msgs.Snapshot{state.CommitIndex, state.StateMachine.MakeSnapshot()}
 				state.LastSnapshot = state.CommitIndex
 			}
@@ -88,7 +88,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 
 			// check view
 			if req.View < state.View {
-				glog.Warning("Sender of NewView is behind, message view ",req.View, " local view is ",state.View)
+				glog.Warning("Sender of NewView is behind, message view ", req.View, " local view is ", state.View)
 			}
 
 			if req.View > state.View {
@@ -127,7 +127,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 				state.MasterID = mod(state.View, config.N)
 			}
 
-			reply := msgs.QueryResponse{config.ID, state.View, state.Log.GetEntries(req.StartIndex,req.EndIndex)}
+			reply := msgs.QueryResponse{config.ID, state.View, state.Log.GetEntries(req.StartIndex, req.EndIndex)}
 			(*io).OutgoingUnicast[req.SenderID].Responses.Query <- msgs.Query{req, reply}
 		}
 	}

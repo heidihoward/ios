@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
+	"net"
+	"strconv"
+	"strings"
 	"sync"
-  "net"
-  "strconv"
-  "strings"
-  "time"
+	"time"
 )
 
 type Peer struct {
@@ -76,11 +76,11 @@ func handlePeer(cn net.Conn, init bool) {
 
 	// check IP address is as expected
 	// TODO: allow dynamic changes of IP
-	expectedAddr := strings.Split(peers[peer_id].address,":")[0]
-	actualAddr := strings.Split(addr,":")[0]
+	expectedAddr := strings.Split(peers[peer_id].address, ":")[0]
+	actualAddr := strings.Split(addr, ":")[0]
 	if expectedAddr != actualAddr {
-		glog.Fatal("Peer ID ",peer_id," has connected from an unexpected address ",actualAddr,
-			" expected ",expectedAddr)
+		glog.Fatal("Peer ID ", peer_id, " has connected from an unexpected address ", actualAddr,
+			" expected ", expectedAddr)
 	}
 
 	glog.Infof("Ready to handle traffic from peer %d at %s ", peer_id, addr)
@@ -146,48 +146,48 @@ func handlePeer(cn net.Conn, init bool) {
 }
 
 func SetupPeers(localId int, addresses []string, msgIo *msgs.Io) {
-  id = localId
-  IO = msgIo
-  //set up peer state
-  peers = make([]Peer, len(addresses))
-  for i := range addresses {
-    peers[i] = Peer{
-      i, addresses[i], false}
-  }
-  peers_mutex = sync.RWMutex{}
+	id = localId
+	IO = msgIo
+	//set up peer state
+	peers = make([]Peer, len(addresses))
+	for i := range addresses {
+		peers[i] = Peer{
+			i, addresses[i], false}
+	}
+	peers_mutex = sync.RWMutex{}
 
-  //set up peer server
-  glog.Info("Starting up peer server")
-  peer_port := strings.Split(addresses[id],":")[1]
-  listeningPort := ":" + peer_port
-  lnPeers, err := net.Listen("tcp", listeningPort)
-  if err != nil {
-    glog.Fatal(err)
-  }
+	//set up peer server
+	glog.Info("Starting up peer server")
+	peer_port := strings.Split(addresses[id], ":")[1]
+	listeningPort := ":" + peer_port
+	lnPeers, err := net.Listen("tcp", listeningPort)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
-  // handle local peer (without sending network traffic)
-  peers_mutex.Lock()
-  peers[id].handled = true
-  peers_mutex.Unlock()
-  from := &(IO.Incoming)
-  go from.Forward(IO.OutgoingUnicast[id])
+	// handle local peer (without sending network traffic)
+	peers_mutex.Lock()
+	peers[id].handled = true
+	peers_mutex.Unlock()
+	from := &(IO.Incoming)
+	go from.Forward(IO.OutgoingUnicast[id])
 
-  // handle for incoming peers
-  go func() {
-    for {
-      conn, err := lnPeers.Accept()
-      if err != nil {
-        glog.Fatal(err)
-      }
-      go handlePeer(conn, false)
-    }
-  }()
+	// handle for incoming peers
+	go func() {
+		for {
+			conn, err := lnPeers.Accept()
+			if err != nil {
+				glog.Fatal(err)
+			}
+			go handlePeer(conn, false)
+		}
+	}()
 
-  // regularly check if all peers are connected and retry if not
-  go func() {
-    for {
-      checkPeer()
-      time.Sleep(500 * time.Millisecond)
-    }
-  }()
+	// regularly check if all peers are connected and retry if not
+	go func() {
+		for {
+			checkPeer()
+			time.Sleep(500 * time.Millisecond)
+		}
+	}()
 }

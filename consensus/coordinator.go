@@ -11,7 +11,7 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 	if prepare {
 
 		// check that committed is not set
-		for i := 0; i < endIndex - startIndex; i++ {
+		for i := 0; i < endIndex-startIndex; i++ {
 			entries[i].Committed = false
 		}
 
@@ -21,7 +21,7 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 
 		// collect responses
 		glog.Info("Waiting for ", config.Quorum.ReplicateSize, " prepare responses")
-		for replied := make([]bool,config.N); !config.Quorum.checkReplicationQuorum(replied); {
+		for replied := make([]bool, config.N); !config.Quorum.checkReplicationQuorum(replied); {
 			msg := <-(*io).Incoming.Responses.Prepare
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, prepare) {
@@ -38,7 +38,7 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 
 	// PHASE 3: commit
 	// set committed so requests will be applied to state machines
-	for i := 0; i < endIndex - startIndex; i++ {
+	for i := 0; i < endIndex-startIndex; i++ {
 		entries[i].Committed = true
 	}
 	// dispatch commit requests to all
@@ -48,7 +48,7 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 
 	// TODO: handle replies properly
 	go func() {
-		for replied := make([]bool,config.N); !config.Quorum.checkReplicationQuorum(replied); {
+		for replied := make([]bool, config.N); !config.Quorum.checkReplicationQuorum(replied); {
 			msg := <-(*io).Incoming.Responses.Commit
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, commit) {

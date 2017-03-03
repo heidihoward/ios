@@ -3,17 +3,17 @@ package msgs
 // MESSAGE FORMATS
 
 type ClientRequest struct {
-	ClientID  int
-	RequestID int
-	Replicate bool
+	ClientID        int
+	RequestID       int
+	Replicate       bool
 	ForceViewChange bool
-	Request   string
+	Request         string
 }
 
 type ClientResponse struct {
 	ClientID  int
 	RequestID int
-	Success bool
+	Success   bool
 	Response  string
 }
 
@@ -29,10 +29,10 @@ type Entry struct {
 }
 
 type PrepareRequest struct {
-	SenderID int
-	View     int
-	StartIndex    int // inclusive
-	EndIndex int // exclusive
+	SenderID   int
+	View       int
+	StartIndex int // inclusive
+	EndIndex   int // exclusive
 	Entries    []Entry
 }
 
@@ -47,9 +47,9 @@ type Prepare struct {
 }
 
 type CommitRequest struct {
-	SenderID int
-	StartIndex  int
-	EndIndex int
+	SenderID   int
+	StartIndex int
+	EndIndex   int
 	Entries    []Entry
 }
 
@@ -81,16 +81,16 @@ type NewView struct {
 }
 
 type QueryRequest struct {
-	SenderID int
-	View     int
-	StartIndex    int // inclusive
-	EndIndex int // exclusive
+	SenderID   int
+	View       int
+	StartIndex int // inclusive
+	EndIndex   int // exclusive
 }
 
 type QueryResponse struct {
 	SenderID int
 	View     int
-	Entries    []Entry
+	Entries  []Entry
 }
 
 type Query struct {
@@ -99,12 +99,12 @@ type Query struct {
 }
 
 type CoordinateRequest struct {
-	SenderID int
-	View     int
-	StartIndex    int //inclusive
-	EndIndex	int //exclusive
-	Prepare  bool
-	Entries   []Entry
+	SenderID   int
+	View       int
+	StartIndex int //inclusive
+	EndIndex   int //exclusive
+	Prepare    bool
+	Entries    []Entry
 }
 
 type CoordinateResponse struct {
@@ -119,9 +119,9 @@ type Coordinate struct {
 
 type LogUpdate struct {
 	StartIndex int
-	EndIndex int
-	Entries []Entry
-	Sync bool
+	EndIndex   int
+	Entries    []Entry
+	Sync       bool
 }
 
 type Snapshot struct {

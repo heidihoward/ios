@@ -1,9 +1,9 @@
 package app
 
 import (
-	"testing"
 	"reflect"
-	)
+	"testing"
+)
 
 func Testprocess(t *testing.T) {
 	store := New()
@@ -26,13 +26,13 @@ func Testprocess(t *testing.T) {
 func TestrestoreSnapshot(t *testing.T) {
 	var store Store
 	store = map[string]string{
-			"A": "0",
-			"B": "0",
-			"C": "0",
+		"A": "0",
+		"B": "0",
+		"C": "0",
 	}
-  snapshot := store.MakeSnapshot()
+	snapshot := store.MakeSnapshot()
 	restore := RestoreSnapshot(snapshot)
-	if !reflect.DeepEqual(store,*restore) {
+	if !reflect.DeepEqual(store, *restore) {
 		t.Error("orginal store and restored store are not the same", store, *restore)
 	}
 }

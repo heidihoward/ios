@@ -27,14 +27,13 @@ func main() {
 	glog.Info("Starting server ", *id)
 	defer glog.Warning("Shutting down server ", *id)
 
-
 	// parse configuration
 	conf := config.ParseServerConfig(*config_file)
 	if *id == -1 {
 		glog.Fatal("ID is required")
 	}
 	if *id >= len(conf.Peers.Address) {
-		glog.Fatal("Node ID is ",*id," but is configured with a ",len(conf.Peers.Address)," node cluster")
+		glog.Fatal("Node ID is ", *id, " but is configured with a ", len(conf.Peers.Address), " node cluster")
 	}
 
 	// setup IO
@@ -48,10 +47,10 @@ func main() {
 
 	// setup peers & clients
 	unix.SetupPeers(*id, conf.Peers.Address, IO)
-	unix.SetupClients(strings.Split(conf.Clients.Address[*id],":")[1], state)
+	unix.SetupClients(strings.Split(conf.Clients.Address[*id], ":")[1], state)
 
 	// configure consensus algorithms
-	quorum := consensus.NewQuorum(conf.Options.QuorumSystem,len(conf.Peers.Address))
+	quorum := consensus.NewQuorum(conf.Options.QuorumSystem, len(conf.Peers.Address))
 	configuration := consensus.Config{
 		*id,
 		len(conf.Peers.Address),

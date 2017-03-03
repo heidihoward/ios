@@ -3,8 +3,8 @@ package consensus
 import (
 	"flag"
 	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/msgs"
 	"github.com/heidi-ann/ios/app"
+	"github.com/heidi-ann/ios/msgs"
 	"reflect"
 	"testing"
 	"time"
@@ -17,45 +17,45 @@ func TestInit(t *testing.T) {
 	// create a node in system of 3 nodes
 	io := msgs.MakeIo(10, 3)
 	store := app.NewStore()
-	conf := Config{0, 3, 1000, 0, 0,0,1, 100}
-	go Init(io, conf,store)
+	conf := Config{0, 3, 1000, 0, 0, 0, 1, 100}
+	go Init(io, conf, store)
 
 	// TEST 1 - SIMPLE COMMIT
 
 	// tell node to prepare update A 3
-	request1 := []msgs.ClientRequest{msgs.ClientRequest{
-		ClientID:  2,
-		RequestID: 0,
-		Replicate: true,
+	request1 := []msgs.ClientRequest{{
+		ClientID:        2,
+		RequestID:       0,
+		Replicate:       true,
 		ForceViewChange: false,
-		Request:   "update A 3"}}
+		Request:         "update A 3"}}
 
-	entries1 := []msgs.Entry{msgs.Entry{
+	entries1 := []msgs.Entry{{
 		View:      0,
 		Committed: false,
 		Requests:  request1}}
 
 	prepare1 := msgs.PrepareRequest{
-		SenderID: 0,
-		View:     0,
-		StartIndex:    0,
-		EndIndex: 1,
+		SenderID:   0,
+		View:       0,
+		StartIndex: 0,
+		EndIndex:   1,
 		Entries:    entries1}
 
 	prepare1_res := msgs.PrepareResponse{
 		SenderID: 0,
 		Success:  true}
 
-  // check view update is persisted
+	// check view update is persisted
 	select {
 	case view_update := <-(*io).ViewPersist:
-			if view_update != 0 {
-				t.Error(view_update)
-			}
-			(*io).ViewPersistFsync <- view_update
-		case <-time.After(time.Second):
-			t.Error("Participant not responding")
+		if view_update != 0 {
+			t.Error(view_update)
 		}
+		(*io).ViewPersistFsync <- view_update
+	case <-time.After(time.Second):
+		t.Error("Participant not responding")
+	}
 
 	(*io).Incoming.Requests.Prepare <- prepare1
 
@@ -83,9 +83,9 @@ func TestInit(t *testing.T) {
 	// tell node to commit update A 3
 	entries1[0].Committed = true
 	commit1 := msgs.CommitRequest{
-		SenderID: 0,
+		SenderID:   0,
 		StartIndex: 0,
-		EndIndex: 1,
+		EndIndex:   1,
 		Entries:    entries1}
 
 	commit1_res := msgs.CommitResponse{

@@ -25,7 +25,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 				(*s).MasterID = nextMaster
 				if nextMaster == config.ID {
 					(*s).View++
-					glog.Info("Starting new master in view ",(*s).View," at ", config.ID)
+					glog.Info("Starting new master in view ", (*s).View, " at ", config.ID)
 					(*io).ViewPersist <- (*s).View
 					written := <-(*io).ViewPersistFsync
 					if written != (*s).View {
@@ -36,9 +36,9 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 				}
 			}
 
-		case req := <- io.IncomingRequestsForced:
+		case req := <-io.IncomingRequestsForced:
 			glog.Warning("Forcing view change")
-			s.View = next(s.View, config.ID,config.N)
+			s.View = next(s.View, config.ID, config.N)
 			(*io).ViewPersist <- (*s).View
 			written := <-(*io).ViewPersistFsync
 			if written != (*s).View {
@@ -48,7 +48,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 			io.IncomingRequests <- req
 			RunMaster((*s).View, (*s).CommitIndex, false, io, config)
 
-		case req := <- io.IncomingRequests:
+		case req := <-io.IncomingRequests:
 			glog.Warning("Request recieved by non-master server ", req)
 			io.OutgoingRequestsFailed <- req
 		}
@@ -57,7 +57,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 
 // RunRecovery executes the recovery phase of leadership election,
 // Returns if it was successful and the previous view's end index
-func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,int) {
+func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool, int) {
 	// dispatch new view requests
 	req := msgs.NewViewRequest{config.ID, view}
 	(*io).OutgoingBroadcast.Requests.NewView <- req
@@ -66,7 +66,7 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 	glog.Info("Waiting for ", config.Quorum.RecoverySize, " new view responses")
 	endIndex := commit_index
 
-	for replied := make([]bool,config.N); !config.Quorum.checkRecoveryQuorum(replied); {
+	for replied := make([]bool, config.N); !config.Quorum.checkRecoveryQuorum(replied); {
 		msg := <-(*io).Incoming.Responses.NewView
 		// check msg replies to the msg we just sent
 		if msg.Request == req {
@@ -92,7 +92,7 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 	}
 
 	// recover entries
-	result := RunRecoveryCoordinator(view, commit_index + 1, endIndex+1, io, config)
+	result := RunRecoveryCoordinator(view, commit_index+1, endIndex+1, io, config)
 	return result, endIndex
 }
 
@@ -100,14 +100,14 @@ func RunRecovery(view int, commit_index int, io *msgs.Io, config Config) (bool,i
 func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Config) {
 	// setup
 	glog.Info("Starting up master in view ", view)
-	glog.Info("Master is configured to delegate replication to ",config.DelegateReplication)
+	glog.Info("Master is configured to delegate replication to ", config.DelegateReplication)
 
 	// determine next safe index
 	index := -1
 
 	if !initial {
 		var success bool
-		success, index = RunRecovery(view,commit_index,io,config)
+		success, index = RunRecovery(view, commit_index, io, config)
 		if !success {
 			glog.Warning("Recovery failed")
 			return
@@ -141,7 +141,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		//wait for window slot
 		//TOOD: replace with better mechanism then polling
 
-		for index >= window_start + config.WindowSize {
+		for index >= window_start+config.WindowSize {
 			glog.Warning("Request querying for replication window")
 			time.Sleep(100 * time.Millisecond)
 		}
@@ -161,13 +161,13 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 			for exit == false {
 				select {
 				case req := <-io.IncomingRequests:
-						reqs_all[reqs_num] = req
-						glog.Info("Request ", reqs_num, " is : ", req)
-						reqs_num = reqs_num + 1
-						if reqs_num == config.MaxBatch {
-							exit = true
-							break
-						}
+					reqs_all[reqs_num] = req
+					glog.Info("Request ", reqs_num, " is : ", req)
+					reqs_num = reqs_num + 1
+					if reqs_num == config.MaxBatch {
+						exit = true
+						break
+					}
 				case <-time.After(time.Millisecond * time.Duration(config.BatchInterval)):
 					exit = true
 					break
@@ -182,8 +182,8 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		glog.Info("Request assigned index: ", index)
 
 		// dispatch to coordinator
-		entries := []msgs.Entry{msgs.Entry{view, false, reqs}}
-		coord := msgs.CoordinateRequest{config.ID, view, index,index+1, true, entries}
+		entries := []msgs.Entry{{view, false, reqs}}
+		coord := msgs.CoordinateRequest{config.ID, view, index, index + 1, true, entries}
 		io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
 		// TODO: BUG: need to handle coordinator failure
 
@@ -196,7 +196,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 				return
 			}
 			glog.Info("Finished replicating request: ", reqs)
-			if reply.Request.StartIndex==window_start+1{
+			if reply.Request.StartIndex == window_start+1 {
 				window_start += 1
 			} else {
 				// TODO: BUG: handle out-of-order commitment
@@ -208,7 +208,7 @@ func RunMaster(view int, commit_index int, initial bool, io *msgs.Io, config Con
 		// rotate coordinator is nessacary
 		if config.DelegateReplication > 1 {
 			coordinator += 1
-			if coordinator>config.ID + config.DelegateReplication {
+			if coordinator > config.ID+config.DelegateReplication {
 				coordinator = config.ID + 1
 			}
 		}

@@ -14,22 +14,22 @@ func TestMakeIo(t *testing.T) {
 
 	// SAMPLE MESSAGES
 
-	request1 := []ClientRequest{ClientRequest{
+	request1 := []ClientRequest{{
 		ClientID:  2,
 		RequestID: 0,
 		Replicate: true,
 		Request:   "update A 3"}}
 
-	entries1 := []Entry{Entry{
+	entries1 := []Entry{{
 		View:      0,
 		Committed: false,
 		Requests:  request1}}
 
 	prepare := PrepareRequest{
-		SenderID: 0,
-		View:     0,
-		StartIndex:    0,
-		EndIndex: 1,
+		SenderID:   0,
+		View:       0,
+		StartIndex: 0,
+		EndIndex:   1,
 		Entries:    entries1}
 
 	prepare_res := PrepareResponse{

@@ -5,8 +5,8 @@ package app
 
 import (
 	"github.com/golang/glog"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type Store map[string]string
@@ -51,7 +51,7 @@ func (s *Store) execute(req string) string {
 			return "request not recognised"
 		}
 		glog.Infof("Deleting %s", request[1])
-		delete(*s,request[1])
+		delete(*s, request[1])
 		return "OK"
 	case "count":
 		if len(request) != 1 {
@@ -87,7 +87,7 @@ func (s *Store) process(req string) string {
 func (s *Store) print() string {
 	str := ""
 	for key, value := range *s {
-		str +=  key+", "+value+ "\n"
+		str += key + ", " + value + "\n"
 	}
 	return str
 }

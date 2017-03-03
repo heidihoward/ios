@@ -2,9 +2,9 @@
 package simulator
 
 import (
+	"github.com/heidi-ann/ios/app"
 	"github.com/heidi-ann/ios/consensus"
 	"github.com/heidi-ann/ios/msgs"
-	"github.com/heidi-ann/ios/app"
 )
 
 func RunSimulator(nodes int) []*msgs.Io {

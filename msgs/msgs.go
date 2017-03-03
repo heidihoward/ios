@@ -8,18 +8,18 @@ import (
 // DATA STRUCTURES FOR ABSTRACTING MSG IO
 
 type Requests struct {
-	Prepare chan PrepareRequest
-	Commit  chan CommitRequest
-	NewView chan NewViewRequest
-	Query   chan QueryRequest
+	Prepare    chan PrepareRequest
+	Commit     chan CommitRequest
+	NewView    chan NewViewRequest
+	Query      chan QueryRequest
 	Coordinate chan CoordinateRequest
 }
 
 type Responses struct {
-	Prepare chan Prepare
-	Commit  chan Commit
-	NewView chan NewView
-	Query   chan Query
+	Prepare    chan Prepare
+	Commit     chan Commit
+	NewView    chan NewView
+	Query      chan Query
 	Coordinate chan Coordinate
 }
 
@@ -29,19 +29,19 @@ type ProtoMsgs struct {
 }
 
 type Io struct {
-	IncomingRequests  chan ClientRequest
-	IncomingRequestsForced   chan ClientRequest
-	OutgoingResponses  chan Client
-	OutgoingRequestsFailed  chan ClientRequest
-	Incoming          ProtoMsgs
-	OutgoingBroadcast ProtoMsgs
-	OutgoingUnicast   map[int]*ProtoMsgs
-	Failure           chan int
-	ViewPersist       chan int
-	ViewPersistFsync  chan int
-	LogPersist        chan LogUpdate
-	LogPersistFsync   chan LogUpdate
-	SnapshotPersist       chan Snapshot
+	IncomingRequests       chan ClientRequest
+	IncomingRequestsForced chan ClientRequest
+	OutgoingResponses      chan Client
+	OutgoingRequestsFailed chan ClientRequest
+	Incoming               ProtoMsgs
+	OutgoingBroadcast      ProtoMsgs
+	OutgoingUnicast        map[int]*ProtoMsgs
+	Failure                chan int
+	ViewPersist            chan int
+	ViewPersistFsync       chan int
+	LogPersist             chan LogUpdate
+	LogPersistFsync        chan LogUpdate
+	SnapshotPersist        chan Snapshot
 }
 
 // TODO: find a more generic method
@@ -168,19 +168,19 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 
 func MakeIo(buf int, n int) *Io {
 	io := Io{
-		IncomingRequests:  make(chan ClientRequest, buf),
-		IncomingRequestsForced:  make(chan ClientRequest, buf),
-		OutgoingResponses:  make(chan Client, buf),
-		OutgoingRequestsFailed:  make(chan ClientRequest, buf),
-		Incoming:          MakeProtoMsgs(buf),
-		OutgoingBroadcast: MakeProtoMsgs(buf),
-		OutgoingUnicast:   make(map[int]*ProtoMsgs),
-		Failure:           make(chan int, buf),
-		ViewPersist:       make(chan int, buf),
-		ViewPersistFsync:  make(chan int, buf),
-		LogPersist:        make(chan LogUpdate, buf),
-		LogPersistFsync:   make(chan LogUpdate, buf),
-		SnapshotPersist:   make(chan Snapshot, buf)}
+		IncomingRequests:       make(chan ClientRequest, buf),
+		IncomingRequestsForced: make(chan ClientRequest, buf),
+		OutgoingResponses:      make(chan Client, buf),
+		OutgoingRequestsFailed: make(chan ClientRequest, buf),
+		Incoming:               MakeProtoMsgs(buf),
+		OutgoingBroadcast:      MakeProtoMsgs(buf),
+		OutgoingUnicast:        make(map[int]*ProtoMsgs),
+		Failure:                make(chan int, buf),
+		ViewPersist:            make(chan int, buf),
+		ViewPersistFsync:       make(chan int, buf),
+		LogPersist:             make(chan LogUpdate, buf),
+		LogPersistFsync:        make(chan LogUpdate, buf),
+		SnapshotPersist:        make(chan Snapshot, buf)}
 
 	for id := 0; id < n; id++ {
 		protomsgs := MakeProtoMsgs(buf)

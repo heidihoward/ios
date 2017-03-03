@@ -144,7 +144,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Fatal("Buffer overflow, dropping message", msg)
 		}
 	default:
-    glog.Warning("Cannot parse message", string(b))
+		glog.Warning("Cannot parse message", string(b))
 	}
 }
 

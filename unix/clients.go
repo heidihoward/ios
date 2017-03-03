@@ -3,12 +3,11 @@ package unix
 import (
 	"bufio"
 	"github.com/golang/glog"
+	"github.com/heidi-ann/ios/app"
 	"github.com/heidi-ann/ios/msgs"
-  "github.com/heidi-ann/ios/app"
-  "net"
-  "io"
+	"io"
+	"net"
 )
-
 
 var notifyClients *msgs.Notificator
 var application *app.StateMachine
@@ -22,14 +21,14 @@ func stateMachine() {
 		case response := <-IO.OutgoingResponses:
 			req = response.Request
 			reply = response.Response
-		case req = <- IO.OutgoingRequestsFailed:
+		case req = <-IO.OutgoingRequestsFailed:
 			glog.Info("Request could not been safely replicated by consensus algorithm", req)
 			reply = msgs.ClientResponse{
 				req.ClientID, req.RequestID, false, ""}
 		}
 
 		// if any handleRequests are waiting on this reply, then reply to them
-		notifyClients.Notify(req,reply)
+		notifyClients.Notify(req, reply)
 	}
 }
 
@@ -45,9 +44,9 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	// CONSENESUS ALGORITHM HERE
 	glog.Info("Passing request to consensus algorithm")
 	if req.ForceViewChange {
-			IO.IncomingRequestsForced <- req
+		IO.IncomingRequestsForced <- req
 	} else {
-			IO.IncomingRequests <- req
+		IO.IncomingRequests <- req
 	}
 
 	if notifyClients.IsSubscribed(req) {
@@ -124,19 +123,19 @@ func handleConnection(cn net.Conn) {
 }
 
 func SetupClients(port string, app *app.StateMachine) {
-  application = app
-  notifyClients = msgs.NewNotificator()
-  go stateMachine()
+	application = app
+	notifyClients = msgs.NewNotificator()
+	go stateMachine()
 
-  // set up client server
-  glog.Info("Starting up client server")
-  listeningPort := ":" + port
-  ln, err := net.Listen("tcp", listeningPort)
-  if err != nil {
-    glog.Fatal(err)
-  }
+	// set up client server
+	glog.Info("Starting up client server")
+	listeningPort := ":" + port
+	ln, err := net.Listen("tcp", listeningPort)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
-  // handle for incoming clients
+	// handle for incoming clients
 	go func() {
 		for {
 			conn, err := ln.Accept()

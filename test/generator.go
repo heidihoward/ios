@@ -12,17 +12,17 @@ import (
 // Store has 10 keys
 type Generator struct {
 	Config ConfigAuto
-	Keys []string
+	Keys   []string
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func RandStringBytes(n int) string {
-    b := make([]byte, n)
-    for i := range b {
-        b[i] = letterBytes[rand.Intn(len(letterBytes))]
-    }
-    return string(b)
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }
 
 func Generate(config WorkloadConfig) *Generator {
@@ -30,7 +30,7 @@ func Generate(config WorkloadConfig) *Generator {
 	for i := range keys {
 		keys[i] = RandStringBytes(config.Config.KeySize)
 	}
-	return &Generator{config.Config,keys}
+	return &Generator{config.Config, keys}
 }
 
 func (g *Generator) Next() (string, bool, bool) {

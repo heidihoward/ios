@@ -135,7 +135,7 @@ func main() {
 	if *id == -1 {
 		rand.Seed(time.Now().UTC().UnixNano())
 		*id = rand.Int()
-		glog.Info("ID was not provided, ID ",*id," has been assigned")
+		glog.Info("ID was not provided, ID ", *id, " has been assigned")
 	}
 
 	glog.Info("Starting up client ", *id)
@@ -188,7 +188,7 @@ func main() {
 
 			// prepare request
 			req := msgs.ClientRequest{
-				*id, requestID, replicate, false,text}
+				*id, requestID, replicate, false, text}
 			b, err := msgs.Marshal(req)
 			if err != nil {
 				glog.Fatal(err)
@@ -213,7 +213,7 @@ func main() {
 					reply = new(msgs.ClientResponse)
 					err = msgs.Unmarshal(replyBytes, reply)
 
-				  if err == nil && !reply.Success {
+					if err == nil && !reply.Success {
 						err = errors.New("request marked by server as unsuccessful")
 					}
 					if err == nil && reply.Success {
