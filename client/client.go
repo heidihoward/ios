@@ -27,9 +27,9 @@ type API interface {
 	Return(string)
 }
 
-var config_file = flag.String("config", "example.conf", "Client configuration file")
-var auto_file = flag.String("auto", "../test/workload.conf", "If workload is automatically generated, configure file for workload")
-var stat_file = flag.String("stat", "latency.csv", "File to write stats to")
+var configFile = flag.String("config", "example.conf", "Client configuration file")
+var autoFile = flag.String("auto", "../test/workload.conf", "If workload is automatically generated, configure file for workload")
+var statFile = flag.String("stat", "latency.csv", "File to write stats to")
 var mode = flag.String("mode", "interactive", "interactive, rest or test")
 var id = flag.Int("id", -1, "ID of client (must be unique) or random number will be generated")
 
@@ -129,7 +129,7 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	// parse config files
-	conf := config.ParseClientConfig(*config_file)
+	conf := config.ParseClientConfig(*configFile)
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	// TODO: find a better way to handle required flags
 	if *id == -1 {
@@ -142,7 +142,7 @@ func main() {
 	defer glog.Info("Shutting down client ", *id)
 
 	// set up stats collection
-	filename := *stat_file
+	filename := *statFile
 	glog.Info("Opening file: ", filename)
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
@@ -168,7 +168,7 @@ func main() {
 	case "interactive":
 		ioapi = interactive.Create()
 	case "test":
-		ioapi = test.Generate(test.ParseAuto(*auto_file))
+		ioapi = test.Generate(test.ParseAuto(*autoFile))
 	case "rest":
 		ioapi = rest.Create()
 	default:

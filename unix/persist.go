@@ -21,13 +21,13 @@ type FileHandler struct {
 
 func openFile(filename string) FileHandler {
 	// check if file exists
-	var is_new bool
+	var isNew bool
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		glog.Info("Creating and opening file: ", filename)
-		is_new = true
+		isNew = true
 	} else {
 		glog.Info("Opening file: ", filename)
-		is_new = false
+		isNew = false
 	}
 
 	// open file
@@ -40,7 +40,7 @@ func openFile(filename string) FileHandler {
 	// create writer and reader
 	w := bufio.NewWriter(file)
 	r := bufio.NewReader(file)
-	return FileHandler{filename, is_new, w, r, file}
+	return FileHandler{filename, isNew, w, r, file}
 }
 
 func restoreLog(logFile FileHandler, MaxLength int, snapshotIndex int) (bool, *consensus.Log) {

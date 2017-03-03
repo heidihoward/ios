@@ -18,7 +18,7 @@ type Peer struct {
 }
 
 var peers []Peer
-var peers_mutex sync.RWMutex
+var peersMutex sync.RWMutex
 var id int
 var IO *msgs.Io
 
@@ -26,9 +26,9 @@ var IO *msgs.Io
 // try to create one if not
 func checkPeer() {
 	for i := range peers {
-		peers_mutex.RLock()
+		peersMutex.RLock()
 		failed := !peers[i].handled
-		peers_mutex.RUnlock()
+		peersMutex.RUnlock()
 		if failed {
 			//glog.Info("Peer ", i, " is not currently connected")
 			cn, err := net.Dial("tcp", peers[i].address)
@@ -63,44 +63,44 @@ func handlePeer(cn net.Conn, init bool) {
 	_ = writer.Flush()
 	text, _ := reader.ReadString('\n')
 	glog.Info("Received ", text)
-	peer_id, err := strconv.Atoi(strings.Trim(text, "\n"))
+	peerID, err := strconv.Atoi(strings.Trim(text, "\n"))
 	if err != nil {
 		glog.Warning(err)
 		return
 	}
 
 	// check ID is expected
-	if peer_id < 0 || peer_id >= len(peers) || peer_id == id {
-		glog.Fatal("Unexpected peer ID ", peer_id)
+	if peerID < 0 || peerID >= len(peers) || peerID == id {
+		glog.Fatal("Unexpected peer ID ", peerID)
 	}
 
 	// check IP address is as expected
 	// TODO: allow dynamic changes of IP
-	expectedAddr := strings.Split(peers[peer_id].address, ":")[0]
+	expectedAddr := strings.Split(peers[peerID].address, ":")[0]
 	actualAddr := strings.Split(addr, ":")[0]
 	if expectedAddr != actualAddr {
-		glog.Fatal("Peer ID ", peer_id, " has connected from an unexpected address ", actualAddr,
+		glog.Fatal("Peer ID ", peerID, " has connected from an unexpected address ", actualAddr,
 			" expected ", expectedAddr)
 	}
 
-	glog.Infof("Ready to handle traffic from peer %d at %s ", peer_id, addr)
+	glog.Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
 
-	peers_mutex.Lock()
-	peers[peer_id].handled = true
-	peers_mutex.Unlock()
+	peersMutex.Lock()
+	peers[peerID].handled = true
+	peersMutex.Unlock()
 
-	close_err := make(chan error)
+	closeErr := make(chan error)
 	go func() {
 		for {
 			// read request
-			glog.Infof("Ready for next message from %d", peer_id)
+			glog.Infof("Ready for next message from %d", peerID)
 			text, err := reader.ReadBytes(byte('\n'))
 			if err != nil {
 				glog.Warning(err)
-				close_err <- err
+				closeErr <- err
 				break
 			}
-			glog.Infof("Read from peer %d: ", peer_id, string(text))
+			glog.Infof("Read from peer %d: ", peerID, string(text))
 			IO.Incoming.BytesToProtoMsg(text)
 
 		}
@@ -109,24 +109,24 @@ func handlePeer(cn net.Conn, init bool) {
 	go func() {
 		for {
 			// send reply
-			glog.Infof("Ready to send message to %d", peer_id)
-			b, err := IO.OutgoingUnicast[peer_id].ProtoMsgToBytes()
+			glog.Infof("Ready to send message to %d", peerID)
+			b, err := IO.OutgoingUnicast[peerID].ProtoMsgToBytes()
 			if err != nil {
 				glog.Fatal("Could not marshal message")
 			}
-			glog.Infof("Sending to %d: %s", peer_id, string(b))
+			glog.Infof("Sending to %d: %s", peerID, string(b))
 			_, err = writer.Write(b)
 			_, err = writer.Write([]byte("\n"))
 			if err != nil {
 				glog.Warning(err)
-				close_err <- err
+				closeErr <- err
 				break
 			}
 			// TODO: BUG need to retry packet
 			err = writer.Flush()
 			if err != nil {
 				glog.Warning(err)
-				close_err <- err
+				closeErr <- err
 				break
 			}
 			glog.Info("Sent")
@@ -134,14 +134,14 @@ func handlePeer(cn net.Conn, init bool) {
 	}()
 
 	// block until connection fails
-	<-close_err
+	<-closeErr
 
 	// tidy up
-	glog.Warningf("No longer able to handle traffic from peer %d at %s ", peer_id, addr)
-	peers_mutex.Lock()
-	peers[peer_id].handled = false
-	peers_mutex.Unlock()
-	IO.Failure <- peer_id
+	glog.Warningf("No longer able to handle traffic from peer %d at %s ", peerID, addr)
+	peersMutex.Lock()
+	peers[peerID].handled = false
+	peersMutex.Unlock()
+	IO.Failure <- peerID
 	cn.Close()
 }
 
@@ -154,21 +154,21 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io) {
 		peers[i] = Peer{
 			i, addresses[i], false}
 	}
-	peers_mutex = sync.RWMutex{}
+	peersMutex = sync.RWMutex{}
 
 	//set up peer server
 	glog.Info("Starting up peer server")
-	peer_port := strings.Split(addresses[id], ":")[1]
-	listeningPort := ":" + peer_port
+	peerPort := strings.Split(addresses[id], ":")[1]
+	listeningPort := ":" + peerPort
 	lnPeers, err := net.Listen("tcp", listeningPort)
 	if err != nil {
 		glog.Fatal(err)
 	}
 
 	// handle local peer (without sending network traffic)
-	peers_mutex.Lock()
+	peersMutex.Lock()
 	peers[id].handled = true
-	peers_mutex.Unlock()
+	peersMutex.Unlock()
 	from := &(IO.Incoming)
 	go from.Forward(IO.OutgoingUnicast[id])
 
