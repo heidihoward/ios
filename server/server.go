@@ -25,8 +25,7 @@ import (
 var application *app.StateMachine
 var cons_io *msgs.Io
 
-var notifyclient map[msgs.ClientRequest](chan msgs.ClientResponse)
-var notifyclient_mutex sync.RWMutex
+var notifyClients *unix.Notificator
 
 type Peer struct {
 	id      int
@@ -57,11 +56,7 @@ func stateMachine() {
 		}
 
 		// if any handleRequests are waiting on this reply, then reply to them
-		notifyclient_mutex.Lock()
-		if notifyclient[req] != nil {
-			notifyclient[req] <- reply
-		}
-		notifyclient_mutex.Unlock()
+		notifyClients.Notify(req,reply)
 	}
 }
 
@@ -74,26 +69,22 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 		return res // FAST PASS
 	}
 
-	// check is request is already in progress
-	if notifyclient[req] == nil {
-		// CONSENESUS ALGORITHM HERE
-		glog.Info("Passing request to consensus algorithm")
-		if req.ForceViewChange {
-				cons_io.IncomingRequestsForced <- req
-		} else {
-				cons_io.IncomingRequests <- req
-		}
-
-		// wait for reply
-		notifyclient_mutex.Lock()
-		notifyclient[req] = make(chan msgs.ClientResponse)
-		notifyclient_mutex.Unlock()
+	// CONSENESUS ALGORITHM HERE
+	glog.Info("Passing request to consensus algorithm")
+	if req.ForceViewChange {
+			cons_io.IncomingRequestsForced <- req
+	} else {
+			cons_io.IncomingRequests <- req
+	}
+		
+	if notifyClients.IsSubscribed(req) {
+		glog.Warning("Client has multiple outstanding connections for the same request, usually not a good sign")
 	}
 
+	// wait for reply
+	reply := notifyClients.Subscribe(req)
 
-	reply := <-notifyclient[req]
-
-	// check reply
+	// check reply is as expected
 	if reply.ClientID != req.ClientID {
 		glog.Fatal("ClientID is different")
 	}
@@ -301,8 +292,7 @@ func main() {
 	// setup IO
 	cons_io = msgs.MakeIo(2000, len(conf.Peers.Address))
 
-	notifyclient = make(map[msgs.ClientRequest](chan msgs.ClientResponse))
-	notifyclient_mutex = sync.RWMutex{}
+	notifyClients = unix.NewNotificator()
 	go stateMachine()
 
 	// set up persistent storage

@@ -225,7 +225,12 @@ func main() {
 
 				// try to establish a new connection
 				for {
-					//conn.Close()
+					if conn != nil {
+						err = conn.Close()
+						if err != nil {
+							glog.Warning(err)
+						}
+					}
 					conn, leader, err = connect(conf.Addresses.Address, leader+1, conf.Parameters.Retries)
 					if err == nil {
 						break
