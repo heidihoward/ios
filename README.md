@@ -25,7 +25,7 @@ go get github.com/heidi-ann/ios/...
 You can start a 1 node Ios cluster as follows:
 ```
 cd $GOPATH/src/github.com/heidi-ann/ios/server
-$GOPATH/bin/server -id 0 
+$GOPATH/bin/server -id 0
 ```
 This will start an Ios server with ID 0, clients can now communicate with the server over port 8080 as follows:
 ```

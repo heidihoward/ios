@@ -82,7 +82,7 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 
 		for _, request := range state.Log.GetEntry(i).Requests {
 			reply := state.StateMachine.Apply(request)
-			(*io).OutgoingResponses <- reply
+			(*io).OutgoingResponses <- msgs.Client{request,reply}
 		}
 	}
 	glog.Info("Recovered ",state.CommitIndex + 1," committed entries")

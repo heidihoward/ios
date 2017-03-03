@@ -31,7 +31,7 @@ type ProtoMsgs struct {
 type Io struct {
 	IncomingRequests  chan ClientRequest
 	IncomingRequestsForced   chan ClientRequest
-	OutgoingResponses  chan ClientResponse
+	OutgoingResponses  chan Client
 	OutgoingRequestsFailed  chan ClientRequest
 	Incoming          ProtoMsgs
 	OutgoingBroadcast ProtoMsgs
@@ -170,7 +170,7 @@ func MakeIo(buf int, n int) *Io {
 	io := Io{
 		IncomingRequests:  make(chan ClientRequest, buf),
 		IncomingRequestsForced:  make(chan ClientRequest, buf),
-		OutgoingResponses:  make(chan ClientResponse, buf),
+		OutgoingResponses:  make(chan Client, buf),
 		OutgoingRequestsFailed:  make(chan ClientRequest, buf),
 		Incoming:          MakeProtoMsgs(buf),
 		OutgoingBroadcast: MakeProtoMsgs(buf),

@@ -66,7 +66,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 			for state.Log.GetEntry(state.CommitIndex+1).Committed {
 				for _, request := range state.Log.GetEntry(state.CommitIndex+1).Requests {
 					reply := state.StateMachine.Apply(request)
-					io.OutgoingResponses <- reply
+					io.OutgoingResponses <- msgs.Client{request,reply}
 					glog.Info("Request Committed: ",request)
 				}
 				state.CommitIndex++

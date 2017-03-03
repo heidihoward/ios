@@ -17,6 +17,11 @@ type ClientResponse struct {
 	Response  string
 }
 
+type Client struct {
+	Request  ClientRequest
+	Response ClientResponse
+}
+
 type Entry struct {
 	View      int
 	Committed bool

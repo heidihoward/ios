@@ -47,7 +47,9 @@ func stateMachine() {
 		var reply msgs.ClientResponse
 
 		select {
-		case reply = <-cons_io.OutgoingResponses:
+		case response := <-cons_io.OutgoingResponses:
+			req = response.Request
+			reply = response.Response
 		case req = <- cons_io.OutgoingRequestsFailed:
 			glog.Info("Request could not been safely replicated by consensus algorithm", req)
 			reply = msgs.ClientResponse{
@@ -138,7 +140,7 @@ func handlePeer(cn net.Conn, init bool) {
 	reader := bufio.NewReader(cn)
 	writer := bufio.NewWriter(cn)
 
-	// exchange peer ID's
+	// exchange peer ID's via handshake
 	_, _ = writer.WriteString(strconv.Itoa(*id) + "\n")
 	_ = writer.Flush()
 	text, _ := reader.ReadString('\n')
@@ -147,6 +149,20 @@ func handlePeer(cn net.Conn, init bool) {
 	if err != nil {
 		glog.Warning(err)
 		return
+	}
+
+	// check ID is expected
+	if peer_id < 0 || peer_id >= len(peers) || peer_id == *id {
+		glog.Fatal("Unexpected peer ID ", peer_id)
+	}
+
+	// check IP address is as expected
+	// TODO: allow dynamic changes of IP
+	expectedAddr := strings.Split(peers[peer_id].address,":")[0]
+	actualAddr := strings.Split(addr,":")[0]
+	if expectedAddr != actualAddr {
+		glog.Fatal("Peer ID ",peer_id," has connected from an unexpected address ",actualAddr,
+			" expected ",expectedAddr)
 	}
 
 	glog.Infof("Ready to handle traffic from peer %d at %s ", peer_id, addr)
@@ -285,7 +301,7 @@ func main() {
 	// setup IO
 	cons_io = msgs.MakeIo(2000, len(conf.Peers.Address))
 
-	notifyclient = make(map[int](chan msgs.ClientResponse))
+	notifyclient = make(map[msgs.ClientRequest](chan msgs.ClientResponse))
 	notifyclient_mutex = sync.RWMutex{}
 	go stateMachine()
 

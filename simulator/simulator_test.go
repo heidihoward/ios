@@ -15,8 +15,11 @@ func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientRespons
 
 	for id := range ios {
 		select {
-		case res := <-(ios[id]).OutgoingResponses:
-			if reply != res {
+		case response := <-(ios[id]).OutgoingResponses:
+			if req != response.Request {
+				t.Error("Expected ",reply, " Received ",res)
+			}
+			if reply != response.Response {
 				t.Error("Expected ",reply, " Received ",res)
 			}
 		case <-time.After(time.Second):
