@@ -47,8 +47,8 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 
 	// write initial term to persistent storage
 	// TODO: if not master then we need not wait until view has been fsynced
-	(*io).ViewPersist <- 0
-	written := <-(*io).ViewPersistFsync
+	io.ViewPersist <- 0
+	written := <-io.ViewPersistFsync
 	if written != 0 {
 		glog.Fatal("Did not persistent view change")
 	}
@@ -84,7 +84,7 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 
 		for _, request := range state.Log.GetEntry(i).Requests {
 			reply := state.StateMachine.Apply(request)
-			(*io).OutgoingResponses <- msgs.Client{request, reply}
+			io.OutgoingResponses <- msgs.Client{request, reply}
 		}
 	}
 	glog.Info("Recovered ", state.CommitIndex+1, " committed entries")

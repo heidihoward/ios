@@ -45,15 +45,15 @@ func TestMakeIo(t *testing.T) {
 	go io.DumpPersistentStorage()
 
 	// TEST
-	if len((*io).OutgoingUnicast) != nodes {
+	if len(io.OutgoingUnicast) != nodes {
 		t.Error("Wrong number of unicast channels created")
 	}
 
 	// TEST
-	(*io).Incoming.Requests.Prepare <- prepare
+	io.Incoming.Requests.Prepare <- prepare
 
 	select {
-	case reply := <-(*io).Incoming.Requests.Prepare:
+	case reply := <-io.Incoming.Requests.Prepare:
 		if !reflect.DeepEqual(reply, prepare) {
 			t.Error(reply)
 		}
@@ -62,7 +62,7 @@ func TestMakeIo(t *testing.T) {
 	}
 
 	// TEST
-	out := (*io).OutgoingUnicast[0]
+	out := io.OutgoingUnicast[0]
 	(*out).Responses.Prepare <- prep
 	select {
 	case reply := <-(*out).Responses.Prepare:
@@ -75,12 +75,12 @@ func TestMakeIo(t *testing.T) {
 
 	//TEST
 	go io.Broadcaster()
-	(*io).OutgoingBroadcast.Responses.Prepare <- prep
+	io.OutgoingBroadcast.Responses.Prepare <- prep
 
 	for id := 0; id < nodes; id++ {
 		// check each receives it
 		select {
-		case reply := <-(*io).OutgoingUnicast[id].Responses.Prepare:
+		case reply := <-io.OutgoingUnicast[id].Responses.Prepare:
 			if reply.Response != prepareRes {
 				t.Error(reply)
 			}

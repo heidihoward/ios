@@ -48,31 +48,31 @@ func TestInit(t *testing.T) {
 
 	// check view update is persisted
 	select {
-	case viewUpdate := <-(*io).ViewPersist:
+	case viewUpdate := <-io.ViewPersist:
 		if viewUpdate != 0 {
 			t.Error(viewUpdate)
 		}
-		(*io).ViewPersistFsync <- viewUpdate
+		io.ViewPersistFsync <- viewUpdate
 	case <-time.After(time.Second):
 		t.Error("Participant not responding")
 	}
 
-	(*io).Incoming.Requests.Prepare <- prepare1
+	io.Incoming.Requests.Prepare <- prepare1
 
 	// check node tried to dispatch request correctly
 	select {
-	case logUpdate := <-(*io).LogPersist:
+	case logUpdate := <-io.LogPersist:
 		if !reflect.DeepEqual(logUpdate.Entries, entries1) {
 			t.Error(logUpdate)
 		}
-		(*io).LogPersistFsync <- logUpdate
+		io.LogPersistFsync <- logUpdate
 	case <-time.After(time.Second):
 		t.Error("Participant not responding")
 	}
 
 	// check node tried to dispatch request correctly
 	select {
-	case reply := <-(*io).OutgoingUnicast[0].Responses.Prepare:
+	case reply := <-io.OutgoingUnicast[0].Responses.Prepare:
 		if reply.Response != prepare1Res {
 			t.Error(reply)
 		}
@@ -93,11 +93,11 @@ func TestInit(t *testing.T) {
 		Success:     true,
 		CommitIndex: 0}
 
-	(*io).Incoming.Requests.Commit <- commit1
+	io.Incoming.Requests.Commit <- commit1
 
 	// check node replies correctly
 	select {
-	case reply := <-(*io).OutgoingUnicast[0].Responses.Commit:
+	case reply := <-io.OutgoingUnicast[0].Responses.Commit:
 		if reply.Response != commit1Res {
 			t.Error(reply)
 		}
@@ -108,7 +108,7 @@ func TestInit(t *testing.T) {
 	// check if update A 3 was committed to state machine
 
 	select {
-	case reply := <-(*io).OutgoingRequests:
+	case reply := <-io.OutgoingRequests:
 		if reply != request1[0] {
 			t.Error(reply)
 		}

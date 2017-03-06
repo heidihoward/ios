@@ -13,7 +13,7 @@ func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 
 	// dispatch query to all
 	query := msgs.QueryRequest{config.ID, view, startIndex, endIndex}
-	(*io).OutgoingBroadcast.Requests.Query <- query
+	io.OutgoingBroadcast.Requests.Query <- query
 
 	// collect responses
 	noopEntry := msgs.Entry{0, false, []msgs.ClientRequest{noop}}
@@ -25,7 +25,7 @@ func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 	//check only one response is received per sender, index= node ID
 
 	for replied := make([]bool, config.N); !config.Quorum.checkRecoveryQuorum(replied); {
-		msg := <-(*io).Incoming.Responses.Query
+		msg := <-io.Incoming.Responses.Query
 		if msg.Request == query {
 
 			// check this is not a duplicate

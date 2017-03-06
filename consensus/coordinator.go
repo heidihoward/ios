@@ -17,12 +17,12 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 
 		prepare := msgs.PrepareRequest{config.ID, view, startIndex, endIndex, entries}
 		glog.Info("Starting prepare phase", prepare)
-		(*io).OutgoingBroadcast.Requests.Prepare <- prepare
+		io.OutgoingBroadcast.Requests.Prepare <- prepare
 
 		// collect responses
 		glog.Info("Waiting for ", config.Quorum.ReplicateSize, " prepare responses")
 		for replied := make([]bool, config.N); !config.Quorum.checkReplicationQuorum(replied); {
-			msg := <-(*io).Incoming.Responses.Prepare
+			msg := <-io.Incoming.Responses.Prepare
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, prepare) {
 				glog.Info("Received ", msg)
@@ -44,12 +44,12 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 	// dispatch commit requests to all
 	commit := msgs.CommitRequest{config.ID, startIndex, endIndex, entries}
 	glog.Info("Starting commit phase", commit)
-	(*io).OutgoingBroadcast.Requests.Commit <- commit
+	io.OutgoingBroadcast.Requests.Commit <- commit
 
 	// TODO: handle replies properly
 	go func() {
 		for replied := make([]bool, config.N); !config.Quorum.checkReplicationQuorum(replied); {
-			msg := <-(*io).Incoming.Responses.Commit
+			msg := <-io.Incoming.Responses.Commit
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, commit) {
 				glog.Info("Received ", msg)
@@ -66,11 +66,11 @@ func RunCoordinator(state *State, io *msgs.Io, config Config) {
 
 	for {
 		glog.Info("Coordinator is ready to handle request")
-		req := <-(*io).Incoming.Requests.Coordinate
+		req := <-io.Incoming.Requests.Coordinate
 		success := DoCoordination(req.View, req.StartIndex, req.EndIndex, req.Entries, io, config, req.Prepare)
 		// TODO: check view
 		reply := msgs.CoordinateResponse{config.ID, success}
-		(*io).OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
+		io.OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
 		glog.Info("Coordinator is finished handling request")
 		// TOD0: handle failure
 	}
