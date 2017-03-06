@@ -20,6 +20,7 @@ type ServerConfig struct {
 		WindowSize          int
 		SnapshotInterval    int
 		QuorumSystem        string
+		IndexExclusivity    bool
 	}
 }
 

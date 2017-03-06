@@ -26,7 +26,8 @@ func TestInit(t *testing.T) {
 		DelegateReplication: 0,
 		WindowSize:          1,
 		SnapshotInterval:    100,
-		Quorum:              NewQuorum("strict majority", 3)}
+		Quorum:              NewQuorum("strict majority", 3),
+	  IndexExclusivity:    true}
 	failure := msgs.NewFailureNotifier(3)
 	go Init(io, config, store, failure)
 

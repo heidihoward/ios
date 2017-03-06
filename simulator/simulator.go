@@ -24,7 +24,8 @@ func runSimulator(nodes int) ([]*msgs.Io, []*msgs.FailureNotifier) {
 			DelegateReplication: 0,
 			WindowSize:          1,
 			SnapshotInterval:    100,
-			Quorum:              consensus.NewQuorum("strict majority", 3)}
+			Quorum:              consensus.NewQuorum("strict majority", 3),
+			IndexExclusivity:    true}
 		go consensus.Init(io, config, app, fail)
 		go io.DumpPersistentStorage()
 		ios[id] = io

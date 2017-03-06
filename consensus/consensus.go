@@ -18,6 +18,7 @@ type Config struct {
 	WindowSize          int       // how many requests can the master have inflight at once
 	SnapshotInterval    int       // how often to record state machine snapshots
 	Quorum              QuorumSys //
+	IndexExclusivity    bool       // if enabled, Ios will assign each index to at most one request
 }
 
 type state struct {
@@ -29,6 +30,8 @@ type state struct {
 	StateMachine *app.StateMachine // ref to current state machine
 	Failures     *msgs.FailureNotifier
 }
+
+var noop = msgs.ClientRequest{-1, -1, true, false, "noop"}
 
 // Init runs the consensus algorithm.
 // It will not return until the application is terminated.

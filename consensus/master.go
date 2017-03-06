@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-var noop = msgs.ClientRequest{-1, -1, true, false, "noop"}
 
 func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 
@@ -84,15 +83,20 @@ func runRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, i
 	}
 
 	glog.Info("End index of the previous views is ", endIndex)
+	startIndex := endIndex
+	if config.IndexExclusivity {
+		startIndex =+ config.WindowSize
+	}
+	glog.Info("Start index of view ",view, " will be ",startIndex)
 
-	if commitIndex == endIndex {
+	if commitIndex == startIndex {
 		glog.Info("New master is up to date, No recovery coordination is required")
-		return true, endIndex
+		return true, startIndex
 	}
 
 	// recover entries
-	result := runRecoveryCoordinator(view, commitIndex+1, endIndex+1, io, config)
-	return result, endIndex
+	result := runRecoveryCoordinator(view, commitIndex+1, startIndex+1, io, config)
+	return result, startIndex
 }
 
 // runMaster implements the Master mode

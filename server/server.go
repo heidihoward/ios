@@ -61,7 +61,8 @@ func main() {
 		conf.Options.DelegateReplication,
 		conf.Options.WindowSize,
 		conf.Options.SnapshotInterval,
-		quorum}
+		quorum,
+		conf.Options.IndexExclusivity}
 
 	// setup consensus algorithm
 	if !found {
