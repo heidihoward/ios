@@ -36,18 +36,18 @@ func main() {
 		glog.Fatal("Node ID is ", *id, " but is configured with a ", len(conf.Peers.Address), " node cluster")
 	}
 
-	// setup IO
-	IO := msgs.MakeIo(2000, len(conf.Peers.Address))
+	// setup iO
+	iO := msgs.MakeIo(2000, len(conf.Peers.Address))
 
 	// setup persistent storage
 	logFile := *diskPath + "/persistent_log_" + strconv.Itoa(*id) + ".temp"
 	dataFile := *diskPath + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
 	snapFile := *diskPath + "/persistent_snapshot_" + strconv.Itoa(*id) + ".temp"
-	found, view, log, index, state := unix.SetupPersistentStorage(logFile, dataFile, snapFile, IO, conf.Options.Length)
+	found, view, log, index, state := unix.SetupPersistentStorage(logFile, dataFile, snapFile, iO, conf.Options.Length)
 
 	// setup peers & clients
 	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))
-	unix.SetupPeers(*id, conf.Peers.Address, IO, failureDetector)
+	unix.SetupPeers(*id, conf.Peers.Address, iO, failureDetector)
 	unix.SetupClients(strings.Split(conf.Clients.Address[*id], ":")[1], state)
 
 	// configure consensus algorithms
@@ -66,10 +66,10 @@ func main() {
 	// setup consensus algorithm
 	if !found {
 		glog.Info("Starting fresh consensus instance")
-		go consensus.Init(IO, configuration, state, failureDetector)
+		go consensus.Init(iO, configuration, state, failureDetector)
 	} else {
 		glog.Info("Restoring consensus instance")
-		go consensus.Recover(IO, configuration, view, log, state, index, failureDetector)
+		go consensus.Recover(iO, configuration, view, log, state, index, failureDetector)
 	}
 
 	// tidy up

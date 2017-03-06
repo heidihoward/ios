@@ -5,9 +5,9 @@ import (
 )
 
 func TestNextIndex(t *testing.T) {
-  window := NewReplicationWindow(-1,1)
-  index := window.NextIndex()
-  if index != 0 {
-    t.Error("ReplicationWindow giving wrong index")
-  }
+	window := newReplicationWindow(-1, 1)
+	index := window.nextIndex()
+	if index != 0 {
+		t.Error("ReplicationWindow giving wrong index")
+	}
 }

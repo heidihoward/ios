@@ -18,15 +18,15 @@ func TestInit(t *testing.T) {
 	io := msgs.MakeIo(10, 3)
 	store := app.New()
 	config := Config{
-		ID:0,
-		N:3,
-		LogLength:1000,
-		BatchInterval:0,
-		MaxBatch:1,
-		DelegateReplication:0,
-		WindowSize:1,
-		SnapshotInterval:100,
-		Quorum:NewQuorum("strict majority",3)}
+		ID:                  0,
+		N:                   3,
+		LogLength:           1000,
+		BatchInterval:       0,
+		MaxBatch:            1,
+		DelegateReplication: 0,
+		WindowSize:          1,
+		SnapshotInterval:    100,
+		Quorum:              NewQuorum("strict majority", 3)}
 	failure := msgs.NewFailureNotifier(3)
 	go Init(io, config, store, failure)
 

@@ -10,15 +10,15 @@ import (
 	"time"
 )
 
-type Peer struct {
+type peer struct {
 	id      int
 	address string
 }
 
-var peers []Peer
+var peers []peer
 var failures *msgs.FailureNotifier
 var id int
-var IO *msgs.Io
+var iO *msgs.Io
 
 // iterative through peers and check if there is a handler for each
 // try to create one if not, report failure if not possible
@@ -93,7 +93,7 @@ func handlePeer(cn net.Conn, init bool) {
 				break
 			}
 			glog.Infof("Read from peer %d: ", peerID, string(text))
-			IO.Incoming.BytesToProtoMsg(text)
+			iO.Incoming.BytesToProtoMsg(text)
 
 		}
 	}()
@@ -102,7 +102,7 @@ func handlePeer(cn net.Conn, init bool) {
 		for {
 			// send reply
 			glog.Infof("Ready to send message to %d", peerID)
-			b, err := IO.OutgoingUnicast[peerID].ProtoMsgToBytes()
+			b, err := iO.OutgoingUnicast[peerID].ProtoMsgToBytes()
 			if err != nil {
 				glog.Fatal("Could not marshal message")
 			}
@@ -136,12 +136,12 @@ func handlePeer(cn net.Conn, init bool) {
 
 func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.FailureNotifier) {
 	id = localId
-	IO = msgIo
+	iO = msgIo
 	failures = fail
 	//set up peer state
-	peers = make([]Peer, len(addresses))
+	peers = make([]peer, len(addresses))
 	for i := range addresses {
-		peers[i] = Peer{
+		peers[i] = peer{
 			i, addresses[i]}
 	}
 
@@ -156,8 +156,8 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.Fail
 
 	// handle local peer (without sending network traffic)
 	failures.NowConnected(id)
-	from := &(IO.Incoming)
-	go from.Forward(IO.OutgoingUnicast[id])
+	from := &(iO.Incoming)
+	go from.Forward(iO.OutgoingUnicast[id])
 
 	// handle for incoming peers
 	go func() {

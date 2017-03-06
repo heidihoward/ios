@@ -32,7 +32,7 @@ type state struct {
 
 // Init runs the consensus algorithm.
 // It will not return until the application is terminated.
-func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureNotifier ) {
+func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureNotifier) {
 
 	// setup
 	glog.Infof("Starting node %d of %d", config.ID, config.N)
@@ -56,12 +56,12 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
 	go runCoordinator(&state, io, config)
-	go MonitorMaster(&state, io, config, true)
+	go monitorMaster(&state, io, config, true)
 	runParticipant(&state, io, config)
 
 }
 
-func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int,  fail *msgs.FailureNotifier) {
+func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int, fail *msgs.FailureNotifier) {
 	// setup
 	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
 
@@ -94,7 +94,7 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
 	go runCoordinator(&state, io, config)
-	go MonitorMaster(&state, io, config, false)
+	go monitorMaster(&state, io, config, false)
 	runParticipant(&state, io, config)
 
 }

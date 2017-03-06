@@ -5,7 +5,7 @@ import (
 	"github.com/golang/glog"
 )
 
-// DATA STRUCTURES FOR ABSTRACTING MSG IO
+// DATA STRUCTURES FOR ABSTRACTING MSG iO
 
 type Requests struct {
 	Prepare    chan PrepareRequest

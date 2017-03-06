@@ -8,12 +8,12 @@ import (
 
 var noop = msgs.ClientRequest{-1, -1, true, false, "noop"}
 
-func MonitorMaster(s *state, io *msgs.Io, config Config, new bool) {
+func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 
 	// if initial master, start master goroutine
 	if config.ID == 0 && new {
 		glog.Info("Starting leader module")
-		RunMaster(0, -1, true, io, config, s)
+		runMaster(0, -1, true, io, config, s)
 	}
 
 	for {
@@ -32,7 +32,7 @@ func MonitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 					glog.Fatal("Did not persistent view change")
 				}
 				s.MasterID = nextMaster
-				RunMaster(s.View, s.CommitIndex, false, io, config, s)
+				runMaster(s.View, s.CommitIndex, false, io, config, s)
 			}
 
 		case req := <-io.IncomingRequestsForced:
@@ -45,7 +45,7 @@ func MonitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 			}
 			s.MasterID = config.ID
 			io.IncomingRequests <- req
-			RunMaster(s.View, s.CommitIndex, false, io, config, s)
+			runMaster(s.View, s.CommitIndex, false, io, config, s)
 
 		case req := <-io.IncomingRequests:
 			glog.Warning("Request received by non-master server ", req)
@@ -54,9 +54,9 @@ func MonitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 	}
 }
 
-// RunRecovery executes the recovery phase of leadership election,
+// runRecovery executes the recovery phase of leadership election,
 // Returns if it was successful and the previous view's end index
-func RunRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, int) {
+func runRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, int) {
 	// dispatch new view requests
 	req := msgs.NewViewRequest{config.ID, view}
 	io.OutgoingBroadcast.Requests.NewView <- req
@@ -91,12 +91,12 @@ func RunRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, i
 	}
 
 	// recover entries
-	result := RunRecoveryCoordinator(view, commitIndex+1, endIndex+1, io, config)
+	result := runRecoveryCoordinator(view, commitIndex+1, endIndex+1, io, config)
 	return result, endIndex
 }
 
-// RunMaster implements the Master mode
-func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Config, s *state) {
+// runMaster implements the Master mode
+func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Config, s *state) {
 	// setup
 	glog.Info("Starting up master in view ", view)
 	glog.Info("Master is configured to delegate replication to ", config.DelegateReplication)
@@ -106,7 +106,7 @@ func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 
 	if !initial {
 		var success bool
-		success, startIndex = RunRecovery(view, commitIndex, io, config)
+		success, startIndex = runRecovery(view, commitIndex, io, config)
 		if !success {
 			glog.Warning("Recovery failed")
 			return
@@ -119,7 +119,7 @@ func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 	if config.DelegateReplication > 0 {
 		coordinator = s.Failures.NextConnected(config.ID)
 	}
-	window := NewReplicationWindow(startIndex,config.WindowSize)
+	window := newReplicationWindow(startIndex, config.WindowSize)
 	stepDown := false
 
 	for {
@@ -139,7 +139,7 @@ func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 		var reqs []msgs.ClientRequest
 
 		//wait for window slot
-		index := window.NextIndex()
+		index := window.nextIndex()
 
 		if config.BatchInterval == 0 || config.MaxBatch == 1 {
 			glog.Info("No batching enabled")
@@ -189,7 +189,7 @@ func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 				return
 			}
 			glog.Info("Finished replicating request: ", reqs)
-			window.IndexCompleted(reply.Request.StartIndex)
+			window.indexCompleted(reply.Request.StartIndex)
 		}()
 
 		// rotate coordinator is nessacary

@@ -28,12 +28,12 @@ func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientRespons
 	}
 }
 
-func TestSimulator(t *testing.T) {
+func TestrunSimulator(t *testing.T) {
 	flag.Parse()
 	defer glog.Flush()
 
 	// create a system of 3 nodes
-	ios, _ := RunSimulator(3)
+	ios, _ := runSimulator(3)
 	app := app.New()
 
 	// check that 3 nodes were created

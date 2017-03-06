@@ -18,10 +18,10 @@ func stateMachine() {
 		var reply msgs.ClientResponse
 
 		select {
-		case response := <-IO.OutgoingResponses:
+		case response := <-iO.OutgoingResponses:
 			req = response.Request
 			reply = response.Response
-		case req = <-IO.OutgoingRequestsFailed:
+		case req = <-iO.OutgoingRequestsFailed:
 			glog.Info("Request could not been safely replicated by consensus algorithm", req)
 			reply = msgs.ClientResponse{
 				req.ClientID, req.RequestID, false, ""}
@@ -44,9 +44,9 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	// CONSENESUS ALGORITHM HERE
 	glog.Info("Passing request to consensus algorithm")
 	if req.ForceViewChange {
-		IO.IncomingRequestsForced <- req
+		iO.IncomingRequestsForced <- req
 	} else {
-		IO.IncomingRequests <- req
+		iO.IncomingRequests <- req
 	}
 
 	if notifyClients.IsSubscribed(req) {

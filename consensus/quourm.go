@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Basic suport for various of quorum systems
+// QuorumSys offers basic suport for various of quorum systems
 // currently only "counting systems" are supported
 type QuorumSys struct {
 	Name          string
@@ -43,7 +43,7 @@ func NewQuorum(configName string, n int) QuorumSys {
 		glog.Fatal("Quourm system is not recognised")
 	}
 	if recovery+replication <= n {
-		glog.Fatal("Unsafe quorum system has been choosen")
+		glog.Fatal("Unsafe quorum system has been chosen")
 	}
 	return QuorumSys{"counting", recovery, replication}
 }

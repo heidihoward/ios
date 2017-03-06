@@ -7,7 +7,7 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 )
 
-func RunSimulator(nodes int) ([]*msgs.Io,[]*msgs.FailureNotifier) {
+func runSimulator(nodes int) ([]*msgs.Io, []*msgs.FailureNotifier) {
 	ios := make([]*msgs.Io, nodes)
 	failures := make([]*msgs.FailureNotifier, nodes)
 	// setup state
@@ -16,15 +16,15 @@ func RunSimulator(nodes int) ([]*msgs.Io,[]*msgs.FailureNotifier) {
 		io := msgs.MakeIo(10, nodes)
 		fail := msgs.NewFailureNotifier(nodes)
 		config := consensus.Config{
-			ID:id,
-			N:nodes,
-			LogLength:1000,
-			BatchInterval:0,
-			MaxBatch:1,
-			DelegateReplication:0,
-			WindowSize:1,
-			SnapshotInterval:100,
-			Quorum:consensus.NewQuorum("strict majority",3)}
+			ID:                  id,
+			N:                   nodes,
+			LogLength:           1000,
+			BatchInterval:       0,
+			MaxBatch:            1,
+			DelegateReplication: 0,
+			WindowSize:          1,
+			SnapshotInterval:    100,
+			Quorum:              consensus.NewQuorum("strict majority", 3)}
 		go consensus.Init(io, config, app, fail)
 		go io.DumpPersistentStorage()
 		ios[id] = io
@@ -41,8 +41,8 @@ func RunSimulator(nodes int) ([]*msgs.Io,[]*msgs.FailureNotifier) {
 	return ios, failures
 }
 
-// same as RunSimulator except where the log in persistent storage is given
-func RunRecoverySimulator(nodes int, logs []*consensus.Log, views []int) []*msgs.Io {
+// same as runSimulator except where the log in persistent storage is given
+func runRecoverySimulator(nodes int, logs []*consensus.Log, views []int) []*msgs.Io {
 	ios := make([]*msgs.Io, nodes)
 	// setup state
 	for id := 0; id < nodes; id++ {

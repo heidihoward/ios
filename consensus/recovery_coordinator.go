@@ -8,7 +8,7 @@ import (
 
 // returns true if successful
 // start index is inclusive and end index is exclusive
-func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io, config Config) bool {
+func runRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io, config Config) bool {
 	glog.Info("Starting recovery for indexes ", startIndex, " to ", endIndex)
 
 	// dispatch query to all
