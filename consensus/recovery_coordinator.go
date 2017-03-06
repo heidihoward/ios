@@ -30,11 +30,11 @@ func RunRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 
 			// check this is not a duplicate
 			if replied[msg.Response.SenderID] {
-				glog.Warning("Response already recieved from ", msg.Response.SenderID)
+				glog.Warning("Response already received from ", msg.Response.SenderID)
 			} else {
 				// check view
 				if msg.Response.View < view {
-					glog.Fatal("Reply view is < current view, this should not have occured")
+					glog.Fatal("Reply view is < current view, this should not have occurred")
 				}
 
 				if view < msg.Response.View {

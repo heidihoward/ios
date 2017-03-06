@@ -7,9 +7,8 @@ func mod(x int, y int) int {
 	dif := x - y
 	if dif < y {
 		return dif
-	} else {
-		return mod(dif, y)
 	}
+	return mod(dif, y)
 }
 
 func next(view int, id int, n int) int {

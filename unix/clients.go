@@ -115,6 +115,9 @@ func handleConnection(cn net.Conn) {
 
 		// tidy up
 		err = writer.Flush()
+		if err != nil {
+			glog.Fatal(err)
+		}
 		glog.Info("Finished sending ", n, " bytes")
 
 	}

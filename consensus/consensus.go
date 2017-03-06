@@ -20,7 +20,7 @@ type Config struct {
 	Quorum              QuorumSys //
 }
 
-type State struct {
+type state struct {
 	View         int               // local view number (persistent)
 	Log          *Log              // log entries, index from 0 (persistent)
 	CommitIndex  int               // index of the last entry applied to the state machine, -1 means no entries have been applied yet
@@ -36,7 +36,7 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 
 	// setup
 	glog.Infof("Starting node %d of %d", config.ID, config.N)
-	state := State{
+	state := state{
 		View:         0,
 		Log:          NewLog(config.LogLength),
 		CommitIndex:  -1,
@@ -55,9 +55,9 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
-	go RunCoordinator(&state, io, config)
+	go runCoordinator(&state, io, config)
 	go MonitorMaster(&state, io, config, true)
-	RunParticipant(&state, io, config)
+	runParticipant(&state, io, config)
 
 }
 
@@ -66,7 +66,7 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
 
 	// restore previous state
-	state := State{
+	state := state{
 		View:         view,
 		Log:          log,
 		CommitIndex:  snapshotIndex,
@@ -93,8 +93,8 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
-	go RunCoordinator(&state, io, config)
+	go runCoordinator(&state, io, config)
 	go MonitorMaster(&state, io, config, false)
-	RunParticipant(&state, io, config)
+	runParticipant(&state, io, config)
 
 }

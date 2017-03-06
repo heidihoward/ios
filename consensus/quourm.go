@@ -43,7 +43,7 @@ func NewQuorum(configName string, n int) QuorumSys {
 		glog.Fatal("Quourm system is not recognised")
 	}
 	if recovery+replication <= n {
-		glog.Fatal("Unsafe quourm system has been choosen")
+		glog.Fatal("Unsafe quorum system has been choosen")
 	}
 	return QuorumSys{"counting", recovery, replication}
 }

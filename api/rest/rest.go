@@ -11,13 +11,13 @@ import (
 
 type Rest struct{}
 
-type RestRequest struct {
+type restrequest struct {
 	Req     string
 	ReplyTo http.ResponseWriter
 }
 
-var waiting chan RestRequest
-var outstanding chan RestRequest
+var waiting chan restrequest
+var outstanding chan restrequest
 
 func versionServer(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "ios 0.1\n")
@@ -35,7 +35,7 @@ func requestServer(w http.ResponseWriter, req *http.Request) {
 	reqs := strings.Split(req.URL.String(), "/")
 	reqNew := strings.Join(reqs[2:], " ")
 	glog.Info("API request is:", reqNew)
-	waiting <- RestRequest{reqNew + "\n", w}
+	waiting <- restrequest{reqNew + "\n", w}
 
 	//wait for response, else give up
 	time.Sleep(time.Second)
@@ -57,8 +57,8 @@ func Create() *Rest {
 	}()
 
 	// setup channels
-	waiting = make(chan RestRequest, 10)
-	outstanding = make(chan RestRequest, 1)
+	waiting = make(chan restrequest, 10)
+	outstanding = make(chan restrequest, 1)
 
 	return &(Rest{})
 

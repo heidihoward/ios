@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry, io *msgs.Io, config Config, prepare bool) bool {
+func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry, io *msgs.Io, config Config, prepare bool) bool {
 	// PHASE 2: prepare
 	if prepare {
 
@@ -61,13 +61,13 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 	return true
 }
 
-// returns true if successful
-func RunCoordinator(state *State, io *msgs.Io, config Config) {
+// runCoordinator eturns true if successful
+func runCoordinator(state *state, io *msgs.Io, config Config) {
 
 	for {
 		glog.Info("Coordinator is ready to handle request")
 		req := <-io.Incoming.Requests.Coordinate
-		success := DoCoordination(req.View, req.StartIndex, req.EndIndex, req.Entries, io, config, req.Prepare)
+		success := doCoordination(req.View, req.StartIndex, req.EndIndex, req.Entries, io, config, req.Prepare)
 		// TODO: check view
 		reply := msgs.CoordinateResponse{config.ID, success}
 		io.OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}

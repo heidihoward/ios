@@ -8,7 +8,7 @@ import (
 
 var noop = msgs.ClientRequest{-1, -1, true, false, "noop"}
 
-func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
+func MonitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 
 	// if initial master, start master goroutine
 	if config.ID == 0 && new {
@@ -48,7 +48,7 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 			RunMaster(s.View, s.CommitIndex, false, io, config, s)
 
 		case req := <-io.IncomingRequests:
-			glog.Warning("Request recieved by non-master server ", req)
+			glog.Warning("Request received by non-master server ", req)
 			io.OutgoingRequestsFailed <- req
 		}
 	}
@@ -96,7 +96,7 @@ func RunRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, i
 }
 
 // RunMaster implements the Master mode
-func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Config, s *State) {
+func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Config, s *state) {
 	// setup
 	glog.Info("Starting up master in view ", view)
 	glog.Info("Master is configured to delegate replication to ", config.DelegateReplication)

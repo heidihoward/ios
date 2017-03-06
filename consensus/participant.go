@@ -8,7 +8,7 @@ import (
 
 // PROTOCOL BODY
 
-func RunParticipant(state *State, io *msgs.Io, config Config) {
+func runParticipant(state *state, io *msgs.Io, config Config) {
 	glog.Info("Ready for requests")
 	for {
 
