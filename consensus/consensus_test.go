@@ -16,9 +16,19 @@ func TestInit(t *testing.T) {
 
 	// create a node in system of 3 nodes
 	io := msgs.MakeIo(10, 3)
-	store := app.NewStore()
-	conf := Config{0, 3, 1000, 0, 0, 0, 1, 100}
-	go Init(io, conf, store)
+	store := app.New()
+	config := Config{
+		ID:0,
+		N:3,
+		LogLength:1000,
+		BatchInterval:0,
+		MaxBatch:1,
+		DelegateReplication:0,
+		WindowSize:1,
+		SnapshotInterval:100,
+		Quorum:NewQuorum("strict majority",3)}
+	failure := msgs.NewFailureNotifier(3)
+	go Init(io, config, store, failure)
 
 	// TEST 1 - SIMPLE COMMIT
 
@@ -108,8 +118,8 @@ func TestInit(t *testing.T) {
 	// check if update A 3 was committed to state machine
 
 	select {
-	case reply := <-io.OutgoingRequests:
-		if reply != request1[0] {
+	case reply := <-io.OutgoingResponses:
+		if reply.Request != request1[0] {
 			t.Error(reply)
 		}
 	case <-time.After(time.Second):
