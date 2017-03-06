@@ -1,4 +1,4 @@
-//Package consensus implements the Unanimous local replication algorithm.
+//Package consensus implements the core of the Ios consensus algorithm.
 package consensus
 
 import (
