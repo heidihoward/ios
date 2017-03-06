@@ -17,10 +17,10 @@ func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientRespons
 		select {
 		case response := <-(ios[id]).OutgoingResponses:
 			if req != response.Request {
-				t.Error("Expected ", reply, " Received ", res)
+				t.Error("Expected ", reply, " Received ", response)
 			}
 			if reply != response.Response {
-				t.Error("Expected ", reply, " Received ", res)
+				t.Error("Expected ", reply, " Received ", response)
 			}
 		case <-time.After(time.Second):
 			t.Error("Participant not responding")
@@ -33,7 +33,7 @@ func TestSimulator(t *testing.T) {
 	defer glog.Flush()
 
 	// create a system of 3 nodes
-	ios := RunSimulator(3)
+	ios, _ := RunSimulator(3)
 	app := app.New()
 
 	// check that 3 nodes were created
@@ -70,7 +70,8 @@ func TestSimulator(t *testing.T) {
 	checkRequest(t, request3, app.Apply(request3), ios, 0)
 
 	//check failure recovery by notifying node 1 that node 0 has failed
-	ios[1].Failure <- 0
+	// failures[1].NowConnected(0)
+	// failures[1].NowDisconnected(0)
 
 	request4 := msgs.ClientRequest{
 		ClientID:        400,
@@ -79,10 +80,11 @@ func TestSimulator(t *testing.T) {
 		ForceViewChange: false,
 		Request:         "get A"}
 
-	checkRequest(t, request4, app.Apply(request4), ios, 1)
+	checkRequest(t, request4, app.Apply(request4), ios, 0)
 
 	//check 2nd failure by notifying node 2 that node 1 has failed
-	ios[2].Failure <- 1
+	// failures[2].NowConnected(1)
+	// failures[2].NowDisconnected(1)
 
 	request5 := msgs.ClientRequest{
 		ClientID:        400,
@@ -91,6 +93,6 @@ func TestSimulator(t *testing.T) {
 		ForceViewChange: false,
 		Request:         "update B 3"}
 
-	checkRequest(t, request5, app.Apply(request5), ios, 2)
+	checkRequest(t, request5, app.Apply(request5), ios, 0)
 
 }

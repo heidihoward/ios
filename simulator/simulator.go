@@ -7,17 +7,28 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 )
 
-func RunSimulator(nodes int) []*msgs.Io {
+func RunSimulator(nodes int) ([]*msgs.Io,[]*msgs.FailureNotifier) {
 	ios := make([]*msgs.Io, nodes)
+	failures := make([]*msgs.FailureNotifier, nodes)
 	// setup state
 	for id := 0; id < nodes; id++ {
 		app := app.New()
 		io := msgs.MakeIo(10, nodes)
-		failure := msgs.NewFailureNotifier(nodes)
-		conf := consensus.Config{ID: id, N: nodes, LogLength: 1000, WindowSize: 1}
-		go consensus.Init(io, conf, app, failure)
+		fail := msgs.NewFailureNotifier(nodes)
+		config := consensus.Config{
+			ID:id,
+			N:nodes,
+			LogLength:1000,
+			BatchInterval:0,
+			MaxBatch:1,
+			DelegateReplication:0,
+			WindowSize:1,
+			SnapshotInterval:100,
+			Quorum:consensus.NewQuorum("strict majority",3)}
+		go consensus.Init(io, config, app, fail)
 		go io.DumpPersistentStorage()
 		ios[id] = io
+		failures[id] = fail
 	}
 
 	// forward traffic
@@ -27,7 +38,7 @@ func RunSimulator(nodes int) []*msgs.Io {
 		}
 	}
 
-	return ios
+	return ios, failures
 }
 
 // same as RunSimulator except where the log in persistent storage is given
