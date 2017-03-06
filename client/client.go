@@ -202,8 +202,12 @@ func main() {
 			// dispatch request until successful
 			for {
 				tries++
-				if tries > 1 {
+				if tries > len(conf.Addresses.Address) {
 					req.ForceViewChange = true
+					b, err = msgs.Marshal(req)
+					if err != nil {
+						glog.Fatal(err)
+					}
 				}
 
 				replyBytes, err := dispatcher(b, conn, rd, timeout)
@@ -231,7 +235,7 @@ func main() {
 							glog.Warning(err)
 						}
 					}
-					conn, leader, err = connect(conf.Addresses.Address, leader+1, conf.Parameters.Retries)
+					conn, leader, err = connect(conf.Addresses.Address, conf.Parameters.Retries, leader+1)
 					if err == nil {
 						break
 					}

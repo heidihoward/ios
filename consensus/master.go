@@ -13,40 +13,39 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 	// if initial master, start master goroutine
 	if config.ID == 0 && new {
 		glog.Info("Starting leader module")
-		RunMaster(0, -1, true, io, config)
+		RunMaster(0, -1, true, io, config, s)
 	}
 
 	for {
 		select {
-		case failed := <-io.Failure:
-			if failed == (*s).MasterID {
-				nextMaster := mod((*s).View+1, config.N)
-				glog.Warningf("Master (ID:%d,View:%d) failed, next up is ID:%d in View:%d", (*s).MasterID, (*s).View, nextMaster, (*s).View+1)
-				(*s).MasterID = nextMaster
-				if nextMaster == config.ID {
-					(*s).View++
-					glog.Info("Starting new master in view ", (*s).View, " at ", config.ID)
-					(*io).ViewPersist <- (*s).View
-					written := <-(*io).ViewPersistFsync
-					if written != (*s).View {
-						glog.Fatal("Did not persistent view change")
-					}
-					(*s).MasterID = nextMaster
-					RunMaster((*s).View, (*s).CommitIndex, false, io, config)
+		case <-s.Failures.NotifyOnFailure(s.MasterID):
+			nextMaster := mod(s.View+1, config.N)
+			glog.Warningf("Master (ID:%d,View:%d) failed, next up is ID:%d in View:%d", s.MasterID, s.View, nextMaster, s.View+1)
+			s.MasterID = nextMaster
+			s.View++
+			if nextMaster == config.ID {
+				s.View++
+				glog.Info("Starting new master in view ", s.View, " at ", config.ID)
+				io.ViewPersist <- s.View
+				written := <-io.ViewPersistFsync
+				if written != s.View {
+					glog.Fatal("Did not persistent view change")
 				}
+				s.MasterID = nextMaster
+				RunMaster(s.View, s.CommitIndex, false, io, config, s)
 			}
 
 		case req := <-io.IncomingRequestsForced:
 			glog.Warning("Forcing view change")
 			s.View = next(s.View, config.ID, config.N)
-			(*io).ViewPersist <- (*s).View
-			written := <-(*io).ViewPersistFsync
-			if written != (*s).View {
+			io.ViewPersist <- s.View
+			written := <-io.ViewPersistFsync
+			if written != s.View {
 				glog.Fatal("Did not persistent view change")
 			}
-			(*s).MasterID = config.ID
+			s.MasterID = config.ID
 			io.IncomingRequests <- req
-			RunMaster((*s).View, (*s).CommitIndex, false, io, config)
+			RunMaster(s.View, s.CommitIndex, false, io, config, s)
 
 		case req := <-io.IncomingRequests:
 			glog.Warning("Request recieved by non-master server ", req)
@@ -60,14 +59,14 @@ func MonitorMaster(s *State, io *msgs.Io, config Config, new bool) {
 func RunRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, int) {
 	// dispatch new view requests
 	req := msgs.NewViewRequest{config.ID, view}
-	(*io).OutgoingBroadcast.Requests.NewView <- req
+	io.OutgoingBroadcast.Requests.NewView <- req
 
 	// collect responses
 	glog.Info("Waiting for ", config.Quorum.RecoverySize, " new view responses")
 	endIndex := commitIndex
 
 	for replied := make([]bool, config.N); !config.Quorum.checkRecoveryQuorum(replied); {
-		msg := <-(*io).Incoming.Responses.NewView
+		msg := <-io.Incoming.Responses.NewView
 		// check msg replies to the msg we just sent
 		if msg.Request == req {
 			res := msg.Response
@@ -97,29 +96,30 @@ func RunRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, i
 }
 
 // RunMaster implements the Master mode
-func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Config) {
+func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Config, s *State) {
 	// setup
 	glog.Info("Starting up master in view ", view)
 	glog.Info("Master is configured to delegate replication to ", config.DelegateReplication)
 
 	// determine next safe index
-	index := -1
+	startIndex := -1
 
 	if !initial {
 		var success bool
-		success, index = RunRecovery(view, commitIndex, io, config)
+		success, startIndex = RunRecovery(view, commitIndex, io, config)
 		if !success {
 			glog.Warning("Recovery failed")
 			return
 		}
 	}
 
-	// store the first coordinator to ask
 	coordinator := config.ID
+
+	// if delegation is enabled then store the first coordinator to ask
 	if config.DelegateReplication > 0 {
-		coordinator += 1
+		coordinator = s.Failures.NextConnected(config.ID)
 	}
-	windowStart := index
+	window := NewReplicationWindow(startIndex,config.WindowSize)
 	stepDown := false
 
 	for {
@@ -139,12 +139,7 @@ func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 		var reqs []msgs.ClientRequest
 
 		//wait for window slot
-		//TOOD: replace with better mechanism then polling
-
-		for index >= windowStart+config.WindowSize {
-			glog.Warning("Request querying for replication window")
-			time.Sleep(100 * time.Millisecond)
-		}
+		index := window.NextIndex()
 
 		if config.BatchInterval == 0 || config.MaxBatch == 1 {
 			glog.Info("No batching enabled")
@@ -177,8 +172,6 @@ func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 			glog.Info("Starting to replicate ", reqsNum, " requests")
 			reqs = reqsAll[:reqsNum]
 		}
-
-		index++
 		glog.Info("Request assigned index: ", index)
 
 		// dispatch to coordinator
@@ -188,7 +181,7 @@ func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 		// TODO: BUG: need to handle coordinator failure
 
 		go func() {
-			reply := <-(*io).Incoming.Responses.Coordinate
+			reply := <-io.Incoming.Responses.Coordinate
 			// TODO: check msg replies to the msg we just sent
 			if !reply.Response.Success {
 				glog.Warning("Commit unsuccessful")
@@ -196,21 +189,12 @@ func RunMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 				return
 			}
 			glog.Info("Finished replicating request: ", reqs)
-			if reply.Request.StartIndex == windowStart+1 {
-				windowStart += 1
-			} else {
-				// TODO: BUG: handle out-of-order commitment
-				glog.Warning("STUB: to implement")
-				windowStart += 1
-			}
+			window.IndexCompleted(reply.Request.StartIndex)
 		}()
 
 		// rotate coordinator is nessacary
 		if config.DelegateReplication > 1 {
-			coordinator += 1
-			if coordinator > config.ID+config.DelegateReplication {
-				coordinator = config.ID + 1
-			}
+			coordinator = s.Failures.NextConnected(coordinator)
 		}
 	}
 	glog.Warning("Master stepping down")

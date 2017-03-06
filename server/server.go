@@ -46,7 +46,8 @@ func main() {
 	found, view, log, index, state := unix.SetupPersistentStorage(logFile, dataFile, snapFile, IO, conf.Options.Length)
 
 	// setup peers & clients
-	unix.SetupPeers(*id, conf.Peers.Address, IO)
+	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))
+	unix.SetupPeers(*id, conf.Peers.Address, IO, failureDetector)
 	unix.SetupClients(strings.Split(conf.Clients.Address[*id], ":")[1], state)
 
 	// configure consensus algorithms
@@ -65,10 +66,10 @@ func main() {
 	// setup consensus algorithm
 	if !found {
 		glog.Info("Starting fresh consensus instance")
-		go consensus.Init(IO, configuration, state)
+		go consensus.Init(IO, configuration, state, failureDetector)
 	} else {
 		glog.Info("Restoring consensus instance")
-		go consensus.Recover(IO, configuration, view, log, state, index)
+		go consensus.Recover(IO, configuration, view, log, state, index, failureDetector)
 	}
 
 	// tidy up

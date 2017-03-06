@@ -27,11 +27,12 @@ type State struct {
 	MasterID     int               // ID of the current master, calculated from View
 	LastSnapshot int               // index of the last state machine snapshot
 	StateMachine *app.StateMachine // ref to current state machine
+	Failures     *msgs.FailureNotifier
 }
 
 // Init runs the consensus algorithm.
 // It will not return until the application is terminated.
-func Init(io *msgs.Io, config Config, app *app.StateMachine) {
+func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureNotifier ) {
 
 	// setup
 	glog.Infof("Starting node %d of %d", config.ID, config.N)
@@ -41,7 +42,8 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine) {
 		CommitIndex:  -1,
 		MasterID:     0,
 		LastSnapshot: 0,
-		StateMachine: app}
+		StateMachine: app,
+		Failures:     fail}
 
 	// write initial term to persistent storage
 	// TODO: if not master then we need not wait until view has been fsynced
@@ -59,7 +61,7 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine) {
 
 }
 
-func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int) {
+func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int,  fail *msgs.FailureNotifier) {
 	// setup
 	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
 
@@ -70,7 +72,8 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 		CommitIndex:  snapshotIndex,
 		MasterID:     mod(view, config.N),
 		LastSnapshot: snapshotIndex,
-		StateMachine: app}
+		StateMachine: app,
+		Failures:     fail}
 
 	// apply recovered requests to state machine
 	for i := snapshotIndex + 1; i <= state.Log.LastIndex; i++ {
@@ -87,9 +90,6 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 	glog.Info("Recovered ", state.CommitIndex+1, " committed entries")
 
 	//  do not start leader without view change
-	if state.MasterID == config.ID {
-		io.Failure <- config.ID
-	}
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)

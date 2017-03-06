@@ -19,7 +19,7 @@ func RunParticipant(state *State, io *msgs.Io, config Config) {
 			glog.Info("Prepare requests received at ", config.ID, ": ", req)
 			// check view
 			if req.View < state.View {
-				glog.Warning("Sender is behind")
+				glog.Warning("Sender ID:",req.SenderID," is behind. Local view is ",state.View,", sender's view was ",req.View)
 				reply := msgs.PrepareResponse{config.ID, false}
 				(*io).OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.Prepare{req, reply}
 				break

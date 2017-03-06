@@ -36,7 +36,6 @@ type Io struct {
 	Incoming               ProtoMsgs
 	OutgoingBroadcast      ProtoMsgs
 	OutgoingUnicast        map[int]*ProtoMsgs
-	Failure                chan int
 	ViewPersist            chan int
 	ViewPersistFsync       chan int
 	LogPersist             chan LogUpdate
@@ -175,7 +174,6 @@ func MakeIo(buf int, n int) *Io {
 		Incoming:               MakeProtoMsgs(buf),
 		OutgoingBroadcast:      MakeProtoMsgs(buf),
 		OutgoingUnicast:        make(map[int]*ProtoMsgs),
-		Failure:                make(chan int, buf),
 		ViewPersist:            make(chan int, buf),
 		ViewPersistFsync:       make(chan int, buf),
 		LogPersist:             make(chan LogUpdate, buf),

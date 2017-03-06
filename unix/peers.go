@@ -7,29 +7,24 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
 type Peer struct {
 	id      int
 	address string
-	handled bool // TODO: replace with Mutex
 }
 
 var peers []Peer
-var peersMutex sync.RWMutex
+var failures *msgs.FailureNotifier
 var id int
 var IO *msgs.Io
 
-// iterative through peers and check there is a handler for each
-// try to create one if not
+// iterative through peers and check if there is a handler for each
+// try to create one if not, report failure if not possible
 func checkPeer() {
 	for i := range peers {
-		peersMutex.RLock()
-		failed := !peers[i].handled
-		peersMutex.RUnlock()
-		if failed {
+		if !failures.IsConnected(i) {
 			//glog.Info("Peer ", i, " is not currently connected")
 			cn, err := net.Dial("tcp", peers[i].address)
 
@@ -84,10 +79,7 @@ func handlePeer(cn net.Conn, init bool) {
 	}
 
 	glog.Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
-
-	peersMutex.Lock()
-	peers[peerID].handled = true
-	peersMutex.Unlock()
+	failures.NowConnected(peerID)
 
 	closeErr := make(chan error)
 	go func() {
@@ -138,23 +130,20 @@ func handlePeer(cn net.Conn, init bool) {
 
 	// tidy up
 	glog.Warningf("No longer able to handle traffic from peer %d at %s ", peerID, addr)
-	peersMutex.Lock()
-	peers[peerID].handled = false
-	peersMutex.Unlock()
-	IO.Failure <- peerID
+	failures.NowDisconnected(peerID)
 	cn.Close()
 }
 
-func SetupPeers(localId int, addresses []string, msgIo *msgs.Io) {
+func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.FailureNotifier) {
 	id = localId
 	IO = msgIo
+	failures = fail
 	//set up peer state
 	peers = make([]Peer, len(addresses))
 	for i := range addresses {
 		peers[i] = Peer{
-			i, addresses[i], false}
+			i, addresses[i]}
 	}
-	peersMutex = sync.RWMutex{}
 
 	//set up peer server
 	glog.Info("Starting up peer server")
@@ -166,9 +155,7 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io) {
 	}
 
 	// handle local peer (without sending network traffic)
-	peersMutex.Lock()
-	peers[id].handled = true
-	peersMutex.Unlock()
+	failures.NowConnected(id)
 	from := &(IO.Incoming)
 	go from.Forward(IO.OutgoingUnicast[id])
 

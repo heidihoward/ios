@@ -53,8 +53,8 @@ func DoCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, commit) {
 				glog.Info("Received ", msg)
+				replied[msg.Response.SenderID] = true
 			}
-			replied[msg.Response.SenderID] = true
 		}
 	}()
 
@@ -68,6 +68,7 @@ func RunCoordinator(state *State, io *msgs.Io, config Config) {
 		glog.Info("Coordinator is ready to handle request")
 		req := <-(*io).Incoming.Requests.Coordinate
 		success := DoCoordination(req.View, req.StartIndex, req.EndIndex, req.Entries, io, config, req.Prepare)
+		// TODO: check view
 		reply := msgs.CoordinateResponse{config.ID, success}
 		(*io).OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
 		glog.Info("Coordinator is finished handling request")
