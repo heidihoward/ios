@@ -95,7 +95,7 @@ func runRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, i
 	}
 
 	// recover entries
-	result := runRecoveryCoordinator(view, commitIndex+1, startIndex, io, config)
+	result := runRecoveryCoordinator(view, commitIndex+1, startIndex+1, io, config)
 	return result, startIndex
 }
 
