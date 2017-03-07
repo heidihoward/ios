@@ -85,17 +85,17 @@ func runRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, i
 	glog.Info("End index of the previous views is ", endIndex)
 	startIndex := endIndex
 	if config.IndexExclusivity {
-		startIndex =+ config.WindowSize
+		startIndex += config.WindowSize
 	}
 	glog.Info("Start index of view ",view, " will be ",startIndex)
 
-	if commitIndex == startIndex {
+	if commitIndex+1 == startIndex {
 		glog.Info("New master is up to date, No recovery coordination is required")
 		return true, startIndex
 	}
 
 	// recover entries
-	result := runRecoveryCoordinator(view, commitIndex+1, startIndex+1, io, config)
+	result := runRecoveryCoordinator(view, commitIndex+1, startIndex, io, config)
 	return result, startIndex
 }
 

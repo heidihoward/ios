@@ -47,6 +47,7 @@ func handlePeer(cn net.Conn, init bool) {
 		glog.Info("Incoming peer connection from ", addr)
 	}
 
+	defer cn.Close()
 	defer glog.Warningf("Connection closed from %s ", addr)
 
 	// handle requests
@@ -131,7 +132,6 @@ func handlePeer(cn net.Conn, init bool) {
 	// tidy up
 	glog.Warningf("No longer able to handle traffic from peer %d at %s ", peerID, addr)
 	failures.NowDisconnected(peerID)
-	cn.Close()
 }
 
 func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.FailureNotifier) {

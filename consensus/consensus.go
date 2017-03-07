@@ -38,7 +38,7 @@ var noop = msgs.ClientRequest{-1, -1, true, false, "noop"}
 func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureNotifier) {
 
 	// setup
-	glog.Infof("Starting node %d of %d", config.ID, config.N)
+	glog.Infof("Starting node ID:%d of %d", config.ID, config.N)
 	state := state{
 		View:         0,
 		Log:          NewLog(config.LogLength),
@@ -86,8 +86,10 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 		state.CommitIndex = i
 
 		for _, request := range state.Log.GetEntry(i).Requests {
-			reply := state.StateMachine.Apply(request)
-			io.OutgoingResponses <- msgs.Client{request, reply}
+			if request != noop {
+				reply := state.StateMachine.Apply(request)
+				io.OutgoingResponses <- msgs.Client{request, reply}
+			}
 		}
 	}
 	glog.Info("Recovered ", state.CommitIndex+1, " committed entries")
