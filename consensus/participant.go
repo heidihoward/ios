@@ -60,7 +60,7 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 
 			// add enties to the log (in-memory)
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
-			io.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
+			//io.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
 
 			// pass requests to state machine if ready
 			for state.Log.GetEntry(state.CommitIndex + 1).Committed {
