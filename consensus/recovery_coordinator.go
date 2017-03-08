@@ -12,7 +12,7 @@ func runRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 	if startIndex == endIndex {
 		return true
 	} else if endIndex < startIndex {
-		glog.Fatal("Invalid recovery range ",startIndex, endIndex)
+		glog.Fatal("Invalid recovery range ", startIndex, endIndex)
 	}
 	glog.Info("Starting recovery for indexes ", startIndex, " to ", endIndex)
 

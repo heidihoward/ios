@@ -18,7 +18,7 @@ type Config struct {
 	WindowSize          int       // how many requests can the master have inflight at once
 	SnapshotInterval    int       // how often to record state machine snapshots
 	Quorum              QuorumSys //
-	IndexExclusivity    bool       // if enabled, Ios will assign each index to at most one request
+	IndexExclusivity    bool      // if enabled, Ios will assign each index to at most one request
 }
 
 type state struct {

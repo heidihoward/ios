@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-
 func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 
 	// if initial master, start master goroutine
@@ -87,7 +86,7 @@ func runRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, i
 	if config.IndexExclusivity {
 		startIndex += config.WindowSize
 	}
-	glog.Info("Start index of view ",view, " will be ",startIndex)
+	glog.Info("Start index of view ", view, " will be ", startIndex)
 
 	if commitIndex+1 == startIndex {
 		glog.Info("New master is up to date, No recovery coordination is required")
