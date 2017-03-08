@@ -80,7 +80,11 @@ func handlePeer(cn net.Conn, init bool) {
 	}
 
 	glog.Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
-	failures.NowConnected(peerID)
+	err = failures.NowConnected(peerID)
+	if err != nil {
+		glog.Warning(err)
+		return
+	}
 
 	closeErr := make(chan error)
 	go func() {

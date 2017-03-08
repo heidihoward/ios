@@ -3,6 +3,7 @@ package msgs
 import (
 	"github.com/golang/glog"
 	"sync"
+  "fmt"
 )
 
 type FailureNotifier struct {
@@ -53,13 +54,15 @@ func (f *FailureNotifier) NextConnected(id int) int {
 	return id
 }
 
-func (f *FailureNotifier) NowConnected(id int) {
+func (f *FailureNotifier) NowConnected(id int) error {
 	f.mutex.Lock()
 	if f.up[id] {
-		glog.Fatal("Possible multiple connections to one peer")
+    f.mutex.Unlock()
+		return fmt.Errorf("Possible multiple connections to peer %d", id)
 	}
 	f.up[id] = true
 	f.mutex.Unlock()
+  return nil
 }
 
 func (f *FailureNotifier) NowDisconnected(id int) {
