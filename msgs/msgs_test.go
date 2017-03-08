@@ -17,7 +17,6 @@ func TestMakeIo(t *testing.T) {
 	request1 := []ClientRequest{{
 		ClientID:  2,
 		RequestID: 0,
-		Replicate: true,
 		Request:   "update A 3"}}
 
 	entries1 := []Entry{{

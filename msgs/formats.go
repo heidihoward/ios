@@ -5,7 +5,6 @@ package msgs
 type ClientRequest struct {
 	ClientID        int
 	RequestID       int
-	Replicate       bool
 	ForceViewChange bool
 	Request         string
 }

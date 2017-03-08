@@ -37,7 +37,6 @@ func TestInit(t *testing.T) {
 	request1 := []msgs.ClientRequest{{
 		ClientID:        2,
 		RequestID:       0,
-		Replicate:       true,
 		ForceViewChange: false,
 		Request:         "update A 3"}}
 

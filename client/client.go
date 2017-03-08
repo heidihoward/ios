@@ -179,7 +179,7 @@ func main() {
 	go func() {
 		for {
 			// get next command
-			text, replicate, ok := ioapi.Next()
+			text, _, ok := ioapi.Next()
 			if !ok {
 				finish <- true
 				break
@@ -188,7 +188,7 @@ func main() {
 
 			// prepare request
 			req := msgs.ClientRequest{
-				*id, requestID, replicate, false, text}
+				*id, requestID, false, text}
 			b, err := msgs.Marshal(req)
 			if err != nil {
 				glog.Fatal(err)

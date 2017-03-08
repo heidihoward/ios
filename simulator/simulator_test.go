@@ -45,7 +45,6 @@ func TestrunSimulator(t *testing.T) {
 	request1 := msgs.ClientRequest{
 		ClientID:        200,
 		RequestID:       1,
-		Replicate:       true,
 		ForceViewChange: false,
 		Request:         "update A 3"}
 
@@ -54,7 +53,6 @@ func TestrunSimulator(t *testing.T) {
 	request2 := msgs.ClientRequest{
 		ClientID:        200,
 		RequestID:       2,
-		Replicate:       true,
 		ForceViewChange: false,
 		Request:         "get A"}
 
@@ -63,7 +61,6 @@ func TestrunSimulator(t *testing.T) {
 	request3 := msgs.ClientRequest{
 		ClientID:        400,
 		RequestID:       1,
-		Replicate:       true,
 		ForceViewChange: false,
 		Request:         "get C"}
 
@@ -76,7 +73,6 @@ func TestrunSimulator(t *testing.T) {
 	request4 := msgs.ClientRequest{
 		ClientID:        400,
 		RequestID:       2,
-		Replicate:       true,
 		ForceViewChange: false,
 		Request:         "get A"}
 
@@ -89,7 +85,6 @@ func TestrunSimulator(t *testing.T) {
 	request5 := msgs.ClientRequest{
 		ClientID:        400,
 		RequestID:       3,
-		Replicate:       true,
 		ForceViewChange: false,
 		Request:         "update B 3"}
 

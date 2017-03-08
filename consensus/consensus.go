@@ -31,7 +31,7 @@ type state struct {
 	Failures     *msgs.FailureNotifier
 }
 
-var noop = msgs.ClientRequest{-1, -1, true, false, "noop"}
+var noop = msgs.ClientRequest{-1, -1, false, "noop"}
 
 // Init runs the consensus algorithm.
 // It will not return until the application is terminated.
