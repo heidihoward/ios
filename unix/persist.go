@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type FileHandler struct {
@@ -156,6 +157,7 @@ func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io
 		for {
 			log := <-io.LogPersist
 			glog.Info("Updating log with ", log)
+			startTime := time.Now()
 			b, err := msgs.Marshal(log)
 			if err != nil {
 				glog.Fatal(err)
@@ -166,12 +168,11 @@ func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io
 			if err != nil {
 				glog.Fatal(err)
 			}
-			glog.Info(n1+n2, " bytes written to persistent log")
 			if log.Sync {
 				logStorage.Fd.Sync()
 				io.LogPersistFsync <- log
 			}
-
+			glog.Info(n1+n2, " bytes written to persistent log in ",time.Since(startTime).String())
 		}
 	}()
 	// write state machine snapshots to persistent storage
