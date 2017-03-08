@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-type FileHandler struct {
+type fileHandler struct {
 	Filename string
 	IsNew    bool
 	W        *bufio.Writer
@@ -20,7 +20,7 @@ type FileHandler struct {
 	Fd       *os.File
 }
 
-func openFile(filename string) FileHandler {
+func openFile(filename string) fileHandler {
 	// check if file exists
 	var isNew bool
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -41,10 +41,10 @@ func openFile(filename string) FileHandler {
 	// create writer and reader
 	w := bufio.NewWriter(file)
 	r := bufio.NewReader(file)
-	return FileHandler{filename, isNew, w, r, file}
+	return fileHandler{filename, isNew, w, r, file}
 }
 
-func restoreLog(logFile FileHandler, MaxLength int, snapshotIndex int) (bool, *consensus.Log) {
+func restoreLog(logFile fileHandler, MaxLength int, snapshotIndex int) (bool, *consensus.Log) {
 
 	if logFile.IsNew {
 		return false, consensus.NewLog(MaxLength)
@@ -73,7 +73,7 @@ func restoreLog(logFile FileHandler, MaxLength int, snapshotIndex int) (bool, *c
 	return found, log
 }
 
-func restoreView(viewFile FileHandler) (bool, int) {
+func restoreView(viewFile fileHandler) (bool, int) {
 	found := false
 	view := 0
 
@@ -92,7 +92,7 @@ func restoreView(viewFile FileHandler) (bool, int) {
 	}
 }
 
-func restoreSnapshot(snapFile FileHandler) (bool, int, *app.StateMachine) {
+func restoreSnapshot(snapFile fileHandler) (bool, int, *app.StateMachine) {
 	if snapFile.IsNew {
 		return false, -1, app.New()
 	}
