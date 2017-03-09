@@ -40,7 +40,7 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 			// add enties to the log (in-memory)
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
 			// add entries to the log (persistent storage)
-			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, true}
+			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries}
 			io.LogPersist <- logUpdate
 			// TODO: find a better way to handle out-of-order log updates
 			lastWritten := <-io.LogPersistFsync

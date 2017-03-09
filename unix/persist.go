@@ -174,10 +174,8 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 			if err != nil {
 				glog.Fatal(err)
 			}
-			if log.Sync {
-				logStorage.Fd.Sync()
-				io.LogPersistFsync <- log
-			}
+			logStorage.Fd.Sync()
+			io.LogPersistFsync <- log
 			glog.Info(n1+n2, " bytes written to persistent log in ", time.Since(startTime).String())
 		}
 	}()
