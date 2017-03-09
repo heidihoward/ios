@@ -69,7 +69,8 @@ Likewise, the following commands work with the above example and are useful for 
 sudo tcpdump -i lo0 -nnAS "(src portrange 8080-8092 or dst portrange 8080-8092) and (length>0)"
 ```
 ```
-sudo strace -p $(pidof server) -T -e trace=fdatasync
+sudo strace -p $(pidof server) -T -e fsync -f
+sudo strace -p $(pidof server) -T -e trace=write -f
 ```
 
 ### Benchmarking
