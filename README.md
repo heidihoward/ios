@@ -60,13 +60,16 @@ The (mode independent) client state is stored in the example.conf file. The clie
 
 Each client needs a unique id.
 
-#### Logging
+#### Debugging
 
 We use glog for logging. Adding `-logtostderr=true` when running executables prints the logging output. For more information, visit https://godoc.org/github.com/golang/glog.
 
-Likewise, the following works with the above example and is useful for debugging:
+Likewise, the following commands work with the above example and are useful for debugging:
 ```
 sudo tcpdump -i lo0 -nnAS "(src portrange 8080-8092 or dst portrange 8080-8092) and (length>0)"
+```
+```
+sudo strace -p $(pidof server) -T -e trace=fdatasync
 ```
 
 ### Benchmarking
