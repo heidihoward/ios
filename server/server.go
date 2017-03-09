@@ -43,7 +43,7 @@ func main() {
 	logFile := *diskPath + "/persistent_log_" + strconv.Itoa(*id) + ".temp"
 	dataFile := *diskPath + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
 	snapFile := *diskPath + "/persistent_snapshot_" + strconv.Itoa(*id) + ".temp"
-	found, view, log, index, state := unix.SetupPersistentStorage(logFile, dataFile, snapFile, iO, conf.Options.Length)
+	found, view, log, index, state := unix.SetupStorage(logFile, dataFile, snapFile, iO, conf.Options.Length, conf.Unsafe.DumpPersistentStorage)
 
 	// setup peers & clients
 	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))

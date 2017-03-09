@@ -118,7 +118,13 @@ func restoreSnapshot(snapFile fileHandler) (bool, int, *app.StateMachine) {
 	return true, index, app.RestoreSnapshot(snapshot)
 }
 
-func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, *consensus.Log, int, *app.StateMachine) {
+func setupDummyStorage(io *msgs.Io, MaxLength int) (bool, int, *consensus.Log, int, *app.StateMachine) {
+	glog.Warning("UNSAFE configuration - Do not use in production")
+	go io.DumpPersistentStorage()
+	return false, 0, consensus.NewLog(MaxLength) ,-1, app.New()
+}
+
+func setupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	// setting up persistent log
 	logStorage := openFile(logFile)
 	dataStorage := openFile(dataFile)
@@ -197,4 +203,11 @@ func SetupPersistentStorage(logFile string, dataFile string, snapFile string, io
 	}()
 
 	return foundView, view, log, index, state
+}
+
+func SetupStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, maxLength int, dummyStorage bool) (bool, int, *consensus.Log, int, *app.StateMachine) {
+	if dummyStorage {
+		return setupDummyStorage(io,maxLength)
+	}
+ return setupPersistentStorage(logFile, dataFile, snapFile, io, maxLength)
 }

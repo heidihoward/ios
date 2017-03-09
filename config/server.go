@@ -22,6 +22,9 @@ type ServerConfig struct {
 		QuorumSystem        string
 		IndexExclusivity    bool
 	}
+	Unsafe struct {
+		DumpPersistentStorage bool
+	}
 }
 
 func ParseServerConfig(filename string) ServerConfig {

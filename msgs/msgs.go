@@ -198,6 +198,8 @@ func (io *Io) DumpPersistentStorage() {
 		case log := <-io.LogPersist:
 			io.LogPersistFsync <- log
 			glog.Info("Updating log with ", log)
+		case snap := <-io.SnapshotPersist:
+			glog.Info("Updating snap with ", snap)
 		}
 	}
 }
