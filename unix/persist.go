@@ -44,6 +44,14 @@ func openFile(filename string) fileHandler {
 	return fileHandler{filename, isNew, w, r, file}
 }
 
+func openWriteAheadFile(filename string) *os.File {
+	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|os.O_APPEND, 0777)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	return file
+}
+
 func restoreLog(logFile fileHandler, MaxLength int, snapshotIndex int) (bool, *consensus.Log) {
 
 	if logFile.IsNew {
@@ -124,7 +132,7 @@ func setupDummyStorage(io *msgs.Io, MaxLength int) (bool, int, *consensus.Log, i
 	return false, 0, consensus.NewLog(MaxLength) ,-1, app.New()
 }
 
-func setupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int) (bool, int, *consensus.Log, int, *app.StateMachine) {
+func setupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int,  persistenceMode string) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	// setting up persistent log
 	logStorage := openFile(logFile)
 	dataStorage := openFile(dataFile)
@@ -159,26 +167,54 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 		}
 	}()
 	// write log updates to persistent storage
-	go func() {
-		for {
-			log := <-io.LogPersist
-			glog.Info("Updating log with ", log)
-			startTime := time.Now()
-			b, err := msgs.Marshal(log)
-			if err != nil {
-				glog.Fatal(err)
+	if persistenceMode=="fsync" || persistenceMode=="none" {
+		go func() {
+			for {
+				log := <-io.LogPersist
+				glog.Info("Updating log with ", log)
+				startTime := time.Now()
+				b, err := msgs.Marshal(log)
+				if err != nil {
+					glog.Fatal(err)
+				}
+				// write to persistent storage
+				n1, err := logStorage.Fd.Write(b)
+				n2, err := logStorage.Fd.Write([]byte("\n"))
+				if err != nil {
+					glog.Fatal(err)
+				}
+				if persistenceMode=="fsync" {
+					logStorage.Fd.Sync()
+				}
+				io.LogPersistFsync <- log
+				glog.Info(n1+n2, " bytes written to persistent log in ", time.Since(startTime).String())
 			}
-			// write to persistent storage
-			n1, err := logStorage.Fd.Write(b)
-			n2, err := logStorage.Fd.Write([]byte("\n"))
-			if err != nil {
-				glog.Fatal(err)
+		}()
+	} else if persistenceMode=="o_sync" {
+		logStorage.Fd.Close()
+		writeAheadLog := openWriteAheadFile(logFile)
+		go func() {
+			for {
+				log := <-io.LogPersist
+				glog.Info("Updating log with ", log)
+				startTime := time.Now()
+				b, err := msgs.Marshal(log)
+				if err != nil {
+					glog.Fatal(err)
+				}
+				// write to persistent storage
+				n1, err := writeAheadLog.Write(b)
+				n2, err := writeAheadLog.Write([]byte("\n"))
+				if err != nil {
+					glog.Fatal(err)
+				}
+				io.LogPersistFsync <- log
+				glog.Info(n1+n2, " bytes written to persistent log in ", time.Since(startTime).String())
 			}
-			logStorage.Fd.Sync()
-			io.LogPersistFsync <- log
-			glog.Info(n1+n2, " bytes written to persistent log in ", time.Since(startTime).String())
-		}
-	}()
+		}()
+	} else {
+		glog.Fatal("No persistentMode")
+	}
 	// write state machine snapshots to persistent storage
 	go func() {
 		for {
@@ -203,9 +239,9 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 	return foundView, view, log, index, state
 }
 
-func SetupStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, maxLength int, dummyStorage bool) (bool, int, *consensus.Log, int, *app.StateMachine) {
+func SetupStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, maxLength int, dummyStorage bool, persistenceMode string) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	if dummyStorage {
 		return setupDummyStorage(io,maxLength)
 	}
- return setupPersistentStorage(logFile, dataFile, snapFile, io, maxLength)
+ return setupPersistentStorage(logFile, dataFile, snapFile, io, maxLength, persistenceMode)
 }

@@ -24,6 +24,7 @@ type ServerConfig struct {
 	}
 	Unsafe struct {
 		DumpPersistentStorage bool
+		PersistenceMode			string // must be none, fsync or o_sync
 	}
 }
 
@@ -35,22 +36,27 @@ func ParseServerConfig(filename string) ServerConfig {
 	}
 	// checking configuation is sensible
 	if len(config.Peers.Address) == 0 {
-		glog.Fatalf("At least one server is required")
+		glog.Fatal("At least one server is required")
 	}
 	if config.Options.Length <= 0 {
-		glog.Fatalf("Log length must be at least 1")
+		glog.Fatal("Log length must be at least 1")
 	}
 	if config.Options.BatchInterval < 0 {
-		glog.Fatalf("Batch interval must be positive")
+		glog.Fatal("Batch interval must be positive")
 	}
 	if config.Options.MaxBatch < 0 {
-		glog.Fatalf("Max batch size must be positive")
+		glog.Fatal("Max batch size must be positive")
 	}
 	if config.Options.DelegateReplication < 0 || config.Options.DelegateReplication > len(config.Peers.Address) {
-		glog.Fatalf("Batch interval must be positive")
+		glog.Fatal("Batch interval must be positive")
 	}
 	if config.Options.WindowSize <= 0 {
-		glog.Fatalf("Window Size must be greater than one")
+		glog.Fatal("Window Size must be greater than one")
 	}
+	// if config.Unsafe.PersistenceMode != "none" ||
+	// 	 config.Unsafe.PersistenceMode != "fsync" ||
+	// 	 config.Unsafe.PersistenceMode != "o_sync" {
+	// 	 glog.Fatal("PersistenceMode must be none, fsync or o_sync ", config.Unsafe.PersistenceMode)
+	//  }
 	return config
 }
