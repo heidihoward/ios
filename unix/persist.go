@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"syscall"
 )
 
 type fileHandler struct {
@@ -44,8 +45,18 @@ func openFile(filename string) fileHandler {
 	return fileHandler{filename, isNew, w, r, file}
 }
 
-func openWriteAheadFile(filename string) *os.File {
-	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|os.O_APPEND, 0777)
+func openWriteAheadFile(filename string, mode string) *os.File {
+	var fileSyscall int
+	if mode=="osync" {
+		fileSyscall = syscall.O_SYNC
+	// } else if mode=="direct" {
+	// 	fileSyscall = syscall.O_DIRECT
+	} else if mode=="dsync" {
+		fileSyscall = syscall.O_DSYNC
+	}	else {
+		glog.Fatal("PersistenceMode not reconised")
+	}
+	file, err := os.OpenFile(filename, os.O_WRONLY|fileSyscall|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -190,9 +201,9 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 				glog.Info(n1+n2, " bytes written to persistent log in ", time.Since(startTime).String())
 			}
 		}()
-	} else if persistenceMode=="o_sync" {
+	} else {
 		logStorage.Fd.Close()
-		writeAheadLog := openWriteAheadFile(logFile)
+		writeAheadLog := openWriteAheadFile(logFile,persistenceMode)
 		go func() {
 			for {
 				log := <-io.LogPersist
@@ -212,8 +223,6 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 				glog.Info(n1+n2, " bytes written to persistent log in ", time.Since(startTime).String())
 			}
 		}()
-	} else {
-		glog.Fatal("No persistentMode")
 	}
 	// write state machine snapshots to persistent storage
 	go func() {
