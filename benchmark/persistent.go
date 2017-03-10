@@ -18,7 +18,7 @@ func benchmarkDisk(filename string, size int, count int) {
 	if err != nil {
 		panic(err)
 	}
-	err = syscall.Fallocate(fd,0,0,size * count)
+	err = syscall.Fallocate(fd,0,0,int64(size * count))
 	if err != nil {
 		panic(err)
 	}
@@ -30,7 +30,7 @@ func benchmarkDisk(filename string, size int, count int) {
 		if err != nil {
 			panic(err)
 		}
-    err = syscall.Fsync(fd)
+    err = syscall.Fdatasync(fd)
 		if err != nil {
 			panic(err)
 		}
