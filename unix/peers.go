@@ -42,9 +42,9 @@ func checkPeer() {
 func handlePeer(cn net.Conn, init bool) {
 	addr := cn.RemoteAddr().String()
 	if init {
-		glog.V(1).Info("Outgoing peer connection to ", addr)
+		glog.Info("Outgoing peer connection to ", addr)
 	} else {
-		glog.V(1).Info("Incoming peer connection from ", addr)
+		glog.Info("Incoming peer connection from ", addr)
 	}
 
 	defer cn.Close()
@@ -79,7 +79,7 @@ func handlePeer(cn net.Conn, init bool) {
 			" expected ", expectedAddr)
 	}
 
-	glog.V(1).Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
+	glog.Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
 	err = failures.NowConnected(peerID)
 	if err != nil {
 		glog.Warning(err)
@@ -150,7 +150,7 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.Fail
 	}
 
 	//set up peer server
-	glog.V(1).Info("Starting up peer server")
+	glog.Info("Starting up peer server")
 	peerPort := strings.Split(addresses[id], ":")[1]
 	listeningPort := ":" + peerPort
 	lnPeers, err := net.Listen("tcp", listeningPort)

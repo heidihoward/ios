@@ -202,7 +202,13 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 				writeAheadLog.Sync()
 			}
 			io.LogPersistFsync <- log
-			glog.V(1).Info(n1, " bytes synced to persistent log in ", time.Since(startTime).String())
+			if time.Since(startTime) > 10*time.Millisecond {
+				glog.Warning(n1, " bytes written & synced to persistent log in ", time.Since(startTime).String())
+			} else if time.Since(startTime) > time.Millisecond {
+				glog.Warning(n1, " bytes written & synced to persistent log in ", time.Since(startTime).String())
+			} else {
+				glog.V(1).Info(n1, " bytes written & synced to persistent log in ", time.Since(startTime).String())
+			}
 		}
 	}()
 	// write state machine snapshots to persistent storage
