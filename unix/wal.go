@@ -31,7 +31,7 @@ func openWriteAheadFile(filename string, mode string) WAL {
 		glog.Fatal(err)
 	}
   // TOD0: remove hardcoded filesize
-  err = syscall.Fallocate(file,0,0,int64(1024))
+  err = syscall.Fallocate(file,0,0,int64( 64 * 1000 * 1000)) // 64MB
   if err != nil {
     glog.Fatal(err)
   }
@@ -40,7 +40,7 @@ func openWriteAheadFile(filename string, mode string) WAL {
 
 func (w WAL) writeAhead(bytes []byte) {
 	startTime := time.Now()
-  _, err := syscall.Write(w.fd,bytes)
+  _, err := syscall.Write(w.fd,bytes[:10])
 	if err != nil {
 		glog.Fatal(err)
 	}
