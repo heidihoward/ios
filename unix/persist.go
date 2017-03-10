@@ -46,17 +46,18 @@ func openFile(filename string) fileHandler {
 }
 
 func openWriteAheadFile(filename string, mode string) *os.File {
-	var fileSyscall int
-	if mode=="osync" {
-		fileSyscall = syscall.O_SYNC
-	// } else if mode=="direct" {
-	// 	fileSyscall = syscall.O_DIRECT
-	} else if mode=="dsync" {
-		fileSyscall = syscall.O_DSYNC
-	}	else {
+	var file *os.File
+	var err error
+	switch mode {
+	case "osync":
+		file, err = os.OpenFile(filename, os.O_WRONLY|syscall.O_SYNC|os.O_CREATE|os.O_APPEND, 0777)
+	case "dsync":
+		file, err = os.OpenFile(filename, os.O_WRONLY|syscall.O_DSYNC|os.O_CREATE|os.O_APPEND, 0777)
+	case "none", "fsync":
+		file, err = os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
+	default:
 		glog.Fatal("PersistenceMode not reconised")
 	}
-	file, err := os.OpenFile(filename, os.O_WRONLY|fileSyscall|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -178,53 +179,32 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 		}
 	}()
 	// write log updates to persistent storage
-	if persistenceMode=="fsync" || persistenceMode=="none" {
-		go func() {
-			for {
-				log := <-io.LogPersist
-				glog.Info("Updating log with ", log)
-				startTime := time.Now()
-				b, err := msgs.Marshal(log)
-				if err != nil {
-					glog.Fatal(err)
-				}
-				// write to persistent storage
-				// TODO: THIS NEEDS REMOVING - FOR TESTING ONLY
-				n1, err := logStorage.Fd.Write(b[:8])
-				//n2, err := logStorage.Fd.Write([]byte("\n"))
-				if err != nil {
-					glog.Fatal(err)
-				}
-				if persistenceMode=="fsync" {
-					logStorage.Fd.Sync()
-				}
-				io.LogPersistFsync <- log
-				glog.Info(n1, " bytes written to persistent log in ", time.Since(startTime).String())
+	logStorage.Fd.Close()
+	writeAheadLog := openWriteAheadFile(logFile,persistenceMode)
+	go func() {
+		for {
+			log := <-io.LogPersist
+			glog.Info("Updating log with ", log)
+			startTime := time.Now()
+			b, err := msgs.Marshal(log)
+			if err != nil {
+				glog.Fatal(err)
 			}
-		}()
-	} else {
-		logStorage.Fd.Close()
-		writeAheadLog := openWriteAheadFile(logFile,persistenceMode)
-		go func() {
-			for {
-				log := <-io.LogPersist
-				glog.Info("Updating log with ", log)
-				startTime := time.Now()
-				b, err := msgs.Marshal(log)
-				if err != nil {
-					glog.Fatal(err)
-				}
-				// write to persistent storage
-				n1, err := writeAheadLog.Write(b)
-				//n2, err := writeAheadLog.Write([]byte("\n"))
-				if err != nil {
-					glog.Fatal(err)
-				}
-				io.LogPersistFsync <- log
-				glog.Info(n1, " bytes written to persistent log in ", time.Since(startTime).String())
+			// write to persistent storage
+			// TODO: THIS NEEDS REMOVING - FOR TESTING ONLY
+			n1, err := writeAheadLog.Write(b[:8])
+			//n2, err := logStorage.Fd.Write([]byte("\n"))
+			if err != nil {
+				glog.Fatal(err)
 			}
-		}()
-	}
+			glog.Info(n1, " bytes written to persistent log in ", time.Since(startTime).String())
+			if persistenceMode=="fsync" {
+				writeAheadLog.Sync()
+			}
+			io.LogPersistFsync <- log
+			glog.Info(n1, " bytes synced to persistent log in ", time.Since(startTime).String())
+		}
+	}()
 	// write state machine snapshots to persistent storage
 	go func() {
 		for {
