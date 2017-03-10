@@ -165,7 +165,6 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 		for {
 			log := <-io.LogPersist
 			glog.V(1).Info("Updating log with ", log)
-			startTime := time.Now()
 			b, err := msgs.Marshal(log)
 			if err != nil {
 				glog.Fatal(err)
