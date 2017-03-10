@@ -45,58 +45,58 @@ type Io struct {
 
 // TODO: find a more generic method
 func (io *Io) Broadcaster() {
-	glog.Info("Setting up broadcaster for ", len(io.OutgoingUnicast), " nodes")
+	glog.V(1).Info("Setting up broadcaster for ", len(io.OutgoingUnicast), " nodes")
 	for {
 		select {
 		// Requests
 		case r := <-io.OutgoingBroadcast.Requests.Prepare:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Requests.Prepare <- r
 			}
 		case r := <-io.OutgoingBroadcast.Requests.Commit:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Requests.Commit <- r
 			}
 		case r := <-io.OutgoingBroadcast.Requests.NewView:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Requests.NewView <- r
 			}
 		case r := <-io.OutgoingBroadcast.Requests.Query:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Requests.Query <- r
 			}
 		case r := <-io.OutgoingBroadcast.Requests.Coordinate:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Requests.Coordinate <- r
 			}
 			// Responses
 		case r := <-io.OutgoingBroadcast.Responses.Prepare:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Responses.Prepare <- r
 			}
 		case r := <-io.OutgoingBroadcast.Responses.Commit:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Responses.Commit <- r
 			}
 		case r := <-io.OutgoingBroadcast.Responses.NewView:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Responses.NewView <- r
 			}
 		case r := <-io.OutgoingBroadcast.Responses.Query:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Responses.Query <- r
 			}
 		case r := <-io.OutgoingBroadcast.Responses.Coordinate:
-			glog.Info("Broadcasting ", r)
+			glog.V(1).Info("Broadcasting ", r)
 			for id := range io.OutgoingUnicast {
 				io.OutgoingUnicast[id].Responses.Coordinate <- r
 			}
@@ -113,35 +113,35 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 		select {
 		// Requests
 		case r := <-from.Requests.Prepare:
-			glog.Info("Forwarding ", r)
+			glog.V(1).Info("Forwarding ", r)
 			to.Requests.Prepare <- r
 		case r := <-from.Requests.Commit:
-			glog.Info("Forwarding", r)
+			glog.V(1).Info("Forwarding", r)
 			to.Requests.Commit <- r
 		case r := <-from.Requests.NewView:
-			glog.Info("Forwarding", r)
+			glog.V(1).Info("Forwarding", r)
 			to.Requests.NewView <- r
 		case r := <-from.Requests.Query:
-			glog.Info("Forwarding", r)
+			glog.V(1).Info("Forwarding", r)
 			to.Requests.Query <- r
 		case r := <-from.Requests.Coordinate:
-			glog.Info("Forwarding", r)
+			glog.V(1).Info("Forwarding", r)
 			to.Requests.Coordinate <- r
 			// Responses
 		case r := <-from.Responses.Prepare:
-			glog.Info("Forwarding", r)
+			glog.V(1).Info("Forwarding", r)
 			to.Responses.Prepare <- r
 		case r := <-from.Responses.Commit:
-			glog.Info("Forwarding", r)
+			glog.V(1).Info("Forwarding", r)
 			to.Responses.Commit <- r
 		case r := <-from.Responses.NewView:
-			glog.Info("Forwarding", r)
+			glog.V(1).Info("Forwarding", r)
 			to.Responses.NewView <- r
 		case r := <-from.Responses.Query:
-			glog.Info("Forwarding", r)
+			glog.V(1).Info("Forwarding", r)
 			to.Responses.Query <- r
 		case r := <-from.Responses.Coordinate:
-			glog.Info("Forwarding", r)
+			glog.V(1).Info("Forwarding", r)
 			to.Responses.Coordinate <- r
 		}
 
@@ -194,12 +194,12 @@ func (io *Io) DumpPersistentStorage() {
 		select {
 		case view := <-io.ViewPersist:
 			io.ViewPersistFsync <- view
-			glog.Info("Updating view to ", view)
+			glog.V(1).Info("Updating view to ", view)
 		case log := <-io.LogPersist:
 			io.LogPersistFsync <- log
-			glog.Info("Updating log with ", log)
+			glog.V(1).Info("Updating log with ", log)
 		case snap := <-io.SnapshotPersist:
-			glog.Info("Updating snap with ", snap)
+			glog.V(1).Info("Updating snap with ", snap)
 		}
 	}
 }

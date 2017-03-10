@@ -16,22 +16,22 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 		}
 
 		prepare := msgs.PrepareRequest{config.ID, view, startIndex, endIndex, entries}
-		glog.Info("Starting prepare phase", prepare)
+		glog.V(1).Info("Starting prepare phase", prepare)
 		io.OutgoingBroadcast.Requests.Prepare <- prepare
 
 		// collect responses
-		glog.Info("Waiting for ", config.Quorum.ReplicateSize, " prepare responses")
+		glog.V(1).Info("Waiting for ", config.Quorum.ReplicateSize, " prepare responses")
 		for replied := make([]bool, config.N); !config.Quorum.checkReplicationQuorum(replied); {
 			msg := <-io.Incoming.Responses.Prepare
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, prepare) {
-				glog.Info("Received ", msg)
+				glog.V(1).Info("Received ", msg)
 				if !msg.Response.Success {
 					glog.Warning("Coordinator is stepping down")
 					return false
 				}
 				replied[msg.Response.SenderID] = true
-				glog.Info("Successful response received, waiting for more")
+				glog.V(1).Info("Successful response received, waiting for more")
 			}
 		}
 	}
@@ -43,7 +43,7 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 	}
 	// dispatch commit requests to all
 	commit := msgs.CommitRequest{config.ID, startIndex, endIndex, entries}
-	glog.Info("Starting commit phase", commit)
+	glog.V(1).Info("Starting commit phase", commit)
 	io.OutgoingBroadcast.Requests.Commit <- commit
 
 	// TODO: handle replies properly
@@ -52,7 +52,7 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 			msg := <-io.Incoming.Responses.Commit
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, commit) {
-				glog.Info("Received ", msg)
+				glog.V(1).Info("Received ", msg)
 				replied[msg.Response.SenderID] = true
 			}
 		}
@@ -65,13 +65,13 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 func runCoordinator(state *state, io *msgs.Io, config Config) {
 
 	for {
-		glog.Info("Coordinator is ready to handle request")
+		glog.V(1).Info("Coordinator is ready to handle request")
 		req := <-io.Incoming.Requests.Coordinate
 		success := doCoordination(req.View, req.StartIndex, req.EndIndex, req.Entries, io, config, req.Prepare)
 		// TODO: check view
 		reply := msgs.CoordinateResponse{config.ID, success}
 		io.OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
-		glog.Info("Coordinator is finished handling request")
+		glog.V(1).Info("Coordinator is finished handling request")
 		// TOD0: handle failure
 	}
 }

@@ -22,7 +22,7 @@ func stateMachine() {
 			req = response.Request
 			reply = response.Response
 		case req = <-iO.OutgoingRequestsFailed:
-			glog.Info("Request could not been safely replicated by consensus algorithm", req)
+			glog.V(1).Info("Request could not been safely replicated by consensus algorithm", req)
 			reply = msgs.ClientResponse{
 				req.ClientID, req.RequestID, false, ""}
 		}
@@ -33,16 +33,16 @@ func stateMachine() {
 }
 
 func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
-	glog.Info("Handling ", req.Request)
+	glog.V(1).Info("Handling ", req.Request)
 
 	// check if already applied
 	if found, res := application.Check(req); found {
-		glog.Info("Request found in cache")
+		glog.V(1).Info("Request found in cache")
 		return res // FAST PASS
 	}
 
 	// CONSENESUS ALGORITHM HERE
-	glog.Info("Passing request to consensus algorithm")
+	glog.V(1).Info("Passing request to consensus algorithm")
 	if req.ForceViewChange {
 		iO.IncomingRequestsForced <- req
 	} else {
@@ -77,7 +77,7 @@ func handleConnection(cn net.Conn) {
 	for {
 
 		// read request
-		glog.Info("Ready for Reading")
+		glog.V(1).Info("Ready for Reading")
 		text, err := reader.ReadBytes(byte('\n'))
 		if err != nil {
 			if err == io.EOF {
@@ -86,8 +86,8 @@ func handleConnection(cn net.Conn) {
 			glog.Warning(err)
 			break
 		}
-		glog.Info("--------------------New request----------------------")
-		glog.Info("Request: ", string(text))
+		glog.V(1).Info("--------------------New request----------------------")
+		glog.V(1).Info("Request: ", string(text))
 		req := new(msgs.ClientRequest)
 		err = msgs.Unmarshal(text, req)
 		if err != nil {
@@ -100,10 +100,10 @@ func handleConnection(cn net.Conn) {
 		if err != nil {
 			glog.Fatal("error:", err)
 		}
-		glog.Info(string(b))
+		glog.V(1).Info(string(b))
 
 		// send reply
-		glog.Info("Sending ", string(b))
+		glog.V(1).Info("Sending ", string(b))
 		n, err := writer.Write(b)
 		if err != nil {
 			glog.Fatal(err)
@@ -118,7 +118,7 @@ func handleConnection(cn net.Conn) {
 		if err != nil {
 			glog.Fatal(err)
 		}
-		glog.Info("Finished sending ", n, " bytes")
+		glog.V(1).Info("Finished sending ", n, " bytes")
 
 	}
 

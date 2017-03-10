@@ -16,11 +16,11 @@ func New() *StateMachine {
 }
 
 func (s *StateMachine) Apply(req msgs.ClientRequest) msgs.ClientResponse {
-	glog.Info("Request has been safely replicated by consensus algorithm", req)
+	glog.V(1).Info("Request has been safely replicated by consensus algorithm", req)
 
 	// check if request already applied
 	if found, reply := s.Cache.check(req); found {
-		glog.Info("Request found in cache and thus need not be applied", req)
+		glog.V(1).Info("Request found in cache and thus need not be applied", req)
 		return reply
 	}
 	// apply request and cache

@@ -25,21 +25,21 @@ func (s *Store) execute(req string) string {
 		if len(request) != 3 {
 			return "not recognised"
 		}
-		glog.Infof("Updating %s to %s", request[1], request[2])
+		glog.V(1).Infof("Updating %s to %s", request[1], request[2])
 		(*s)[request[1]] = request[2]
 		return "OK"
 	case "exists":
 		if len(request) != 2 {
 			return "request not recognised"
 		}
-		glog.Infof("Checking if %s exists", request[1])
+		glog.V(1).Infof("Checking if %s exists", request[1])
 		_, exists := (*s)[request[1]]
 		return strconv.FormatBool(exists)
 	case "get":
 		if len(request) != 2 {
 			return "request not recognised"
 		}
-		glog.Infof("Getting %s", request[1])
+		glog.V(1).Infof("Getting %s", request[1])
 		value, ok := (*s)[request[1]]
 		if ok {
 			return value
@@ -50,20 +50,20 @@ func (s *Store) execute(req string) string {
 		if len(request) != 2 {
 			return "request not recognised"
 		}
-		glog.Infof("Deleting %s", request[1])
+		glog.V(1).Infof("Deleting %s", request[1])
 		delete(*s, request[1])
 		return "OK"
 	case "count":
 		if len(request) != 1 {
 			return "request not recognised"
 		}
-		glog.Infof("Counting size of key-value store")
+		glog.V(1).Infof("Counting size of key-value store")
 		return strconv.Itoa(len(*s))
 	case "print":
 		if len(request) != 1 {
 			return "request not recognised"
 		}
-		glog.Infof("Printing key-value store")
+		glog.V(1).Infof("Printing key-value store")
 		return s.print()
 	default:
 		return "request not recognised"

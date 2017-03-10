@@ -31,10 +31,10 @@ func closeServer(w http.ResponseWriter, req *http.Request) {
 // main request handler
 func requestServer(w http.ResponseWriter, req *http.Request) {
 	// NB: ResponseWriter needs to be used before this function exits
-	glog.Info("Incoming GET request to", req.URL.String())
+	glog.V(1).Info("Incoming GET request to", req.URL.String())
 	reqs := strings.Split(req.URL.String(), "/")
 	reqNew := strings.Join(reqs[2:], " ")
-	glog.Info("API request is:", reqNew)
+	glog.V(1).Info("API request is:", reqNew)
 	waiting <- restrequest{reqNew + "\n", w}
 
 	//wait for response, else give up
@@ -43,7 +43,7 @@ func requestServer(w http.ResponseWriter, req *http.Request) {
 
 func Create() *Rest {
 	port := ":12345"
-	glog.Info("Setting up HTTP server on ", port)
+	glog.V(1).Info("Setting up HTTP server on ", port)
 
 	//setup HTTP server
 	http.HandleFunc("/request/", requestServer)
@@ -65,20 +65,20 @@ func Create() *Rest {
 }
 
 func (r *Rest) Next() (string, bool, bool) {
-	glog.Info("Waiting for next request")
+	glog.V(1).Info("Waiting for next request")
 	restreq, ok := <-waiting
 	if !ok {
 		return "", false, false
 	}
 	outstanding <- restreq
-	glog.Info("Next request received: ", restreq.Req)
+	glog.V(1).Info("Next request received: ", restreq.Req)
 	return restreq.Req, true, true
 }
 
 func (r *Rest) Return(str string) {
-	glog.Info("Response received: ", str)
+	glog.V(1).Info("Response received: ", str)
 	restreq := <-outstanding
 	io.WriteString(restreq.ReplyTo, str)
-	glog.Info("Response sent")
+	glog.V(1).Info("Response sent")
 
 }

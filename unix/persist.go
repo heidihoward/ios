@@ -25,10 +25,10 @@ func openFile(filename string) fileHandler {
 	// check if file exists
 	var isNew bool
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		glog.Info("Creating and opening file: ", filename)
+		glog.V(1).Info("Creating and opening file: ", filename)
 		isNew = true
 	} else {
-		glog.Info("Opening file: ", filename)
+		glog.V(1).Info("Opening file: ", filename)
 		isNew = false
 	}
 
@@ -76,7 +76,7 @@ func restoreLog(logFile fileHandler, MaxLength int, snapshotIndex int) (bool, *c
 	for {
 		b, err := logFile.R.ReadBytes(byte('\n'))
 		if err != nil {
-			glog.Info("No more commands in persistent storage, ", log.LastIndex, " log entries were recovered")
+			glog.V(1).Info("No more commands in persistent storage, ", log.LastIndex, " log entries were recovered")
 			break
 		}
 		found = true
@@ -87,7 +87,7 @@ func restoreLog(logFile fileHandler, MaxLength int, snapshotIndex int) (bool, *c
 		}
 		// add enties to the log (in-memory)
 		log.AddEntries(update.StartIndex, update.EndIndex, update.Entries)
-		glog.Info("Adding from persistent storage :", update)
+		glog.V(1).Info("Adding from persistent storage :", update)
 	}
 
 	return found, log
@@ -104,7 +104,7 @@ func restoreView(viewFile fileHandler) (bool, int) {
 	for {
 		b, err := viewFile.R.ReadBytes(byte('\n'))
 		if err != nil {
-			glog.Info("No more view updates in persistent storage")
+			glog.V(1).Info("No more view updates in persistent storage")
 			return found, view
 		}
 		found = true
@@ -168,7 +168,7 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 	go func() {
 		for {
 			view := <-io.ViewPersist
-			glog.Info("Updating view to ", view)
+			glog.V(1).Info("Updating view to ", view)
 			_, err := dataStorage.Fd.Write([]byte(strconv.Itoa(view)))
 			_, err = dataStorage.Fd.Write([]byte("\n"))
 			if err != nil {
@@ -184,7 +184,7 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 	go func() {
 		for {
 			log := <-io.LogPersist
-			glog.Info("Updating log with ", log)
+			glog.V(1).Info("Updating log with ", log)
 			startTime := time.Now()
 			b, err := msgs.Marshal(log)
 			if err != nil {
@@ -197,19 +197,19 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 			if err != nil {
 				glog.Fatal(err)
 			}
-			glog.Info(n1, " bytes written to persistent log in ", time.Since(startTime).String())
+			glog.V(1).Info(n1, " bytes written to persistent log in ", time.Since(startTime).String())
 			if persistenceMode=="fsync" {
 				writeAheadLog.Sync()
 			}
 			io.LogPersistFsync <- log
-			glog.Info(n1, " bytes synced to persistent log in ", time.Since(startTime).String())
+			glog.V(1).Info(n1, " bytes synced to persistent log in ", time.Since(startTime).String())
 		}
 	}()
 	// write state machine snapshots to persistent storage
 	go func() {
 		for {
 			snap := <-io.SnapshotPersist
-			glog.Info("Saving request cache and state machine snapshot upto index", snap.Index,
+			glog.V(1).Info("Saving request cache and state machine snapshot upto index", snap.Index,
 				" of size ", len(snap.Bytes))
 			file, err := os.OpenFile(snapFile, os.O_RDWR|os.O_CREATE, 0777)
 			if err != nil {

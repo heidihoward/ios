@@ -49,7 +49,7 @@ func (g *Generator) Next() (string, bool, bool) {
 
 	// generate key
 	key := g.Keys[rand.Intn(g.Config.Keys)]
-	glog.Info("Key is ", key)
+	glog.V(1).Info("Key is ", key)
 
 	if rand.Intn(100) < g.Config.Reads {
 		return fmt.Sprintf("get %s", key), false, true

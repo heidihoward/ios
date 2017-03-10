@@ -21,7 +21,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		return
 	}
 
-	glog.Info("Received ", string(b))
+	glog.V(1).Info("Received ", string(b))
 	switch int(b[0]) {
 	case 1:
 		var msg PrepareRequest
@@ -29,7 +29,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Requests.Prepare <- msg:
 		default:
@@ -41,7 +41,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Requests.Commit <- msg:
 		default:
@@ -53,7 +53,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Responses.Prepare <- msg:
 		default:
@@ -65,7 +65,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Responses.Commit <- msg:
 		default:
@@ -77,7 +77,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Requests.NewView <- msg:
 		default:
@@ -89,7 +89,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Responses.NewView <- msg:
 		default:
@@ -101,7 +101,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Requests.Coordinate <- msg:
 		default:
@@ -113,7 +113,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Responses.Coordinate <- msg:
 		default:
@@ -125,7 +125,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Requests.Query <- msg:
 		default:
@@ -137,7 +137,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
-		glog.Info("Unmarshalled ", msg)
+		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Responses.Query <- msg:
 		default:
@@ -162,61 +162,61 @@ func appendr(x byte, xs []byte) []byte {
 func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 	select {
 	case msg := <-msgch.Requests.Prepare:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(1), b)
 		return snd, err
 
 	case msg := <-msgch.Requests.Commit:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(2), b)
 		return snd, err
 
 	case msg := <-msgch.Responses.Prepare:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(3), b)
 		return snd, err
 
 	case msg := <-msgch.Responses.Commit:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(4), b)
 		return snd, err
 
 	case msg := <-msgch.Requests.NewView:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(5), b)
 		return snd, err
 
 	case msg := <-msgch.Responses.NewView:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(6), b)
 		return snd, err
 
 	case msg := <-msgch.Requests.Coordinate:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(7), b)
 		return snd, err
 
 	case msg := <-msgch.Responses.Coordinate:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(8), b)
 		return snd, err
 
 	case msg := <-msgch.Requests.Query:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(9), b)
 		return snd, err
 
 	case msg := <-msgch.Responses.Query:
-		glog.Info("Marshalling ", msg)
+		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(0), b)
 		return snd, err

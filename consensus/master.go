@@ -10,7 +10,7 @@ func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 
 	// if initial master, start master goroutine
 	if config.ID == 0 && new {
-		glog.Info("Starting leader module")
+		glog.V(1).Info("Starting leader module")
 		runMaster(0, -1, true, io, config, s)
 	}
 
@@ -23,7 +23,7 @@ func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 			s.View++
 			if nextMaster == config.ID {
 				s.View++
-				glog.Info("Starting new master in view ", s.View, " at ", config.ID)
+				glog.V(1).Info("Starting new master in view ", s.View, " at ", config.ID)
 				io.ViewPersist <- s.View
 				written := <-io.ViewPersistFsync
 				if written != s.View {
@@ -72,12 +72,12 @@ func runRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, i
 				glog.Warning("New view failed, stepping down from master")
 				return false, 0
 			}
-			glog.Info("Received ", res)
+			glog.V(1).Info("Received ", res)
 			if res.Index > endIndex {
 				endIndex = res.Index
 			}
 			replied[msg.Response.SenderID] = true
-			glog.Info("Successful new view received, waiting for more")
+			glog.V(1).Info("Successful new view received, waiting for more")
 		}
 	}
 
@@ -132,24 +132,24 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 			break
 		}
 
-		glog.Info("Ready to handle request")
+		glog.V(1).Info("Ready to handle request")
 		var req1 msgs.ClientRequest
 		select {
 		case req1 = <-io.IncomingRequests:
 		case req1 = <-io.IncomingRequestsForced:
 		}
-		glog.Info("Request received: ", req1)
+		glog.V(1).Info("Request received: ", req1)
 		var reqs []msgs.ClientRequest
 
 		//wait for window slot
 		index := window.nextIndex()
 
 		if config.BatchInterval == 0 || config.MaxBatch == 1 {
-			glog.Info("No batching enabled")
+			glog.V(1).Info("No batching enabled")
 			// handle client requests (1 at a time)
 			reqs = []msgs.ClientRequest{req1}
 		} else {
-			glog.Info("Ready to handle more requests. Batch every ", config.BatchInterval, " milliseconds")
+			glog.V(1).Info("Ready to handle more requests. Batch every ", config.BatchInterval, " milliseconds")
 			// setup for holding requests
 			reqsAll := make([]msgs.ClientRequest, config.MaxBatch)
 			reqsNum := 1
@@ -160,7 +160,7 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 				select {
 				case req := <-io.IncomingRequests:
 					reqsAll[reqsNum] = req
-					glog.Info("Request ", reqsNum, " is : ", req)
+					glog.V(1).Info("Request ", reqsNum, " is : ", req)
 					reqsNum = reqsNum + 1
 					if reqsNum == config.MaxBatch {
 						exit = true
@@ -172,10 +172,10 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 				}
 			}
 			// this batch is ready
-			glog.Info("Starting to replicate ", reqsNum, " requests")
+			glog.V(1).Info("Starting to replicate ", reqsNum, " requests")
 			reqs = reqsAll[:reqsNum]
 		}
-		glog.Info("Request assigned index: ", index)
+		glog.V(1).Info("Request assigned index: ", index)
 
 		// dispatch to coordinator
 		entries := []msgs.Entry{{view, false, reqs}}
@@ -191,7 +191,7 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 				stepDown = true
 				return
 			}
-			glog.Info("Finished replicating request: ", reqs)
+			glog.V(1).Info("Finished replicating request: ", reqs)
 			window.indexCompleted(reply.Request.StartIndex)
 		}()
 

@@ -25,7 +25,7 @@ var iO *msgs.Io
 func checkPeer() {
 	for i := range peers {
 		if !failures.IsConnected(i) {
-			//glog.Info("Peer ", i, " is not currently connected")
+			//glog.V(1).Info("Peer ", i, " is not currently connected")
 			cn, err := net.Dial("tcp", peers[i].address)
 
 			if err != nil {
@@ -34,7 +34,7 @@ func checkPeer() {
 				go handlePeer(cn, true)
 			}
 		} else {
-			//glog.Info("Peer ", i, " is currently connected")
+			//glog.V(1).Info("Peer ", i, " is currently connected")
 		}
 	}
 }
@@ -42,9 +42,9 @@ func checkPeer() {
 func handlePeer(cn net.Conn, init bool) {
 	addr := cn.RemoteAddr().String()
 	if init {
-		glog.Info("Outgoing peer connection to ", addr)
+		glog.V(1).Info("Outgoing peer connection to ", addr)
 	} else {
-		glog.Info("Incoming peer connection from ", addr)
+		glog.V(1).Info("Incoming peer connection from ", addr)
 	}
 
 	defer cn.Close()
@@ -58,7 +58,7 @@ func handlePeer(cn net.Conn, init bool) {
 	_, _ = writer.WriteString(strconv.Itoa(id) + "\n")
 	_ = writer.Flush()
 	text, _ := reader.ReadString('\n')
-	glog.Info("Received ", text)
+	glog.V(1).Info("Received ", text)
 	peerID, err := strconv.Atoi(strings.Trim(text, "\n"))
 	if err != nil {
 		glog.Warning(err)
@@ -79,7 +79,7 @@ func handlePeer(cn net.Conn, init bool) {
 			" expected ", expectedAddr)
 	}
 
-	glog.Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
+	glog.V(1).Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
 	err = failures.NowConnected(peerID)
 	if err != nil {
 		glog.Warning(err)
@@ -90,14 +90,14 @@ func handlePeer(cn net.Conn, init bool) {
 	go func() {
 		for {
 			// read request
-			glog.Infof("Ready for next message from %d", peerID)
+			glog.V(1).Infof("Ready for next message from %d", peerID)
 			text, err := reader.ReadBytes(byte('\n'))
 			if err != nil {
 				glog.Warning(err)
 				closeErr <- err
 				break
 			}
-			glog.Infof("Read from peer %d: ", peerID, string(text))
+			glog.V(1).Infof("Read from peer %d: ", peerID, string(text))
 			iO.Incoming.BytesToProtoMsg(text)
 
 		}
@@ -106,12 +106,12 @@ func handlePeer(cn net.Conn, init bool) {
 	go func() {
 		for {
 			// send reply
-			glog.Infof("Ready to send message to %d", peerID)
+			glog.V(1).Infof("Ready to send message to %d", peerID)
 			b, err := iO.OutgoingUnicast[peerID].ProtoMsgToBytes()
 			if err != nil {
 				glog.Fatal("Could not marshal message")
 			}
-			glog.Infof("Sending to %d: %s", peerID, string(b))
+			glog.V(1).Infof("Sending to %d: %s", peerID, string(b))
 			_, err = writer.Write(b)
 			_, err = writer.Write([]byte("\n"))
 			if err != nil {
@@ -126,7 +126,7 @@ func handlePeer(cn net.Conn, init bool) {
 				closeErr <- err
 				break
 			}
-			glog.Info("Sent")
+			glog.V(1).Info("Sent")
 		}
 	}()
 
@@ -150,7 +150,7 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.Fail
 	}
 
 	//set up peer server
-	glog.Info("Starting up peer server")
+	glog.V(1).Info("Starting up peer server")
 	peerPort := strings.Split(addresses[id], ":")[1]
 	listeningPort := ":" + peerPort
 	lnPeers, err := net.Listen("tcp", listeningPort)

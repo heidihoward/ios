@@ -9,14 +9,14 @@ import (
 // PROTOCOL BODY
 
 func runParticipant(state *state, io *msgs.Io, config Config) {
-	glog.Info("Ready for requests")
+	glog.V(1).Info("Ready for requests")
 	for {
 
 		// get request
 		select {
 
 		case req := <-io.Incoming.Requests.Prepare:
-			glog.Info("Prepare requests received at ", config.ID, ": ", req)
+			glog.V(1).Info("Prepare requests received at ", config.ID, ": ", req)
 			// check view
 			if req.View < state.View {
 				glog.Warning("Sender ID:", req.SenderID, " is behind. Local view is ", state.View, ", sender's view was ", req.View)
@@ -53,10 +53,10 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 			// reply to coordinator
 			reply := msgs.PrepareResponse{config.ID, true}
 			(io.OutgoingUnicast[req.SenderID]).Responses.Prepare <- msgs.Prepare{req, reply}
-			glog.Info("Response dispatched: ", reply)
+			glog.V(1).Info("Response dispatched: ", reply)
 
 		case req := <-io.Incoming.Requests.Commit:
-			glog.Info("Commit requests received at ", config.ID, ": ", req)
+			glog.V(1).Info("Commit requests received at ", config.ID, ": ", req)
 
 			// add enties to the log (in-memory)
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
@@ -68,7 +68,7 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 					if request != noop {
 						reply := state.StateMachine.Apply(request)
 						io.OutgoingResponses <- msgs.Client{request, reply}
-						glog.Info("Request Committed: ", request)
+						glog.V(1).Info("Request Committed: ", request)
 					}
 				}
 				state.CommitIndex++
@@ -83,10 +83,10 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 			// reply to coordinator
 			reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
 			(io.OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
-			glog.Info("Commit response dispatched")
+			glog.V(1).Info("Commit response dispatched")
 
 		case req := <-io.Incoming.Requests.NewView:
-			glog.Info("New view requests received at ", config.ID, ": ", req)
+			glog.V(1).Info("New view requests received at ", config.ID, ": ", req)
 
 			// check view
 			if req.View < state.View {
@@ -106,10 +106,10 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 
 			reply := msgs.NewViewResponse{config.ID, state.View, state.Log.LastIndex}
 			io.OutgoingUnicast[req.SenderID].Responses.NewView <- msgs.NewView{req, reply}
-			glog.Info("Response dispatched")
+			glog.V(1).Info("Response dispatched")
 
 		case req := <-io.Incoming.Requests.Query:
-			glog.Info("Query requests received at ", config.ID, ": ", req)
+			glog.V(1).Info("Query requests received at ", config.ID, ": ", req)
 
 			// check view
 			if req.View < state.View {

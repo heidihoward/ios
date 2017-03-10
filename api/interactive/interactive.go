@@ -34,7 +34,7 @@ func (i *Interative) Next() (string, bool, bool) {
 		glog.Fatal(err)
 	}
 	text = strings.Trim(text, "\n")
-	glog.Info("User entered", text)
+	glog.V(1).Info("User entered", text)
 	return text, true, true
 }
 

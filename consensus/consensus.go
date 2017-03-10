@@ -38,7 +38,7 @@ var noop = msgs.ClientRequest{-1, -1, false, "noop"}
 func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureNotifier) {
 
 	// setup
-	glog.Infof("Starting node ID:%d of %d", config.ID, config.N)
+	glog.V(1).Infof("Starting node ID:%d of %d", config.ID, config.N)
 	state := state{
 		View:         0,
 		Log:          NewLog(config.LogLength),
@@ -57,7 +57,7 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 	}
 
 	// operator as normal node
-	glog.Info("Starting participant module, ID ", config.ID)
+	glog.V(1).Info("Starting participant module, ID ", config.ID)
 	go runCoordinator(&state, io, config)
 	go monitorMaster(&state, io, config, true)
 	runParticipant(&state, io, config)
@@ -66,7 +66,7 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 
 func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int, fail *msgs.FailureNotifier) {
 	// setup
-	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
+	glog.V(1).Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
 
 	// restore previous state
 	state := state{
@@ -92,12 +92,12 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 			}
 		}
 	}
-	glog.Info("Recovered ", state.CommitIndex+1, " committed entries")
+	glog.V(1).Info("Recovered ", state.CommitIndex+1, " committed entries")
 
 	//  do not start leader without view change
 
 	// operator as normal node
-	glog.Info("Starting participant module, ID ", config.ID)
+	glog.V(1).Info("Starting participant module, ID ", config.ID)
 	go runCoordinator(&state, io, config)
 	go monitorMaster(&state, io, config, false)
 	runParticipant(&state, io, config)

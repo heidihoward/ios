@@ -43,11 +43,11 @@ func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
 	}
 
 	// first, try on to connect to the most likely leader
-	glog.Info("Trying to connect to ", addrs[hint])
+	glog.V(1).Info("Trying to connect to ", addrs[hint])
 	conn, err = net.Dial("tcp", addrs[hint])
 	// if successful
 	if err == nil {
-		glog.Infof("Connect established to %s", addrs[hint])
+		glog.V(1).Infof("Connect established to %s", addrs[hint])
 		return conn, hint, err
 	}
 	//if unsuccessful
@@ -56,12 +56,12 @@ func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
 	// if fails, try everyone else
 	for i := range addrs {
 		for t := tries; t > 0; t-- {
-			glog.Info("Trying to connect to ", addrs[i])
+			glog.V(1).Info("Trying to connect to ", addrs[i])
 			conn, err = net.Dial("tcp", addrs[i])
 
 			// if successful
 			if err == nil {
-				glog.Infof("Connect established to %s", addrs[i])
+				glog.V(1).Infof("Connect established to %s", addrs[i])
 				return conn, i, err
 			}
 
@@ -94,7 +94,7 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 			errCh <- err
 		}
 
-		glog.Info("Sent")
+		glog.V(1).Info("Sent")
 
 		// read response
 		reply, err := r.ReadBytes('\n')
@@ -135,15 +135,15 @@ func main() {
 	if *id == -1 {
 		rand.Seed(time.Now().UTC().UnixNano())
 		*id = rand.Int()
-		glog.Info("ID was not provided, ID ", *id, " has been assigned")
+		glog.V(1).Info("ID was not provided, ID ", *id, " has been assigned")
 	}
 
-	glog.Info("Starting up client ", *id)
-	defer glog.Info("Shutting down client ", *id)
+	glog.V(1).Info("Starting up client ", *id)
+	defer glog.V(1).Info("Shutting down client ", *id)
 
 	// set up stats collection
 	filename := *statFile
-	glog.Info("Opening file: ", filename)
+	glog.V(1).Info("Opening file: ", filename)
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		glog.Fatal(err)
@@ -175,7 +175,7 @@ func main() {
 		glog.Fatal("Invalid mode: ", mode)
 	}
 
-	glog.Info("Client is ready to start processing incoming requests")
+	glog.V(1).Info("Client is ready to start processing incoming requests")
 	go func() {
 		for {
 			// get next command
@@ -184,7 +184,7 @@ func main() {
 				finish <- true
 				break
 			}
-			glog.Info("Request ", requestID, " is: ", text)
+			glog.V(1).Info("Request ", requestID, " is: ", text)
 
 			// prepare request
 			req := msgs.ClientRequest{
@@ -193,7 +193,7 @@ func main() {
 			if err != nil {
 				glog.Fatal(err)
 			}
-			glog.Info(string(b))
+			glog.V(1).Info(string(b))
 
 			startTime := time.Now()
 			tries := 0
@@ -221,7 +221,7 @@ func main() {
 						err = errors.New("request marked by server as unsuccessful")
 					}
 					if err == nil && reply.Success {
-						glog.Info("request was Successful", reply)
+						glog.V(1).Info("request was Successful", reply)
 						break
 					}
 				}
@@ -286,7 +286,7 @@ func main() {
 	case sig := <-sigs:
 		glog.Warning("Termination due to: ", sig)
 	case <-finish:
-		glog.Info("No more commands")
+		glog.V(1).Info("No more commands")
 	}
 	glog.Flush()
 
