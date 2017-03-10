@@ -189,8 +189,9 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 					glog.Fatal(err)
 				}
 				// write to persistent storage
-				n1, err := logStorage.Fd.Write(b)
-				n2, err := logStorage.Fd.Write([]byte("\n"))
+				// TODO: THIS NEEDS REMOVING - FOR TESTING ONLY
+				n1, err := logStorage.Fd.Write(b[:8])
+				//n2, err := logStorage.Fd.Write([]byte("\n"))
 				if err != nil {
 					glog.Fatal(err)
 				}
@@ -198,7 +199,7 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 					logStorage.Fd.Sync()
 				}
 				io.LogPersistFsync <- log
-				glog.Info(n1+n2, " bytes written to persistent log in ", time.Since(startTime).String())
+				glog.Info(n1, " bytes written to persistent log in ", time.Since(startTime).String())
 			}
 		}()
 	} else {
