@@ -22,6 +22,8 @@ func openWriteAheadFile(filename string, mode string) WAL {
 		file, err = syscall.Open(filename, syscall.O_SYNC|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	case "dsync":
 		file, err = syscall.Open(filename, syscall.O_DSYNC|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	case "direct":
+		file, err = syscall.Open(filename, syscall.O_DIRECT|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	case "none", "fsync":
 		file, err = syscall.Open(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	default:
@@ -44,7 +46,7 @@ func (w WAL) writeAhead(bytes []byte) {
 	if err != nil {
 		glog.Fatal(err)
 	}
-	if w.mode=="fsync" {
+	if w.mode=="fsync" || w.mode=="direct" {
   	err = syscall.Fdatasync(w.fd)
 		if err != nil {
 			glog.Fatal(err)
