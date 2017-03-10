@@ -4,15 +4,16 @@ import (
 	"math/rand"
 	"os"
 	"fmt"
+	"flag"
 	"time"
 )
 
 func benchmarkDisk(filename string, size int, count int) {
 	startTime := time.Now()
 	bytes := make([]byte, size)
-  file, _ := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
+	rand.Read(bytes)
+  file, _ := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
   for i := 0; i < count; i++ {
-		rand.Read(bytes)
     file.Write(bytes)
     file.Sync()
   }
@@ -21,6 +22,10 @@ func benchmarkDisk(filename string, size int, count int) {
 
 
 func main() {
-	benchmarkDisk("testing.log",10,1000)
+	size := flag.Int("size", 1, "number of bytes to append to file")
+	count := flag.Int("count", 1000, "number of appends")
+	file := flag.String("file", "bench.dat", "file to write to")
+	flag.Parse()
+	benchmarkDisk(*file,*size,*count)
 
 }
