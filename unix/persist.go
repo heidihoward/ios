@@ -191,7 +191,7 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 				// write to persistent storage
 				// TODO: THIS NEEDS REMOVING - FOR TESTING ONLY
 				n1, err := logStorage.Fd.Write(b[:8])
-				//n2, err := logStorage.Fd.Write([]byte("\n"))
+				n2, err := logStorage.Fd.Write([]byte("\n"))
 				if err != nil {
 					glog.Fatal(err)
 				}
@@ -216,7 +216,7 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 				}
 				// write to persistent storage
 				n1, err := writeAheadLog.Write(b)
-				n2, err := writeAheadLog.Write([]byte("\n"))
+				//n2, err := writeAheadLog.Write([]byte("\n"))
 				if err != nil {
 					glog.Fatal(err)
 				}
