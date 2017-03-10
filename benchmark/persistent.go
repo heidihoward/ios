@@ -2,7 +2,9 @@ package main
 
 import (
 	"math/rand"
+	"syscall"
 	"os"
+	"errors"
 	"fmt"
 	"flag"
 	"time"
@@ -12,12 +14,29 @@ func benchmarkDisk(filename string, size int, count int) {
 	startTime := time.Now()
 	bytes := make([]byte, size)
 	rand.Read(bytes)
-  file, _ := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+  fd, err := syscall.Open(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		panic(err)
+	}
+	err = syscall.Fallocate(fd,0,0,size * count)
+	if err != nil {
+		panic(err)
+	}
   for i := 0; i < count; i++ {
-    file.Write(bytes)
-    file.Sync()
+    n, err := syscall.Write(fd,bytes)
+		if n != size {
+			panic(errors.New("Short write"))
+		}
+		if err != nil {
+			panic(err)
+		}
+    err = syscall.Fsync(fd)
+		if err != nil {
+			panic(err)
+		}
   }
 	fmt.Printf("%s\n",time.Since(startTime).String())
+	syscall.Close(fd)
 }
 
 
