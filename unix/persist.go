@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"syscall"
 )
 
 type fileHandler struct {
@@ -43,25 +42,6 @@ func openFile(filename string) fileHandler {
 	w := bufio.NewWriter(file)
 	r := bufio.NewReader(file)
 	return fileHandler{filename, isNew, w, r, file}
-}
-
-func openWriteAheadFile(filename string, mode string) *os.File {
-	var file *os.File
-	var err error
-	switch mode {
-	case "osync":
-		file, err = os.OpenFile(filename, os.O_WRONLY|syscall.O_SYNC|os.O_CREATE|os.O_APPEND, 0777)
-	case "dsync":
-		file, err = os.OpenFile(filename, os.O_WRONLY|syscall.O_DSYNC|os.O_CREATE|os.O_APPEND, 0777)
-	case "none", "fsync":
-		file, err = os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
-	default:
-		glog.Fatal("PersistenceMode not reconised")
-	}
-	if err != nil {
-		glog.Fatal(err)
-	}
-	return file
 }
 
 func restoreLog(logFile fileHandler, MaxLength int, snapshotIndex int) (bool, *consensus.Log) {
@@ -180,7 +160,7 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 	}()
 	// write log updates to persistent storage
 	logStorage.Fd.Close()
-	writeAheadLog := openWriteAheadFile(logFile,persistenceMode)
+	wal := openWriteAheadFile(logFile,persistenceMode)
 	go func() {
 		for {
 			log := <-io.LogPersist
@@ -191,24 +171,9 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 				glog.Fatal(err)
 			}
 			// write to persistent storage
-			// TODO: THIS NEEDS REMOVING - FOR TESTING ONLY
-			n1, err := writeAheadLog.Write(b[:8])
+			wal.writeAhead(b)
 			//n2, err := logStorage.Fd.Write([]byte("\n"))
-			if err != nil {
-				glog.Fatal(err)
-			}
-			glog.V(1).Info(n1, " bytes written to persistent log in ", time.Since(startTime).String())
-			if persistenceMode=="fsync" {
-				writeAheadLog.Sync()
-			}
 			io.LogPersistFsync <- log
-			if time.Since(startTime) > 10*time.Millisecond {
-				glog.Warning(n1, " bytes written & synced to persistent log in ", time.Since(startTime).String())
-			} else if time.Since(startTime) > time.Millisecond {
-				glog.Info(n1, " bytes written & synced to persistent log in ", time.Since(startTime).String())
-			} else {
-				glog.V(1).Info(n1, " bytes written & synced to persistent log in ", time.Since(startTime).String())
-			}
 		}
 	}()
 	// write state machine snapshots to persistent storage
