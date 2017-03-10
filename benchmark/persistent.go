@@ -12,7 +12,7 @@ func benchmarkDisk(filename string, size int, count int) {
 	startTime := time.Now()
 	bytes := make([]byte, size)
 	rand.Read(bytes)
-  file, _ := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+  file, _ := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
   for i := 0; i < count; i++ {
     file.Write(bytes)
     file.Sync()
