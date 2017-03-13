@@ -15,7 +15,7 @@ func TestProcess(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := store.process(c.req)
+		got := store.Process(c.req)
 		if got != c.res {
 			t.Errorf("%s returned %s but %s was expected", c.req, got, c.res)
 		}
