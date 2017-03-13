@@ -21,6 +21,7 @@ type ServerConfig struct {
 		SnapshotInterval    int
 		QuorumSystem        string
 		IndexExclusivity    bool
+		Application					string
 	}
 	Unsafe struct {
 		DumpPersistentStorage bool

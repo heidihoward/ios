@@ -91,39 +91,39 @@ func restoreView(viewFile fileHandler) (bool, int) {
 	}
 }
 
-func restoreSnapshot(snapFile fileHandler) (bool, int, *app.StateMachine) {
+func restoreSnapshot(snapFile fileHandler, appConfig string) (bool, int, *app.StateMachine) {
 	if snapFile.IsNew {
-		return false, -1, app.New()
+		return false, -1, app.New(appConfig)
 	}
 
 	// fetching index from snapshot file
 	b, err := snapFile.R.ReadBytes(byte('\n'))
 	if err != nil {
 		glog.Warning("Snapshot corrupted, ignoring snapshot", err)
-		return false, -1, app.New()
+		return false, -1, app.New(appConfig)
 	}
 	index, err := strconv.Atoi(strings.Trim(string(b), "\n"))
 	if err != nil {
 		glog.Warning("Snapshot corrupted, ignoring snapshot", err)
-		return false, -1, app.New()
+		return false, -1, app.New(appConfig)
 	}
 
 	// fetch state machine snapshot from shapshot file
 	snapshot, err := snapFile.R.ReadBytes(byte('\n'))
 	if err != nil {
 		glog.Warning("Snapshot corrupted, ignoring snapshot", err)
-		return false, -1, app.New()
+		return false, -1, app.New(appConfig)
 	}
-	return true, index, app.RestoreSnapshot(snapshot)
+	return true, index, app.RestoreSnapshot(snapshot,appConfig)
 }
 
-func setupDummyStorage(io *msgs.Io, MaxLength int) (bool, int, *consensus.Log, int, *app.StateMachine) {
+func setupDummyStorage(io *msgs.Io, MaxLength int, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	glog.Warning("UNSAFE configuration - Do not use in production")
 	go io.DumpPersistentStorage()
-	return false, 0, consensus.NewLog(MaxLength) ,-1, app.New()
+	return false, 0, consensus.NewLog(MaxLength) ,-1, app.New(appConfig)
 }
 
-func setupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int,  persistenceMode string) (bool, int, *consensus.Log, int, *app.StateMachine) {
+func setupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int,  persistenceMode string, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	// setting up persistent log
 	logStorage := openFile(logFile)
 	dataStorage := openFile(dataFile)
@@ -132,7 +132,7 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 	// check persistent storage for view
 	foundView, view := restoreView(dataStorage)
 	// check persistent storage for snapshots
-	foundSnapshot, index, state := restoreSnapshot(snapStorage)
+	foundSnapshot, index, state := restoreSnapshot(snapStorage, appConfig)
 	// check persistent storage for commands
 	foundLog, log := restoreLog(logStorage, MaxLength, index)
 
@@ -198,9 +198,9 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 	return foundView, view, log, index, state
 }
 
-func SetupStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, maxLength int, dummyStorage bool, persistenceMode string) (bool, int, *consensus.Log, int, *app.StateMachine) {
+func SetupStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, maxLength int, dummyStorage bool, persistenceMode string, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	if dummyStorage {
-		return setupDummyStorage(io,maxLength)
+		return setupDummyStorage(io,maxLength, appConfig)
 	}
- return setupPersistentStorage(logFile, dataFile, snapFile, io, maxLength, persistenceMode)
+ return setupPersistentStorage(logFile, dataFile, snapFile, io, maxLength, persistenceMode, appConfig)
 }

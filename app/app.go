@@ -4,15 +4,17 @@ import (
 	"encoding/json"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
+	"github.com/heidi-ann/ios/services"
 )
+
 
 type StateMachine struct {
 	Cache *Cache
-	Store *Store
+	Store services.Service
 }
 
-func New() *StateMachine {
-	return &StateMachine{newCache(), newStore()}
+func New(appConfig string) *StateMachine {
+	return &StateMachine{newCache(), services.StartService(appConfig)}
 }
 
 func (s *StateMachine) Apply(req msgs.ClientRequest) msgs.ClientResponse {
@@ -25,7 +27,7 @@ func (s *StateMachine) Apply(req msgs.ClientRequest) msgs.ClientResponse {
 	}
 	// apply request and cache
 	reply := msgs.ClientResponse{
-		req.ClientID, req.RequestID, true, s.Store.process(req.Request)}
+		req.ClientID, req.RequestID, true, s.Store.Process(req.Request)}
 	s.Cache.add(reply)
 	return reply
 }
@@ -42,11 +44,11 @@ func (s *StateMachine) MakeSnapshot() []byte {
 	return b
 }
 
-func RestoreSnapshot(snap []byte) *StateMachine {
-	var sm StateMachine
-	err := json.Unmarshal(snap, &sm)
+func RestoreSnapshot(snap []byte, appConfig string) *StateMachine {
+	sm := New(appConfig)
+	err := json.Unmarshal(snap, sm)
 	if err != nil {
 		glog.Fatal("Unable to restore from snapshot: ", err)
 	}
-	return &sm
+	return sm
 }

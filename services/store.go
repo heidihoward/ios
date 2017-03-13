@@ -1,23 +1,24 @@
 // Package store provides a simple key value store
 // Not safe for concurreny access
 // TODO: replace map with https://github.com/orcaman/concurrent-map
-package app
+package services
 
 import (
 	"github.com/golang/glog"
+	"encoding/json"
 	"strconv"
 	"strings"
 )
 
-type Store map[string]string
+type store map[string]string
 
-func newStore() *Store {
-	var s Store
+func newStore() *store {
+	var s store
 	s = map[string]string{}
 	return &s
 }
 
-func (s *Store) execute(req string) string {
+func (s *store) execute(req string) string {
 	request := strings.Split(req, " ")
 
 	switch request[0] {
@@ -70,7 +71,7 @@ func (s *Store) execute(req string) string {
 	}
 }
 
-func (s *Store) process(req string) string {
+func (s *store) Process(req string) string {
 	reqs := strings.Split(strings.Trim(req, "\n"), "; ")
 	var reply string
 
@@ -84,10 +85,24 @@ func (s *Store) process(req string) string {
 	return reply
 }
 
-func (s *Store) print() string {
+func (s *store) print() string {
 	str := ""
 	for key, value := range *s {
 		str += key + ", " + value + "\n"
 	}
 	return str
+}
+
+func (s *store) MarshalJSON() ([]byte, error) {
+	return json.Marshal(*s)
+}
+
+func (s *store) UnmarshalJSON(snap []byte) error {
+	// this seems like a strange approach but unmarshalling directly into store causes memory leak
+	var sTemp map[string]string
+	json.Unmarshal(snap, &sTemp)
+	for key, value := range sTemp {
+		(*s)[key] = value
+	}
+	return nil
 }

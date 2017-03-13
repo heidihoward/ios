@@ -12,7 +12,7 @@ func runSimulator(nodes int) ([]*msgs.Io, []*msgs.FailureNotifier) {
 	failures := make([]*msgs.FailureNotifier, nodes)
 	// setup state
 	for id := 0; id < nodes; id++ {
-		app := app.New()
+		app := app.New("kv-store")
 		io := msgs.MakeIo(10, nodes)
 		fail := msgs.NewFailureNotifier(nodes)
 		config := consensus.Config{
@@ -47,7 +47,7 @@ func runRecoverySimulator(nodes int, logs []*consensus.Log, views []int) []*msgs
 	ios := make([]*msgs.Io, nodes)
 	// setup state
 	for id := 0; id < nodes; id++ {
-		app := app.New()
+		app := app.New("kv-store")
 		io := msgs.MakeIo(10, nodes)
 		failure := msgs.NewFailureNotifier(nodes)
 		conf := consensus.Config{ID: id, N: nodes, LogLength: 1000}

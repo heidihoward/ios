@@ -34,7 +34,7 @@ func TestrunSimulator(t *testing.T) {
 
 	// create a system of 3 nodes
 	ios, _ := runSimulator(3)
-	app := app.New()
+	app := app.New("kv-store")
 
 	// check that 3 nodes were created
 	if len(ios) != 3 {

@@ -16,7 +16,7 @@ func TestInit(t *testing.T) {
 
 	// create a node in system of 3 nodes
 	io := msgs.MakeIo(10, 3)
-	store := app.New()
+	store := app.New("kv-store")
 	config := Config{
 		ID:                  0,
 		N:                   3,
