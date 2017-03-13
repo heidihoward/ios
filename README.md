@@ -5,29 +5,35 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/heidi-ann/ios)](https://goreportcard.com/report/github.com/heidi-ann/ios)
 [![GoDoc](https://godoc.org/github.com/heidi-ann/ios?status.svg)](https://godoc.org/github.com/heidi-ann/ios)
 
-Welcome to Ios, a distributed and strongly consistent key-value store, built upon a novel delegated and decentralised consensus protocol.
+Welcome to Ios, a reliable distributed agreement service for cloud applications. Built upon a novel decentralised consensus protocol, Ios provides vital services for your cloud application such as distributed locking, consistent data structures and leader election as well as distributed configuration and coordination.
 
-*This repository is pre-alpha and under active development. APIs will be broken.*
+*This repository is pre-alpha and under active development. APIs will be broken. This code has not been proven correct and is not ready for production deployment.*
 
+## Getting Started
+These instructions will get you a simple Ios server and client up and running on your local machine. See deployment for notes on how to deploy Ios across a cluster.
+
+### Prerequisites
+Ios is built in [Go](https://golang.org/) version 1.6.2 and is currently supports Go version 1.6 and 1.7. The [Golang site](https://golang.org/) details how to install and setup Go on your local machine. Don't forget to add GOPATH to your .profile.
 
 ### Installation
-
-Most of this project is written using Go version 1.6.2 The [Go lang site](https://golang.org/) details how to install and setup Go. Don't forget to add GOPATH to your .profile. The project has the following dependancies:
-* [glog](github.com/golang/glog) - logging library, in the style of glog for C++
-* [gcfg](gopkg.in/gcfg.v1) - library for parsing git-config style config files
-
-After installing go:
+After installing Go, run:
 ```
 go get github.com/heidi-ann/ios/...
 ```
+This command will copy the Ios source code to $GOPATH/src/github.com/heidi-ann/ios. Then fetch and build the following dependancies:
+* [glog](github.com/golang/glog) - logging library, in the style of glog for C++
+* [gcfg](gopkg.in/gcfg.v1) - library for parsing git-config style config files
+It will then build and install Ios, the server and client binaries will be placed in $GOPATH/bin.
 
-### Quick start
-You can start a 1 node Ios cluster as follows:
+### Up & Running
+You can now start a simple 1 node Ios cluster as follows:
 ```
 cd $GOPATH/src/github.com/heidi-ann/ios/server
 $GOPATH/bin/server -id 0
 ```
-This will start an Ios server with ID 0, clients can now communicate with the server over port 8080 as follows:
+This will start an Ios server providing a simple key-value store. The server is listening for clients on port 8080.
+
+You can now start a Ios client as follows:
 ```
 $ cd $GOPATH/src/github.com/heidi-ann/ios/client
 $ $GOPATH/bin/client
@@ -47,22 +53,48 @@ Enter command: get A
 1
 ...
 ```
-The server is using files called persistent_log_0.temp and persistent_data_0.temp to store Ios's persistent state. If these files are present when the server starts, it will restore the state from these files, if you would like to start a fresh server, make sure to use ``rm *.temp`` first.
+You can now enter commands for the key value store, followed by the enter key. These commands are being send to the Ios server, executed and the result is returned to the user.
 
-### Usage
+The Ios server is using files called persistent_log_0.temp, persistent_snap_0.temp and persistent_data_0.temp to store Ios's persistent state. If these files are present when a server starts, it will restore its state from these files. You can try this by killing the server process and restarting it, it should carry on from where it left off.
 
-#### Client
+When you would like to start a fresh server instance, use ``rm persistent*.temp`` first to clear these files and then start the server again.
 
-The (mode independent) client state is stored in the example.conf file. The client has three possible interfaces:
-* Test - a workload is automatically generated for Ios. This workload is configured using a workload.conf file. An example of this is given in test/workload.conf.
-* Interactive - requests are entered from the terminal. Requests takes the form of either ``get [key]`` or ``update [key] [value]``. There can be multiple commands in a single request, separated by semi-colons
-* REST API - a HTTP server on port 12345
+### Next steps
 
-Each client needs a unique id.
+In this section, we are going to take a closer look at what is going on underneath. We will then use this information to setup a 3 server Ios cluster on your local machine and automatically generate a workload to put it to the test. PS: you might want to start by opening up a few terminal windows.
+
+#### Server configuration
+The server we ran in previous section was using the default configuration file found in [server/example.conf](server/example.conf). The first section of this file lists the Ios servers in the cluster and how the peers can connect to them and the second section lists how the client can connect to them. The configuration file [server/example3.conf](server/example3.conf) shows what this looks like for 3 servers running on localhost. The same configuration file is used for all the servers, at run time they are each given an ID (starting from 0) and use this know which ports to listen on. The rest of configuration file option are described later. After removing the persistent storage, start 3 Ios servers in 3 separate terminal windows as follows:
+
+```
+$GOPATH/bin/server -id [ID] -config example3.config -stderrthreshold=INFO
+```
+For ID 0, 1 and 2
+
+#### Client configuration
+
+Like the servers, the client we ran in previous section was using the default configuration file found in [client/example.conf](client/example.conf). The first section lists the Ios servers in the cluster and how to connect to them. The configuration file [client/example3.conf](client/example3.conf) shows what this looks like for 3 servers currently running on localhost.
+
+We are run a client as before and interact with our 3 servers.
+```
+$GOPATH/bin/client -config example3.config
+```
+
+You should be able to kill and restart the servers to test when the system is available to the client. Since the Ios cluster you have deployed is configured to use strict majority quorums then the system should be available whenever at least two servers are up.
+
+#### Workload configuration
+
+Typing requests into a terminal is, of course, slow and unrealistic. To help test the system, Ios provides test clients which can automatically generate a workload and measure system performance. To run a client in test mode use:
+```
+$GOPATH/bin/client -mode test -config example3.config
+```
+This client will run the workload described in [test/workload.conf](test/workload.conf) and then terminate. It will write performance metrics into a file called latency.csv. Ios currently also support a REST API mode which listens for HTTP on port 12345.
+
+### Contributing
 
 #### Debugging
 
-We use glog for logging. Adding `-logtostderr=true` when running executables prints the logging output. For more information, visit https://godoc.org/github.com/golang/glog.
+We use glog for logging. Adding `-logtostderr=true -v=1` when running executables prints the logging output. For more information, visit https://godoc.org/github.com/golang/glog.
 
 Likewise, the following commands work with the above example and are useful for debugging:
 ```
@@ -72,6 +104,9 @@ sudo tcpdump -i lo0 -nnAS "(src portrange 8080-8092 or dst portrange 8080-8092) 
 sudo strace -p $(pidof server) -T -e fsync -f
 sudo strace -p $(pidof server) -T -e trace=write -f
 ```
+### License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
 ### Benchmarking
 
