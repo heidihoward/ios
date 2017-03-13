@@ -59,7 +59,7 @@ The Ios server is using files called persistent_log_0.temp, persistent_snap_0.te
 
 When you would like to start a fresh server instance, use ``rm persistent*.temp`` first to clear these files and then start the server again.
 
-### Next steps
+## Next steps
 
 In this section, we are going to take a closer look at what is going on underneath. We will then use this information to setup a 3 server Ios cluster on your local machine and automatically generate a workload to put it to the test. PS: you might want to start by opening up a few terminal windows.
 
@@ -90,7 +90,7 @@ $GOPATH/bin/client -mode test -config example3.config
 ```
 This client will run the workload described in [test/workload.conf](test/workload.conf) and then terminate. It will write performance metrics into a file called latency.csv. Ios currently also support a REST API mode which listens for HTTP on port 12345.
 
-### Contributing
+## Contributing
 
 #### Debugging
 
@@ -104,10 +104,11 @@ sudo tcpdump -i lo0 -nnAS "(src portrange 8080-8092 or dst portrange 8080-8092) 
 sudo strace -p $(pidof server) -T -e fsync -f
 sudo strace -p $(pidof server) -T -e trace=write -f
 ```
-### License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
 ### Benchmarking
 
 The benchmarking scripts for Ios can found here https://github.com/heidi-ann/consensus_eval
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
