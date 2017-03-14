@@ -65,6 +65,7 @@ func Create() *Rest {
 
 }
 
+// Next returns the next request for the state machine or false if wishes to terminate
 func (r *Rest) Next() (string, bool) {
 	glog.V(1).Info("Waiting for next request")
 	restreq, ok := <-waiting
@@ -76,6 +77,7 @@ func (r *Rest) Next() (string, bool) {
 	return restreq.Req, true
 }
 
+// Return provides the REST API with the response to the current outstanding request
 func (r *Rest) Return(str string) {
 	glog.V(1).Info("Response received: ", str)
 	restreq := <-outstanding
