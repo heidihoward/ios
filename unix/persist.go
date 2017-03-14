@@ -114,16 +114,16 @@ func restoreSnapshot(snapFile fileHandler, appConfig string) (bool, int, *app.St
 		glog.Warning("Snapshot corrupted, ignoring snapshot", err)
 		return false, -1, app.New(appConfig)
 	}
-	return true, index, app.RestoreSnapshot(snapshot,appConfig)
+	return true, index, app.RestoreSnapshot(snapshot, appConfig)
 }
 
 func setupDummyStorage(io *msgs.Io, MaxLength int, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	glog.Warning("UNSAFE configuration - Do not use in production")
 	go io.DumpPersistentStorage()
-	return false, 0, consensus.NewLog(MaxLength) ,-1, app.New(appConfig)
+	return false, 0, consensus.NewLog(MaxLength), -1, app.New(appConfig)
 }
 
-func setupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int,  persistenceMode string, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
+func setupPersistentStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, MaxLength int, persistenceMode string, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	// setting up persistent log
 	logStorage := openFile(logFile)
 	dataStorage := openFile(dataFile)
@@ -159,7 +159,7 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 	}()
 	// write log updates to persistent storage
 	logStorage.Fd.Close()
-	wal := openWriteAheadFile(logFile,persistenceMode)
+	wal := openWriteAheadFile(logFile, persistenceMode)
 	go func() {
 		for {
 			log := <-io.LogPersist
@@ -200,7 +200,7 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 
 func SetupStorage(logFile string, dataFile string, snapFile string, io *msgs.Io, maxLength int, dummyStorage bool, persistenceMode string, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	if dummyStorage {
-		return setupDummyStorage(io,maxLength, appConfig)
+		return setupDummyStorage(io, maxLength, appConfig)
 	}
- return setupPersistentStorage(logFile, dataFile, snapFile, io, maxLength, persistenceMode, appConfig)
+	return setupPersistentStorage(logFile, dataFile, snapFile, io, maxLength, persistenceMode, appConfig)
 }

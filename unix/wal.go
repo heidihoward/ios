@@ -1,17 +1,15 @@
 package unix
 
 import (
-	"syscall"
-	"os"
-	"time"
 	"github.com/golang/glog"
+	"os"
+	"syscall"
+	"time"
 )
 
-
-
 type WAL struct {
-  fd int
-  mode string
+	fd   int
+	mode string
 }
 
 func openWriteAheadFile(filename string, mode string) WAL {
@@ -32,22 +30,22 @@ func openWriteAheadFile(filename string, mode string) WAL {
 	if err != nil {
 		glog.Fatal(err)
 	}
-  // TOD0: remove hardcoded filesize
-  err = syscall.Fallocate(file,0,0,int64( 64 * 1000 * 1000)) // 64MB
-  if err != nil {
-    glog.Fatal(err)
-  }
-	return WAL{file,mode}
+	// TOD0: remove hardcoded filesize
+	err = syscall.Fallocate(file, 0, 0, int64(64*1000*1000)) // 64MB
+	if err != nil {
+		glog.Fatal(err)
+	}
+	return WAL{file, mode}
 }
 
 func (w WAL) writeAhead(bytes []byte) {
 	startTime := time.Now()
-  _, err := syscall.Write(w.fd,bytes)
+	_, err := syscall.Write(w.fd, bytes)
 	if err != nil {
 		glog.Fatal(err)
 	}
-	if w.mode=="fsync" || w.mode=="direct" {
-  	err = syscall.Fdatasync(w.fd)
+	if w.mode == "fsync" || w.mode == "direct" {
+		err = syscall.Fdatasync(w.fd)
 		if err != nil {
 			glog.Fatal(err)
 		}

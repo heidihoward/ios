@@ -18,19 +18,19 @@ type ServerConfig struct {
 		Address []string
 	}
 	Options struct {
-		Length              int // max log size
-		BatchInterval       int // how often to batch process request in ms, 0 means no batching
-		MaxBatch            int // maximum requests in a batch, unused if BatchInterval=0
-		DelegateReplication int // how many replication coordinators to delegate to when master
-		WindowSize          int // how many requests can the master have inflight at once
-		SnapshotInterval    int // how often to record state machine snapshots
+		Length              int    // max log size
+		BatchInterval       int    // how often to batch process request in ms, 0 means no batching
+		MaxBatch            int    // maximum requests in a batch, unused if BatchInterval=0
+		DelegateReplication int    // how many replication coordinators to delegate to when master
+		WindowSize          int    // how many requests can the master have inflight at once
+		SnapshotInterval    int    // how often to record state machine snapshots
 		QuorumSystem        string // which quorum system to use: either "strict majority", "non-strict majority", "all-in", "one-in" or "fixed:n"
-		IndexExclusivity    bool // if enabled, Ios will assign each index to at most one request
-		Application					string // which application should Ios serve: either "kv-store" or "dummy"
+		IndexExclusivity    bool   // if enabled, Ios will assign each index to at most one request
+		Application         string // which application should Ios serve: either "kv-store" or "dummy"
 	}
 	Unsafe struct {
-		DumpPersistentStorage bool // if enabled, then persistent storage is not written to a file, always set to false
-		PersistenceMode			string // mode of write ahead logging: either "none", "fsync" or "osync", "direct" or "dsync". The "none" option is unsafe.
+		DumpPersistentStorage bool   // if enabled, then persistent storage is not written to a file, always set to false
+		PersistenceMode       string // mode of write ahead logging: either "none", "fsync" or "osync", "direct" or "dsync". The "none" option is unsafe.
 	}
 }
 

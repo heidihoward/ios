@@ -5,7 +5,7 @@ import (
 )
 
 type dummy struct {
-  requests int
+	requests int
 }
 
 func newDummy() *dummy {
@@ -13,11 +13,11 @@ func newDummy() *dummy {
 }
 
 func (d *dummy) Process(request string) string {
-  if request=="ping"{
-    d.requests++
-    return "pong"
-  }
-  return ""
+	if request == "ping" {
+		d.requests++
+		return "pong"
+	}
+	return ""
 }
 
 func (d *dummy) MarshalJSON() ([]byte, error) {
@@ -25,6 +25,6 @@ func (d *dummy) MarshalJSON() ([]byte, error) {
 }
 
 func (d *dummy) UnmarshalJSON(_ []byte) error {
-  // TODO: finish placeholder
+	// TODO: finish placeholder
 	return nil
 }

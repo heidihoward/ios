@@ -10,8 +10,8 @@ type Config struct {
 		Address []string
 	}
 	Parameters struct {
-		Retries int
-		Timeout int
+		Retries     int
+		Timeout     int
 		Application string
 	}
 }

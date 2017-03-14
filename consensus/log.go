@@ -28,7 +28,7 @@ func (l *Log) checkInvariants(index int, nxtEntry msgs.Entry) {
 	}
 	// each index is allocated once per view
 	if prevEntry.View == nxtEntry.View && !reflect.DeepEqual(prevEntry.Requests, nxtEntry.Requests) {
-		glog.Fatal("Index ",index," has been reallocated from ", prevEntry," to " ,nxtEntry,)
+		glog.Fatal("Index ", index, " has been reallocated from ", prevEntry, " to ", nxtEntry)
 	}
 	// entries should only be overwritten by same or higher view
 	if prevEntry.View > nxtEntry.View {
@@ -41,7 +41,7 @@ func NewLog(maxLength int) *Log {
 }
 
 func RestoreLog(maxLength int, startIndex int) *Log {
-	return &Log{make([]msgs.Entry, maxLength), startIndex, startIndex+1, maxLength}
+	return &Log{make([]msgs.Entry, maxLength), startIndex, startIndex + 1, maxLength}
 }
 
 func (l *Log) AddEntries(startIndex int, endIndex int, entries []msgs.Entry) {

@@ -7,7 +7,6 @@ import (
 	"github.com/heidi-ann/ios/services"
 )
 
-
 type StateMachine struct {
 	Cache *Cache
 	Store services.Service
