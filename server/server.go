@@ -18,7 +18,7 @@ import (
 
 // command line flags
 var id = flag.Int("id", -1, "server ID [REQUIRED]") // required flag
-var config_file = flag.String("config", "example.conf", "Server configuration file") // optional flag
+var config_file = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/server/example.conf", "Server configuration file") // optional flag
 var diskPath = flag.String("disk", ".", "Path to directory to store persistent storage") // optional flag
 
 // main entry point of server

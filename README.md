@@ -28,7 +28,6 @@ It will then build and install Ios, the server and client binaries will be place
 ### Up & Running
 You can now start a simple 1 node Ios cluster as follows:
 ```
-cd $GOPATH/src/github.com/heidi-ann/ios/server
 $GOPATH/bin/server -id 0
 ```
 This will start an Ios server providing a simple key-value store. The server is listening for clients on port 8080.
@@ -67,7 +66,7 @@ In this section, we are going to take a closer look at what is going on undernea
 The server we ran in previous section was using the default configuration file found in [server/example.conf](server/example.conf). The first section of this file lists the Ios servers in the cluster and how the peers can connect to them and the second section lists how the client can connect to them. The configuration file [server/example3.conf](server/example3.conf) shows what this looks like for 3 servers running on localhost. The same configuration file is used for all the servers, at run time they are each given an ID (starting from 0) and use this know which ports to listen on. The rest of configuration file options are document at https://godoc.org/github.com/heidi-ann/ios/config. After removing the persistent storage, start 3 Ios servers in 3 separate terminal windows as follows:
 
 ```
-$GOPATH/bin/server -id [ID] -config example3.config -stderrthreshold=INFO
+$GOPATH/bin/server -id [ID] -config $GOPATH/src/github.com/heidi-ann/ios/server/example3.config -stderrthreshold=INFO
 ```
 For ID 0, 1 and 2
 
@@ -77,7 +76,7 @@ Like the servers, the client we ran in previous section was using the default co
 
 We are run a client as before and interact with our 3 servers.
 ```
-$GOPATH/bin/client -config example3.config
+$GOPATH/bin/client -config $GOPATH/src/github.com/heidi-ann/ios/client/example3.config
 ```
 
 You should be able to kill and restart the servers to test when the system is available to the client. Since the Ios cluster you have deployed is configured to use strict majority quorums then the system should be available whenever at least two servers are up.

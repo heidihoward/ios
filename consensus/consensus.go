@@ -14,7 +14,7 @@ type Config struct {
 	LogLength           int       // max log size
 	BatchInterval       int       // how often to batch process request in ms, 0 means no batching
 	MaxBatch            int       // maximum requests in a batch, unused if BatchInterval=0
-	DelegateReplication int       // how many replication coordinators to delegate to when leading
+	DelegateReplication int       // how many replication coordinators to delegate to when master
 	WindowSize          int       // how many requests can the master have inflight at once
 	SnapshotInterval    int       // how often to record state machine snapshots
 	Quorum              QuorumSys // which quorum system to use

@@ -60,10 +60,6 @@ func ParseServerConfig(filename string) ServerConfig {
 	if config.Options.WindowSize <= 0 {
 		glog.Fatal("Window Size must be greater than one")
 	}
-	// if config.Unsafe.PersistenceMode != "none" ||
-	// 	 config.Unsafe.PersistenceMode != "fsync" ||
-	// 	 config.Unsafe.PersistenceMode != "o_sync" {
-	// 	 glog.Fatal("PersistenceMode must be none, fsync or o_sync ", config.Unsafe.PersistenceMode)
-	//  }
+	// TODO: check QuorumSystem and Application
 	return config
 }
