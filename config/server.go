@@ -5,30 +5,36 @@ import (
 	"gopkg.in/gcfg.v1"
 )
 
+// ServerConfig describes the configuration options for an Ios server.
+// Example valid configuration files can be found in server/example.conf and server/example3.conf
 type ServerConfig struct {
+	// Peers holds the addresses of all Ios servers on which peers can connect to them
 	Peers struct {
+		// Address is of the form ipv4:port e.g. 127.0.0.1:8090
 		Address []string
 	}
+	// Clients holds the addresses of all Ios servers on which clients can connect to them
 	Clients struct {
 		Address []string
 	}
 	Options struct {
-		Length              int
-		BatchInterval       int
-		MaxBatch            int
-		DelegateReplication int
-		WindowSize          int
-		SnapshotInterval    int
-		QuorumSystem        string
-		IndexExclusivity    bool
-		Application					string
+		Length              int // max log size
+		BatchInterval       int // how often to batch process request in ms, 0 means no batching
+		MaxBatch            int // maximum requests in a batch, unused if BatchInterval=0
+		DelegateReplication int // how many replication coordinators to delegate to when master
+		WindowSize          int // how many requests can the master have inflight at once
+		SnapshotInterval    int // how often to record state machine snapshots
+		QuorumSystem        string // which quorum system to use: either "strict majority", "non-strict majority", "all-in", "one-in" or "fixed:n"
+		IndexExclusivity    bool // if enabled, Ios will assign each index to at most one request
+		Application					string // which application should Ios serve: either "kv-store" or "dummy"
 	}
 	Unsafe struct {
-		DumpPersistentStorage bool
-		PersistenceMode			string // must be none, fsync or o_sync
+		DumpPersistentStorage bool // if enabled, then persistent storage is not written to a file, always set to false
+		PersistenceMode			string // mode of write ahead logging: either "none", "fsync" or "osync", "direct" or "dsync". The "none" option is unsafe.
 	}
 }
 
+// ParseServerConfig filename will parse the given file and return a ServerConfig object containing its data
 func ParseServerConfig(filename string) ServerConfig {
 	var config ServerConfig
 	err := gcfg.ReadFileInto(&config, filename)

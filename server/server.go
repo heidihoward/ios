@@ -1,4 +1,4 @@
-// Package server provides I/O for Ios servers
+// Package server is the main entry point to run an Ios server on Unix
 
 package main
 
@@ -16,18 +16,18 @@ import (
 	"syscall"
 )
 
-var id = flag.Int("id", -1, "server ID")
-var config_file = flag.String("config", "example.conf", "Server configuration file")
-var diskPath = flag.String("disk", ".", "Path to directory to store persistent storage")
+// command line flags
+var id = flag.Int("id", -1, "server ID [REQUIRED]") // required flag
+var config_file = flag.String("config", "example.conf", "Server configuration file") // optional flag
+var diskPath = flag.String("disk", ".", "Path to directory to store persistent storage") // optional flag
 
+// main entry point of server
 func main() {
 	// set up logging
 	flag.Parse()
 	defer glog.Flush()
-	glog.Info("Starting server ", *id)
-	defer glog.Warning("Shutting down server ", *id)
 
-	// parse configuration
+	// parse configuration file
 	conf := config.ParseServerConfig(*config_file)
 	if *id == -1 {
 		glog.Fatal("ID is required")
@@ -36,7 +36,12 @@ func main() {
 		glog.Fatal("Node ID is ", *id, " but is configured with a ", len(conf.Peers.Address), " node cluster")
 	}
 
+	// logging
+	glog.Info("Starting server ", *id)
+	defer glog.Warning("Shutting down server ", *id)
+
 	// setup iO
+	// TODO: remove this hardcoded limit on channel size
 	iO := msgs.MakeIo(2000, len(conf.Peers.Address))
 
 	// setup persistent storage
@@ -44,7 +49,8 @@ func main() {
 	dataFile := *diskPath + "/persistent_data_" + strconv.Itoa(*id) + ".temp"
 	snapFile := *diskPath + "/persistent_snapshot_" + strconv.Itoa(*id) + ".temp"
 	found, view, log, index, state := unix.SetupStorage(
-		logFile, dataFile, snapFile, iO, conf.Options.Length, conf.Unsafe.DumpPersistentStorage, conf.Unsafe.PersistenceMode, conf.Options.Application)
+		logFile, dataFile, snapFile, iO, conf.Options.Length,
+		conf.Unsafe.DumpPersistentStorage, conf.Unsafe.PersistenceMode, conf.Options.Application)
 
 	// setup peers & clients
 	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))

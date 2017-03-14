@@ -17,7 +17,7 @@ type Config struct {
 	DelegateReplication int       // how many replication coordinators to delegate to when leading
 	WindowSize          int       // how many requests can the master have inflight at once
 	SnapshotInterval    int       // how often to record state machine snapshots
-	Quorum              QuorumSys //
+	Quorum              QuorumSys // which quorum system to use
 	IndexExclusivity    bool      // if enabled, Ios will assign each index to at most one request
 }
 
