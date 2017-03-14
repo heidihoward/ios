@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/heidi-ann/ios/services"
 	"os"
 	"strings"
 )
@@ -13,15 +14,7 @@ type Interative bufio.Reader
 
 func Create(app string) *Interative {
 	fmt.Printf("Starting Ios %s client in interactive mode.\n", app)
-	fmt.Print(`
-The following commands are available:
-	get [key]: to return the value of a given key
-	exists [key]: to test if a given key is present
-	update [key] [value]: to set the value of a given key, if key already exists then overwrite
-	delete [key]: to remove a key value pair if present
-	count: to return the number of keys
-	print: to return all key value pairs
-`)
+	fmt.Print(services.GetInteractiveText(app))
 	return (*Interative)(bufio.NewReader(os.Stdin))
 
 }
