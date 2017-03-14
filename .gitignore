@@ -30,3 +30,6 @@ _testmain.go
 *.csv
 *.log
 results
+*.dat
+server/server
+client/client

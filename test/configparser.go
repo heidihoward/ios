@@ -18,6 +18,7 @@ type WorkloadConfig struct {
 	Config ConfigAuto
 }
 
+// ParseAuto filenames parses workload configation file
 func ParseAuto(filename string) WorkloadConfig {
 	var config WorkloadConfig
 	err := gcfg.ReadFileInto(&config, filename)

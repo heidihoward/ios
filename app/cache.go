@@ -1,4 +1,3 @@
-// TODO: locking could be more fine grained for improved concurreny
 package app
 
 import (
@@ -8,6 +7,7 @@ import (
 	"strconv"
 	"sync"
 )
+// TODO: locking could be more fine grained for improved concurreny
 
 // Cache provides a simple key value store mapping client ID's to the last request sent to them.
 // It is safe for concurreny access
@@ -41,6 +41,8 @@ func (c *Cache) add(res msgs.ClientResponse) {
 	c.Unlock()
 }
 
+// MarshalJSON marshals a cache into bytes
+// default JSON marshalling requires string map keys thus custom function is provided
 func (c *Cache) MarshalJSON() ([]byte, error) {
 	c.Lock()
 	// convert to string map
@@ -56,6 +58,7 @@ func (c *Cache) MarshalJSON() ([]byte, error) {
 	return b, err
 }
 
+// UnmarshalJSON unmarshals bytes into a cache
 func (c *Cache) UnmarshalJSON(snap []byte) error {
 	var strMap map[string]msgs.ClientResponse
 	err := json.Unmarshal(snap, &strMap)
