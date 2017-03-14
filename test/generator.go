@@ -4,6 +4,7 @@ package test
 import (
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/heidi-ann/ios/config"
 	"math/rand"
 	"time"
 )
@@ -11,7 +12,7 @@ import (
 // Generator generates workloads for the store
 // Store has 10 keys
 type Generator struct {
-	Config ConfigAuto
+	Config config.ConfigAuto
 	Keys   []string
 }
 
@@ -25,7 +26,7 @@ func RandStringBytes(n int) string {
 	return string(b)
 }
 
-func Generate(config WorkloadConfig) *Generator {
+func Generate(config config.WorkloadConfig) *Generator {
 	keys := make([]string, config.Config.Keys)
 	for i := range keys {
 		keys[i] = RandStringBytes(config.Config.KeySize)

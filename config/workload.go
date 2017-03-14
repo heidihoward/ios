@@ -1,4 +1,4 @@
-package test
+package config
 
 import (
 	"github.com/golang/glog"
@@ -19,7 +19,7 @@ type WorkloadConfig struct {
 }
 
 // ParseAuto filenames parses workload configation file
-func ParseAuto(filename string) WorkloadConfig {
+func ParseWorkloadConfig(filename string) WorkloadConfig {
 	var config WorkloadConfig
 	err := gcfg.ReadFileInto(&config, filename)
 	if err != nil {

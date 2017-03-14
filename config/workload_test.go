@@ -1,4 +1,4 @@
-package test
+package config
 
 import (
 	"os"
@@ -7,5 +7,5 @@ import (
 
 // TestParseAuto calls ParseAuto for the example configuration file
 func TestParseAuto(t *testing.T) {
-	ParseAuto(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/test/workload.conf")
+	ParseWorkloadConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/test/workload.conf")
 }

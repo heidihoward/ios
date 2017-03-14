@@ -168,7 +168,7 @@ func main() {
 	case "interactive":
 		ioapi = interactive.Create(conf.Parameters.Application)
 	case "test":
-		ioapi = test.Generate(test.ParseAuto(*autoFile))
+		ioapi = test.Generate(config.ParseWorkloadConfig(*autoFile))
 	case "rest":
 		ioapi = rest.Create()
 	default:
