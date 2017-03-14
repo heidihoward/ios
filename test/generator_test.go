@@ -3,6 +3,7 @@ package test
 import (
 	"strings"
 	"testing"
+	"github.com/heidi-ann/ios/config"
 )
 
 func checkKey(t *testing.T, str string, key string) {
@@ -42,7 +43,7 @@ func checkFormat(t *testing.T, req string, key string) {
 
 // check that the generator is producing valid commands
 func TestGenerate(t *testing.T) {
-	conf := WorkloadConfig{ConfigAuto{50, 0, 8, 8, 20, 1}}
+	conf := config.WorkloadConfig{config.ConfigAuto{50, 0, 8, 8, 20, 1}}
 
 	gen := Generate(conf)
 	key := ""
