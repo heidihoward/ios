@@ -12,6 +12,7 @@ type Config struct {
 	Parameters struct {
 		Retries int
 		Timeout int
+		Application string
 	}
 }
 
@@ -31,5 +32,6 @@ func ParseClientConfig(filename string) Config {
 	if config.Parameters.Timeout <= 0 {
 		glog.Fatalf("Timeout must be >= 0")
 	}
+	// TODO: check Application
 	return config
 }

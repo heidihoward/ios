@@ -166,7 +166,7 @@ func main() {
 	var ioapi API
 	switch *mode {
 	case "interactive":
-		ioapi = interactive.Create()
+		ioapi = interactive.Create(conf.Parameters.Application)
 	case "test":
 		ioapi = test.Generate(test.ParseAuto(*autoFile))
 	case "rest":

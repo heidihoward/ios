@@ -11,9 +11,9 @@ import (
 
 type Interative bufio.Reader
 
-func Create() *Interative {
-	fmt.Print(`Starting Ios client in interactive mode.
-
+func Create(app string) *Interative {
+	fmt.Printf("Starting Ios %s client in interactive mode.\n", app)
+	fmt.Print(`
 The following commands are available:
 	get [key]: to return the value of a given key
 	exists [key]: to test if a given key is present
