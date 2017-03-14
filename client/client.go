@@ -1,37 +1,25 @@
-// Package client provides I/O for Ios clients
 package main
 
 import (
 	"bufio"
-	"encoding/csv"
 	"errors"
-	"flag"
 	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/api/interactive"
-	"github.com/heidi-ann/ios/api/rest"
-	"github.com/heidi-ann/ios/config"
 	"github.com/heidi-ann/ios/msgs"
-	"github.com/heidi-ann/ios/test"
 	"io"
-	"math/rand"
 	"net"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
 	"time"
 )
 
-type API interface {
-	Next() (string, bool)
-	Return(string)
+type client struct {
+	id        int
+	requestID int //TODO: write this value to disk
+	stats     *statsFile
+	servers   []string
+	conn      net.Conn
+	rd        *bufio.Reader
+	timeout   time.Duration
+	master    int
 }
-
-var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
-var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/test/workload.conf", "If workload is automatically generated, configure file for workload")
-var statFile = flag.String("stat", "latency.csv", "File to write stats to")
-var mode = flag.String("mode", "interactive", "interactive, rest or test")
-var id = flag.Int("id", -1, "ID of client (must be unique) or random number will be generated")
 
 func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
 	var conn net.Conn
@@ -93,16 +81,13 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 			glog.Warning(err)
 			errCh <- err
 		}
-
 		glog.V(1).Info("Sent")
-
 		// read response
 		reply, err := r.ReadBytes('\n')
 		if err != nil && err != io.EOF {
 			glog.Warning(err)
 			errCh <- err
 		}
-
 		// success, return reply
 		replyCh <- reply
 	}()
@@ -118,176 +103,115 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 	}
 }
 
-func main() {
-	// set up logging
-	flag.Parse()
-	defer glog.Flush()
-
-	// always flush (whatever happens)
-	sigs := make(chan os.Signal, 1)
-	finish := make(chan bool, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	// parse config files
-	conf := config.ParseClientConfig(*configFile)
-	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
-	// TODO: find a better way to handle required flags
-	if *id == -1 {
-		rand.Seed(time.Now().UTC().UnixNano())
-		*id = rand.Int()
-		glog.V(1).Info("ID was not provided, ID ", *id, " has been assigned")
-	}
-
-	glog.V(1).Info("Starting up client ", *id)
-	defer glog.V(1).Info("Shutting down client ", *id)
+func StartClient(id int, statFile string, addrs []string, timeout time.Duration) *client {
+	glog.Info("Starting up client ", id)
 
 	// set up stats collection
-	filename := *statFile
-	glog.V(1).Info("Opening file: ", filename)
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	stats := csv.NewWriter(file)
-	defer stats.Flush()
-
-	// set up request id
-	// TODO: write this value to disk
-	requestID := 1
+	stats := OpenStatsFile(statFile)
 
 	// connecting to server
-	conn, leader, err := connect(conf.Addresses.Address, 10, 0)
+	conn, master, err := connect(addrs, 10, 0)
 	if err != nil {
 		glog.Fatal(err)
 	}
 	rd := bufio.NewReader(conn)
 
-	// setup API
-	var ioapi API
-	switch *mode {
-	case "interactive":
-		ioapi = interactive.Create(conf.Parameters.Application)
-	case "test":
-		ioapi = test.Generate(config.ParseWorkloadConfig(*autoFile))
-	case "rest":
-		ioapi = rest.Create()
-	default:
-		glog.Fatal("Invalid mode: ", mode)
-	}
+	glog.Info("Client is ready to start processing incoming requests")
+	return &client{id, 1, stats, addrs, conn, rd, timeout, master}
+}
 
-	glog.V(1).Info("Client is ready to start processing incoming requests")
-	go func() {
-		for {
-			// get next command
-			text, ok := ioapi.Next()
-			if !ok {
-				finish <- true
+func (c *client) SubmitRequest(text string) (bool, string) {
+	glog.V(1).Info("Request ", c.requestID, " is: ", text)
+
+	// prepare request
+	req := msgs.ClientRequest{c.id, c.requestID, false, text}
+	b, err := msgs.Marshal(req)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	glog.V(1).Info(string(b))
+
+	c.stats.StartRequest(c.requestID)
+	tries := 0
+	var reply *msgs.ClientResponse
+
+	// dispatch request until successful
+	for {
+		tries++
+		if tries > len(c.servers) {
+			req.ForceViewChange = true
+			b, err = msgs.Marshal(req)
+			if err != nil {
+				glog.Fatal(err)
+			}
+		}
+
+		replyBytes, err := dispatcher(b, c.conn, c.rd, c.timeout)
+		if err == nil {
+			//handle reply
+			reply = new(msgs.ClientResponse)
+			err = msgs.Unmarshal(replyBytes, reply)
+
+			if err == nil && !reply.Success {
+				err = errors.New("request marked by server as unsuccessful")
+			}
+			if err == nil && reply.Success {
+				glog.V(1).Info("request was Successful", reply)
 				break
 			}
-			glog.V(1).Info("Request ", requestID, " is: ", text)
-
-			// prepare request
-			req := msgs.ClientRequest{
-				*id, requestID, false, text}
-			b, err := msgs.Marshal(req)
-			if err != nil {
-				glog.Fatal(err)
-			}
-			glog.V(1).Info(string(b))
-
-			startTime := time.Now()
-			tries := 0
-			var reply *msgs.ClientResponse
-
-			// dispatch request until successful
-			for {
-				tries++
-				if tries > len(conf.Addresses.Address) {
-					req.ForceViewChange = true
-					b, err = msgs.Marshal(req)
-					if err != nil {
-						glog.Fatal(err)
-					}
-				}
-
-				replyBytes, err := dispatcher(b, conn, rd, timeout)
-				if err == nil {
-
-					//handle reply
-					reply = new(msgs.ClientResponse)
-					err = msgs.Unmarshal(replyBytes, reply)
-
-					if err == nil && !reply.Success {
-						err = errors.New("request marked by server as unsuccessful")
-					}
-					if err == nil && reply.Success {
-						glog.V(1).Info("request was Successful", reply)
-						break
-					}
-				}
-				glog.Warning("Request ", requestID, " failed due to: ", err)
-
-				// try to establish a new connection
-				for {
-					if conn != nil {
-						err = conn.Close()
-						if err != nil {
-							glog.Warning(err)
-						}
-					}
-					conn, leader, err = connect(conf.Addresses.Address, conf.Parameters.Retries, leader+1)
-					if err == nil {
-						break
-					}
-					glog.Warning("Serious connectivity issues")
-					time.Sleep(time.Second)
-				}
-
-				rd = bufio.NewReader(conn)
-
-			}
-
-			//check reply is not nil
-			if *reply == (msgs.ClientResponse{}) {
-				glog.Fatal("Response is nil")
-			}
-
-			//check reply is as expected
-			if reply.ClientID != *id {
-				glog.Fatal("Response received has wrong ClientID: expected ",
-					*id, " ,received ", reply.ClientID)
-			}
-			if reply.RequestID != requestID {
-				glog.Fatal("Response received has wrong RequestID: expected ",
-					requestID, " ,received ", reply.RequestID)
-			}
-			if !reply.Success {
-				glog.Fatal("Response marked as unsuccessful but not retried")
-			}
-
-			// write to latency to log
-			latency := strconv.FormatInt(time.Since(startTime).Nanoseconds(), 10)
-			err = stats.Write([]string{strconv.FormatInt(startTime.UnixNano(), 10), strconv.Itoa(requestID), latency, strconv.Itoa(tries)})
-			if err != nil {
-				glog.Fatal(err)
-			}
-			stats.Flush()
-			// TODO: call error to check if successful
-
-			requestID++
-			// writing result to user
-			// time.Since(startTime)
-			ioapi.Return(reply.Response)
-
 		}
-	}()
+		glog.Warning("Request ", c.requestID, " failed due to: ", err)
 
-	select {
-	case sig := <-sigs:
-		glog.Warning("Termination due to: ", sig)
-	case <-finish:
-		glog.V(1).Info("No more commands")
+		// try to establish a new connection
+		for {
+			if c.conn != nil {
+				err = c.conn.Close()
+				if err != nil {
+					glog.Warning(err)
+				}
+			}
+			c.conn, c.master, err = connect(c.servers, 10, c.master+1)
+			if err == nil {
+				break
+			}
+			glog.Warning("Serious connectivity issues")
+			time.Sleep(time.Second)
+		}
+
+		c.rd = bufio.NewReader(c.conn)
+
 	}
-	glog.Flush()
 
+	//check reply is not nil
+	if *reply == (msgs.ClientResponse{}) {
+		glog.Fatal("Response is nil")
+	}
+
+	//check reply is as expected
+	if reply.ClientID != *id {
+		glog.Fatal("Response received has wrong ClientID: expected ",
+			*id, " ,received ", reply.ClientID)
+	}
+	if reply.RequestID != c.requestID {
+		glog.Fatal("Response received has wrong RequestID: expected ",
+			c.requestID, " ,received ", reply.RequestID)
+	}
+	if !reply.Success {
+		glog.Fatal("Response marked as unsuccessful but not retried")
+	}
+
+	// write to latency to log
+	c.stats.StopRequest(tries)
+	c.requestID++
+	return true, reply.Response
+}
+
+func (c *client) StopClient() {
+	glog.V(1).Info("Shutting down client ", *id)
+	// close stats file
+	c.stats.CloseStatsFile()
+	// close connection
+	if c.conn != nil {
+		c.conn.Close()
+	}
 }
