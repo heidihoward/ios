@@ -125,6 +125,9 @@ func handleConnection(cn net.Conn) {
 	cn.Close()
 }
 
+// SetupClients listen for client on the given port, it forwards thier requests to the consensus algorithm and
+// then applies them to the state machine
+// SetupClients returns when setup is completed, spawning goroutines to listen for clients.
 func SetupClients(port string, app *app.StateMachine) {
 	application = app
 	notifyClients = msgs.NewNotificator()

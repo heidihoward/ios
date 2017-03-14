@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Rest is a placeholder
 type Rest struct{}
 
 type restrequest struct {
@@ -64,15 +65,15 @@ func Create() *Rest {
 
 }
 
-func (r *Rest) Next() (string, bool, bool) {
+func (r *Rest) Next() (string, bool) {
 	glog.V(1).Info("Waiting for next request")
 	restreq, ok := <-waiting
 	if !ok {
-		return "", false, false
+		return "", false
 	}
 	outstanding <- restreq
 	glog.V(1).Info("Next request received: ", restreq.Req)
-	return restreq.Req, true, true
+	return restreq.Req, true
 }
 
 func (r *Rest) Return(str string) {

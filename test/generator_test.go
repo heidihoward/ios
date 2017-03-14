@@ -48,7 +48,7 @@ func TestGenerate(t *testing.T) {
 	gen := Generate(conf)
 	key := ""
 	for i := 0; i < 100; i++ {
-		str, _, ok := gen.Next()
+		str, ok := gen.Next()
 		if !ok {
 			if conf.Config.Requests != i {
 				t.Errorf("Generator terminated a request %d, should terminate at %d",

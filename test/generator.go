@@ -34,11 +34,11 @@ func Generate(config config.WorkloadConfig) *Generator {
 	return &Generator{config.Config, keys}
 }
 
-func (g *Generator) Next() (string, bool, bool) {
+func (g *Generator) Next() (string, bool) {
 
 	//handle termination after n requests
 	if g.Config.Requests == 0 {
-		return "", false, false
+		return "", false
 	}
 	g.Config.Requests--
 
@@ -53,10 +53,10 @@ func (g *Generator) Next() (string, bool, bool) {
 	glog.V(1).Info("Key is ", key)
 
 	if rand.Intn(100) < g.Config.Reads {
-		return fmt.Sprintf("get %s", key), false, true
+		return fmt.Sprintf("get %s", key), true
 	} else {
 		value := RandStringBytes(g.Config.ValueSize)
-		return fmt.Sprintf("update %s %s", key, value), true, true
+		return fmt.Sprintf("update %s %s", key, value), true
 	}
 }
 

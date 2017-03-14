@@ -23,7 +23,7 @@ import (
 )
 
 type API interface {
-	Next() (string, bool, bool)
+	Next() (string, bool)
 	Return(string)
 }
 
@@ -179,7 +179,7 @@ func main() {
 	go func() {
 		for {
 			// get next command
-			text, _, ok := ioapi.Next()
+			text, ok := ioapi.Next()
 			if !ok {
 				finish <- true
 				break
