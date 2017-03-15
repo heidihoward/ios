@@ -8,14 +8,15 @@ import (
 type rwindow struct {
 	outstanding map[int]bool // outstanding holds in progress request indexes
 	ready       chan int     // indexes that can be allocated
-	windowStart int          // the last committed entry, window is from windowStart+1
-	windowSize  int          // limit on the size of the window, window is to windowStart+windowSize
+	windowStart int          // the last committed entry, window is from windowStart+1 to windowStart+windowSize
+	windowSize  int          // limit on the size of the window
 	sync.RWMutex // lock for concurrent access to outstanding
 }
 
 func newReplicationWindow(startIndex int, windowSize int) *rwindow {
 	outstanding := make(map[int]bool)
 	ready := make(chan int, windowSize)
+	// preload ready with token which are ready
 	for i := startIndex + 1; i <= startIndex+windowSize; i++ {
 		ready <- i
 		outstanding[i] = false
@@ -32,22 +33,15 @@ func (rw *rwindow) nextIndex() int {
 	return index
 }
 
+// TODO: indexCompleted is assuming in-order return
 func (rw *rwindow) indexCompleted(index int) {
 	// remove from outstanding
 	rw.Lock()
 	delete(rw.outstanding, index)
-	rw.Unlock()
-	glog.Info("Index ",index," is completed")
 	// check if we can advance the windowStart
 	// if so, indexes can be loaded into ready
-	rw.Lock()
-	for _, ok := rw.outstanding[rw.windowStart+1]; !ok; {
-		rw.windowStart++
-		newIndex := rw.windowStart + rw.windowSize
-		glog.Info("Advancing window to ",rw.windowStart)
-		glog.Info("Adding index ",newIndex)
-
-		rw.outstanding[newIndex] = false
-	}
+	rw.windowStart++
+	rw.outstanding[rw.windowStart + rw.windowSize] = false
+	rw.ready <- rw.windowStart + rw.windowSize
 	rw.Unlock()
 }
