@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
+	"github.com/heidi-ann/ios/config"
+	"math/rand"
 	"io"
 	"net"
 	"time"
@@ -103,11 +105,20 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 	}
 }
 
+// StartClient creates an Ios client and tries to connect to an Ios cluster
+// If ID is -1 then a random one will be generated
 func StartClient(id int, statFile string, addrs []string, timeout time.Duration) *client {
+	// TODO: find a better way to handle required flags
+	if id == -1 {
+		rand.Seed(time.Now().UTC().UnixNano())
+		id = rand.Int()
+		glog.V(1).Info("ID was not provided, ID ", id, " has been assigned")
+	}
+
 	glog.Info("Starting up client ", id)
 
 	// set up stats collection
-	stats := OpenStatsFile(statFile)
+	stats := openStatsFile(statFile)
 
 	// connecting to server
 	conn, master, err := connect(addrs, 10, 0)
@@ -131,7 +142,7 @@ func (c *client) SubmitRequest(text string) (bool, string) {
 	}
 	glog.V(1).Info(string(b))
 
-	c.stats.StartRequest(c.requestID)
+	c.stats.startRequest(c.requestID)
 	tries := 0
 	var reply *msgs.ClientResponse
 
@@ -201,15 +212,23 @@ func (c *client) SubmitRequest(text string) (bool, string) {
 	}
 
 	// write to latency to log
-	c.stats.StopRequest(tries)
+	c.stats.stopRequest(tries)
 	c.requestID++
 	return true, reply.Response
+}
+
+// StartClientFromConfigFile creates an Ios client
+// If ID is -1 then a random one will be generated
+func StartClientFromConfigFile(id int, statFile string, configFile string) *client {
+	conf := config.ParseClientConfig(configFile)
+	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
+	return StartClient(id, statFile, conf.Addresses.Address, timeout)
 }
 
 func (c *client) StopClient() {
 	glog.V(1).Info("Shutting down client ", *id)
 	// close stats file
-	c.stats.CloseStatsFile()
+	c.stats.closeStatsFile()
 	// close connection
 	if c.conn != nil {
 		c.conn.Close()

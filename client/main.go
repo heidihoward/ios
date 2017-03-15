@@ -8,7 +8,6 @@ import (
 	"github.com/heidi-ann/ios/api/rest"
 	"github.com/heidi-ann/ios/config"
 	"github.com/heidi-ann/ios/test"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -39,12 +38,6 @@ func main() {
 	// parse config files
 	conf := config.ParseClientConfig(*configFile)
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
-	// TODO: find a better way to handle required flags
-	if *id == -1 {
-		rand.Seed(time.Now().UTC().UnixNano())
-		*id = rand.Int()
-		glog.V(1).Info("ID was not provided, ID ", *id, " has been assigned")
-	}
 
 	c := StartClient(*id, *statFile, conf.Addresses.Address, timeout)
 
