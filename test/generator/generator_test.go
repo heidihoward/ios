@@ -1,9 +1,9 @@
-package test
+package generator
 
 import (
+	"github.com/heidi-ann/ios/config"
 	"strings"
 	"testing"
-	"github.com/heidi-ann/ios/config"
 )
 
 func checkKey(t *testing.T, str string, key string) {

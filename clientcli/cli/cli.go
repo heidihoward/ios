@@ -1,5 +1,5 @@
 // Package interactive provides a simple user facing terminal client for Ios.
-package interactive
+package cli
 
 import (
 	"bufio"

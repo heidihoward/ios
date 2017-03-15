@@ -34,8 +34,7 @@ This will start an Ios server providing a simple key-value store. The server is 
 
 You can now start a Ios client as follows:
 ```
-$ cd $GOPATH/src/github.com/heidi-ann/ios/client
-$ $GOPATH/bin/client
+$ $GOPATH/bin/clientcli
 Starting Ios client in interactive mode.
 
 The following commands are available:
@@ -76,7 +75,7 @@ Like the servers, the client we ran in previous section was using the default co
 
 We are run a client as before and interact with our 3 servers.
 ```
-$GOPATH/bin/client -config $GOPATH/src/github.com/heidi-ann/ios/client/example3.config
+$GOPATH/bin/clientcli -config $GOPATH/src/github.com/heidi-ann/ios/client/example3.config
 ```
 
 You should be able to kill and restart the servers to test when the system is available to the client. Since the Ios cluster you have deployed is configured to use strict majority quorums then the system should be available whenever at least two servers are up.

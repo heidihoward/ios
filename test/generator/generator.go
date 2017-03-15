@@ -1,5 +1,5 @@
-// Package test provides clients for testing Ios's performance.
-package test
+// Package generator provides clients for testing Ios's performance.
+package generator
 
 import (
 	"fmt"

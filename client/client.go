@@ -1,13 +1,14 @@
-package main
+// Package client provides Ios client side code for connecting to an Ios cluster
+package client
 
 import (
 	"bufio"
 	"errors"
 	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/msgs"
 	"github.com/heidi-ann/ios/config"
-	"math/rand"
+	"github.com/heidi-ann/ios/msgs"
 	"io"
+	"math/rand"
 	"net"
 	"time"
 )
@@ -199,9 +200,9 @@ func (c *client) SubmitRequest(text string) (bool, string) {
 	}
 
 	//check reply is as expected
-	if reply.ClientID != *id {
+	if reply.ClientID != c.id {
 		glog.Fatal("Response received has wrong ClientID: expected ",
-			*id, " ,received ", reply.ClientID)
+			c.id, " ,received ", reply.ClientID)
 	}
 	if reply.RequestID != c.requestID {
 		glog.Fatal("Response received has wrong RequestID: expected ",
@@ -226,7 +227,7 @@ func StartClientFromConfigFile(id int, statFile string, configFile string) *clie
 }
 
 func (c *client) StopClient() {
-	glog.V(1).Info("Shutting down client ", *id)
+	glog.V(1).Info("Shutting down client ", c.id)
 	// close stats file
 	c.stats.closeStatsFile()
 	// close connection

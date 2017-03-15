@@ -1,28 +1,20 @@
-// Package client provides I/O for Ios clients
 package main
 
 import (
 	"flag"
 	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/api/interactive"
-	"github.com/heidi-ann/ios/api/rest"
+	"github.com/heidi-ann/ios/client"
 	"github.com/heidi-ann/ios/config"
-	"github.com/heidi-ann/ios/test"
+	"github.com/heidi-ann/ios/test/generator"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
 
-type API interface {
-	Next() (string, bool)
-	Return(string)
-}
-
 var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
-var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/test/workload.conf", "If workload is automatically generated, configure file for workload")
+var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/test/workload.conf", "Configure file for workload")
 var statFile = flag.String("stat", "latency.csv", "File to write stats to")
-var mode = flag.String("mode", "interactive", "interactive, rest or test")
 var id = flag.Int("id", -1, "ID of client (must be unique) or random number will be generated")
 
 func main() {
@@ -39,20 +31,10 @@ func main() {
 	conf := config.ParseClientConfig(*configFile)
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 
-	c := StartClient(*id, *statFile, conf.Addresses.Address, timeout)
+	c := client.StartClient(*id, *statFile, conf.Addresses.Address, timeout)
 
 	// setup API
-	var ioapi API
-	switch *mode {
-	case "interactive":
-		ioapi = interactive.Create(conf.Parameters.Application)
-	case "test":
-		ioapi = test.Generate(config.ParseWorkloadConfig(*autoFile))
-	case "rest":
-		ioapi = rest.Create()
-	default:
-		glog.Fatal("Invalid mode: ", mode)
-	}
+	ioapi := generator.Generate(config.ParseWorkloadConfig(*autoFile))
 
 	go func() {
 		for {
