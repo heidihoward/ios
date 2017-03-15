@@ -84,7 +84,7 @@ You should be able to kill and restart the servers to test when the system is av
 
 Typing requests into a terminal is, of course, slow and unrealistic. To help test the system, Ios provides test clients which can automatically generate a workload and measure system performance. To run a client in test mode use:
 ```
-$GOPATH/bin/client -mode test -config example3.config
+$GOPATH/bin/test -config $GOPATH/src/github.com/heidi-ann/ios/client/example3.config
 ```
 This client will run the workload described in [test/workload.conf](test/workload.conf) and then terminate. It will write performance metrics into a file called latency.csv. Ios currently also support a REST API mode which listens for HTTP on port 12345.
 
