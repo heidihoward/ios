@@ -15,6 +15,7 @@ import (
 var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
 var statFile = flag.String("stat", "latency.csv", "File to write stats to")
 var id = flag.Int("id", -1, "ID of client (must be unique) or random number will be generated")
+var port = flag.Int("port", 12345, "Port to listen for HTTP request on")
 
 func main() {
 	// set up logging
@@ -33,7 +34,7 @@ func main() {
 	c := client.StartClient(*id, *statFile, conf.Addresses.Address, timeout)
 
 	// setup API
-	ioapi := rest.Create()
+	ioapi := rest.Create(12345)
 
 	go func() {
 		for {

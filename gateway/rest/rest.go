@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"strconv"
 )
 
 // Rest is a placeholder
@@ -42,8 +43,8 @@ func requestServer(w http.ResponseWriter, req *http.Request) {
 	time.Sleep(time.Second)
 }
 
-func Create() *Rest {
-	port := ":12345"
+func Create(port int) *Rest {
+	portStr := ":"+strconv.Itoa(port)
 	glog.V(1).Info("Setting up HTTP server on ", port)
 
 	//setup HTTP server
@@ -51,7 +52,7 @@ func Create() *Rest {
 	http.HandleFunc("/close", closeServer)
 	http.HandleFunc("/version", versionServer)
 	go func() {
-		err := http.ListenAndServe(port, nil)
+		err := http.ListenAndServe(portStr, nil)
 		if err != nil {
 			glog.Fatal("ListenAndServe: ", err)
 		}
