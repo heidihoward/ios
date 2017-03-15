@@ -1,4 +1,4 @@
-// Package interactive provides a simple user facing terminal client for Ios.
+// Package cli provides a command line interface for interactive with Ios, useful for testing
 package cli
 
 import (
