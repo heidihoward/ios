@@ -1,5 +1,10 @@
 package services
 
+import (
+	"github.com/golang/glog"
+)
+
+
 type Service interface {
 	Process(req string) string
 	MarshalJSON() ([]byte, error)
@@ -13,6 +18,8 @@ func StartService(config string) Service {
 		serv = newStore()
 	case "dummy":
 		serv = newDummy()
+	default:
+		glog.Fatal("No valid service specified")
 	}
 	return serv
 }
