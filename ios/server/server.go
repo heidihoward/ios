@@ -6,7 +6,8 @@ import (
 	"github.com/heidi-ann/ios/config"
 	"github.com/heidi-ann/ios/consensus"
 	"github.com/heidi-ann/ios/msgs"
-	"github.com/heidi-ann/ios/unix"
+	"github.com/heidi-ann/ios/net"
+	"github.com/heidi-ann/ios/storage"
 	"strconv"
 	"strings"
 )
@@ -23,14 +24,14 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 	logFile := diskPath + "/persistent_log_" + strconv.Itoa(id) + ".temp"
 	dataFile := diskPath + "/persistent_data_" + strconv.Itoa(id) + ".temp"
 	snapFile := diskPath + "/persistent_snapshot_" + strconv.Itoa(id) + ".temp"
-	found, view, log, index, state := unix.SetupStorage(
+	found, view, log, index, state := storage.SetupStorage(
 		logFile, dataFile, snapFile, iO, conf.Options.Length,
 		conf.Unsafe.DumpPersistentStorage, conf.Unsafe.PersistenceMode, conf.Options.Application)
 
 	// setup peers & clients
 	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))
-	unix.SetupPeers(id, conf.Peers.Address, iO, failureDetector)
-	unix.SetupClients(strings.Split(conf.Clients.Address[id], ":")[1], state)
+	net.SetupPeers(id, conf.Peers.Address, iO, failureDetector)
+	net.SetupClients(strings.Split(conf.Clients.Address[id], ":")[1], state)
 
 	// configure consensus algorithms
 	quorum := consensus.NewQuorum(conf.Options.QuorumSystem, len(conf.Peers.Address))

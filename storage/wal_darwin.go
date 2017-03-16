@@ -1,6 +1,6 @@
-// +build linux
+// +build darwin
 
-package unix
+package storage
 
 import (
 	"github.com/golang/glog"
@@ -18,22 +18,14 @@ func openWriteAheadFile(filename string, mode string) WAL {
 	var file int
 	var err error
 	switch mode {
-	case "osync":
-		file, err = syscall.Open(filename, syscall.O_SYNC|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-	case "dsync":
-		file, err = syscall.Open(filename, syscall.O_DSYNC|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-	case "direct":
-		file, err = syscall.Open(filename, syscall.O_DIRECT|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	case "none", "fsync":
 		file, err = syscall.Open(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	default:
-		glog.Fatal("PersistenceMode not reconised")
+		glog.Fatal("PersistenceMode not recognised, only fsync and none are avalible on darwin")
 	}
 	if err != nil {
 		glog.Fatal(err)
 	}
-	// TOD0: remove hardcoded filesize
-	err = syscall.Fallocate(file, 0, 0, int64(64*1000*1000)) // 64MB
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -47,7 +39,7 @@ func (w WAL) writeAhead(bytes []byte) {
 		glog.Fatal(err)
 	}
 	if w.mode == "fsync" || w.mode == "direct" {
-		err = syscall.Fdatasync(w.fd)
+		err = syscall.Fsync(w.fd)
 		if err != nil {
 			glog.Fatal(err)
 		}
