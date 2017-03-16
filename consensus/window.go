@@ -1,16 +1,16 @@
 package consensus
 
 import (
-	"sync"
 	"github.com/golang/glog"
+	"sync"
 )
 
 type rwindow struct {
-	outstanding map[int]bool // outstanding holds in progress request indexes
-	ready       chan int     // indexes that can be allocated
-	windowStart int          // the last committed entry, window is from windowStart+1 to windowStart+windowSize
-	windowSize  int          // limit on the size of the window
-	sync.RWMutex // lock for concurrent access to outstanding
+	outstanding  map[int]bool // outstanding holds in progress request indexes
+	ready        chan int     // indexes that can be allocated
+	windowStart  int          // the last committed entry, window is from windowStart+1 to windowStart+windowSize
+	windowSize   int          // limit on the size of the window
+	sync.RWMutex              // lock for concurrent access to outstanding
 }
 
 func newReplicationWindow(startIndex int, windowSize int) *rwindow {
@@ -21,7 +21,7 @@ func newReplicationWindow(startIndex int, windowSize int) *rwindow {
 		ready <- i
 		outstanding[i] = false
 	}
-	return &rwindow{outstanding, ready, startIndex, windowSize,sync.RWMutex{}}
+	return &rwindow{outstanding, ready, startIndex, windowSize, sync.RWMutex{}}
 }
 
 func (rw *rwindow) nextIndex() int {
@@ -29,7 +29,7 @@ func (rw *rwindow) nextIndex() int {
 	rw.Lock()
 	rw.outstanding[index] = true
 	rw.Unlock()
-	glog.V(1).Info("Allocating index ",index)
+	glog.V(1).Info("Allocating index ", index)
 	return index
 }
 
@@ -41,7 +41,7 @@ func (rw *rwindow) indexCompleted(index int) {
 	// check if we can advance the windowStart
 	// if so, indexes can be loaded into ready
 	rw.windowStart++
-	rw.outstanding[rw.windowStart + rw.windowSize] = false
+	rw.outstanding[rw.windowStart+rw.windowSize] = false
 	rw.ready <- rw.windowStart + rw.windowSize
 	rw.Unlock()
 }

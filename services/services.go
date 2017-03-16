@@ -4,7 +4,6 @@ import (
 	"github.com/golang/glog"
 )
 
-
 type Service interface {
 	Process(req string) string
 	MarshalJSON() ([]byte, error)

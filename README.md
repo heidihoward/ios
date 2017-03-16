@@ -28,7 +28,7 @@ It will then build and install Ios, the server and client binaries will be place
 ### Up & Running
 You can now start a simple 1 node Ios cluster as follows:
 ```
-$GOPATH/bin/server -id 0
+$GOPATH/bin/ios -id 0
 ```
 This will start an Ios server providing a simple key-value store. The server is listening for clients on port 8080.
 
@@ -73,7 +73,7 @@ You can then run server instances in docker passing configuration through direct
 docker run -p 8080:8080 ios -id 0
 ```
 
-Note that this will only use storage local to the container instance. If you want persistence/recoverability for instances you will need to store persistence logs on a mounted data volume 
+Note that this will only use storage local to the container instance. If you want persistence/recoverability for instances you will need to store persistence logs on a mounted data volume
 
 ## Next steps
 
@@ -83,7 +83,7 @@ In this section, we are going to take a closer look at what is going on undernea
 The server we ran in previous section was using the default configuration file found in [server/example.conf](server/example.conf). The first section of this file lists the Ios servers in the cluster and how the peers can connect to them and the second section lists how the client can connect to them. The configuration file [server/example3.conf](server/example3.conf) shows what this looks like for 3 servers running on localhost. The same configuration file is used for all the servers, at run time they are each given an ID (starting from 0) and use this to know which ports to listen on. The rest of the configuration file options are documented at https://godoc.org/github.com/heidi-ann/ios/config. After removing the persistent storage, start 3 Ios servers in 3 separate terminal windows as follows:
 
 ```
-$GOPATH/bin/server -id [ID] -config $GOPATH/src/github.com/heidi-ann/ios/server/example3.conf -stderrthreshold=INFO
+$GOPATH/bin/ios -id [ID] -config $GOPATH/src/github.com/heidi-ann/ios/server/example3.conf -stderrthreshold=INFO
 ```
 For ID 0, 1 and 2
 

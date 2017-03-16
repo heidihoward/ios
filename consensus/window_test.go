@@ -1,8 +1,8 @@
 package consensus
 
 import (
-	"testing"
 	"github.com/golang/glog"
+	"testing"
 )
 
 func TestNextIndex(t *testing.T) {
