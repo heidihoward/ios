@@ -40,7 +40,7 @@ func (rw *rwindow) indexCompleted(index int) {
 
 	// check if we can advance the windowStart
 	// if so, indexes can be loaded into ready
-	for !rw.outstanding[index%rw.windowSize] && (index%rw.windowSize == rw.windowStart+1) {
+	for !rw.outstanding[index%rw.windowSize] && (index%rw.windowSize == (rw.windowStart+1)%rw.windowSize) {
 		glog.V(1).Info("Moving window")
 		rw.windowStart++
 		glog.V(1).Info("marking index as oustanding: ", (rw.windowStart+rw.windowSize)%rw.windowSize)
