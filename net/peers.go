@@ -150,7 +150,7 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.Fail
 	}
 
 	//set up peer server
-	glog.Info("Starting up peer server on ",addresses[id])
+	glog.Info("Starting up peer server on ", addresses[id])
 	peerPort := strings.Split(addresses[id], ":")[1]
 	listeningPort := ":" + peerPort
 	lnPeers, err := net.Listen("tcp", listeningPort)

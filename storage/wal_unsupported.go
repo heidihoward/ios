@@ -9,7 +9,7 @@ import (
 )
 
 type WAL struct {
-	file   *os.File
+	file *os.File
 	mode string
 }
 
