@@ -27,6 +27,7 @@ func (i *Interative) Next() (string, bool) {
 		glog.Fatal(err)
 	}
 	text = strings.Trim(text, "\n")
+	text = strings.Trim(text, "\r")
 	glog.V(1).Info("User entered", text)
 	return text, true
 }
