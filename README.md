@@ -57,6 +57,24 @@ The Ios server is using files called persistent_log_0.temp, persistent_snap_0.te
 
 When you would like to start a fresh server instance, use ``rm persistent*.temp`` first to clear these files and then start the server again.
 
+## Building in Docker
+
+Alternatively you can build and run in docker. Make sure Docker is installed and running, then clone this repository.
+
+Build an image named 'ios' using the command
+
+```
+docker build -t ios .
+```
+
+You can then run server instances in docker passing configuration through directly (be sure to expose the ports from the container). E.g:
+
+```
+docker run -p 8080:8080 ios -id 0
+```
+
+Note that this will only use storage local to the container instance. If you want persistence/recoverability for instances you will need to store persistence logs on a mounted data volume 
+
 ## Next steps
 
 In this section, we are going to take a closer look at what is going on underneath. We will then use this information to setup a 3 server Ios cluster on your local machine and automatically generate a workload to put it to the test. PS: you might want to start by opening up a few terminal windows.
