@@ -1,4 +1,4 @@
-package unix
+package storage
 
 import (
 	"bufio"
@@ -72,6 +72,22 @@ func restoreLog(logFile fileHandler, MaxLength int, snapshotIndex int) (bool, *c
 	return found, log
 }
 
+// blocking & non-terminating
+func updateLog(logFile string, persistenceMode string, updates chan msgs.LogUpdate, acks chan msgs.LogUpdate) {
+	wal := openWriteAheadFile(logFile, persistenceMode)
+	for {
+		log := <-updates
+		glog.V(1).Info("Updating log with ", log)
+		b, err := msgs.Marshal(log)
+		if err != nil {
+			glog.Fatal(err)
+		}
+		// write to persistent storage
+		wal.writeAhead(b)
+		acks <- log
+	}
+}
+
 func restoreView(viewFile fileHandler) (bool, int) {
 	found := false
 	view := 0
@@ -88,6 +104,21 @@ func restoreView(viewFile fileHandler) (bool, int) {
 		}
 		found = true
 		view, _ = strconv.Atoi(string(b))
+	}
+}
+
+// blocking & non-terminating
+func updateView(file fileHandler, updates chan int, acks chan int) {
+	for {
+		view := <-updates
+		glog.Info("Updating view to ", view, " in persistent storage")
+		_, err := file.Fd.Write([]byte(strconv.Itoa(view)))
+		_, err = file.Fd.Write([]byte("\n"))
+		if err != nil {
+			glog.Fatal(err)
+		}
+		file.Fd.Sync()
+		acks <- view
 	}
 }
 
@@ -117,6 +148,28 @@ func restoreSnapshot(snapFile fileHandler, appConfig string) (bool, int, *app.St
 	return true, index, app.RestoreSnapshot(snapshot, appConfig)
 }
 
+// BUG: leaking open files & not flushing correctly
+// blocking & non-terminating
+func updateSnapshot(snapFile string, snaps chan msgs.Snapshot) {
+	for {
+		snap := <-snaps
+		glog.V(1).Info("Saving request cache and state machine snapshot upto index", snap.Index,
+			" of size ", len(snap.Bytes))
+		file, err := os.OpenFile(snapFile, os.O_RDWR|os.O_CREATE, 0777)
+		if err != nil {
+			glog.Fatal(err)
+		}
+
+		_, err = file.Write([]byte(strconv.Itoa(snap.Index)))
+		_, err = file.Write([]byte("\n"))
+		_, err = file.Write([]byte(snap.Bytes))
+		_, err = file.Write([]byte("\n"))
+		if err != nil {
+			glog.Fatal(err)
+		}
+	}
+}
+
 func setupDummyStorage(io *msgs.Io, MaxLength int, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
 	glog.Warning("UNSAFE configuration - Do not use in production")
 	go io.DumpPersistentStorage()
@@ -144,56 +197,12 @@ func setupPersistentStorage(logFile string, dataFile string, snapFile string, io
 	}
 
 	// write view updates to persistent storage
-	go func() {
-		for {
-			view := <-io.ViewPersist
-			glog.V(1).Info("Updating view to ", view)
-			_, err := dataStorage.Fd.Write([]byte(strconv.Itoa(view)))
-			_, err = dataStorage.Fd.Write([]byte("\n"))
-			if err != nil {
-				glog.Fatal(err)
-			}
-			dataStorage.Fd.Sync()
-			io.ViewPersistFsync <- view
-		}
-	}()
+	go updateView(dataStorage, io.ViewPersist, io.ViewPersistFsync)
 	// write log updates to persistent storage
 	logStorage.Fd.Close()
-	wal := openWriteAheadFile(logFile, persistenceMode)
-	go func() {
-		for {
-			log := <-io.LogPersist
-			glog.V(1).Info("Updating log with ", log)
-			b, err := msgs.Marshal(log)
-			if err != nil {
-				glog.Fatal(err)
-			}
-			// write to persistent storage
-			wal.writeAhead(b)
-			//n2, err := logStorage.Fd.Write([]byte("\n"))
-			io.LogPersistFsync <- log
-		}
-	}()
+	go updateLog(logFile, persistenceMode, io.LogPersist, io.LogPersistFsync)
 	// write state machine snapshots to persistent storage
-	go func() {
-		for {
-			snap := <-io.SnapshotPersist
-			glog.V(1).Info("Saving request cache and state machine snapshot upto index", snap.Index,
-				" of size ", len(snap.Bytes))
-			file, err := os.OpenFile(snapFile, os.O_RDWR|os.O_CREATE, 0777)
-			if err != nil {
-				glog.Fatal(err)
-			}
-
-			_, err = file.Write([]byte(strconv.Itoa(snap.Index)))
-			_, err = file.Write([]byte("\n"))
-			_, err = file.Write([]byte(snap.Bytes))
-			_, err = file.Write([]byte("\n"))
-			if err != nil {
-				glog.Fatal(err)
-			}
-		}
-	}()
+	go updateSnapshot(snapFile, io.SnapshotPersist)
 
 	return foundView, view, log, index, state
 }

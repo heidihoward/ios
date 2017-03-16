@@ -61,7 +61,7 @@ func ParseServerConfig(filename string) ServerConfig {
 		glog.Fatal("Window Size must be greater than one")
 	}
 	if config.Options.Application != "kv-store" && config.Options.Application != "dummy" {
-		glog.Fatal("Application must be either kv-store or dummy but is ",config.Options.Application)
+		glog.Fatal("Application must be either kv-store or dummy but is ", config.Options.Application)
 	}
 	// TODO: check QuorumSystem
 	return config

@@ -5,9 +5,9 @@ import (
 	"github.com/golang/glog"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 )
 
 // Rest is a placeholder
@@ -44,7 +44,7 @@ func requestServer(w http.ResponseWriter, req *http.Request) {
 }
 
 func Create(port int) *Rest {
-	portStr := ":"+strconv.Itoa(port)
+	portStr := ":" + strconv.Itoa(port)
 	glog.V(1).Info("Setting up HTTP server on ", port)
 
 	//setup HTTP server
