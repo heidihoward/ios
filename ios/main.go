@@ -9,12 +9,17 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"strings"
+	"strconv"
 )
 
 // command line flags
 var id = flag.Int("id", -1, "server ID [REQUIRED]")                                                                                          // required flag
 var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/ios/example.conf", "Server configuration file") // optional flag
 var diskPath = flag.String("disk", ".", "Path to directory to store persistent storage")                                                     // optional flag
+var peerPort = flag.Int("listen-peers", 0, "Overwrite the port specified in config file to listen for peers on")                                                     // optional flag
+var clientPort = flag.Int("listen-clients", 0, "Overwrite the port specified in config file to listen for clients on")                                                     // optional flag
+
 
 // entry point of server executable
 func main() {
@@ -29,6 +34,19 @@ func main() {
 	}
 	if *id >= len(conf.Peers.Address) {
 		glog.Fatal("Node ID is ", *id, " but is configured with a ", len(conf.Peers.Address), " node cluster")
+	}
+
+	// overwrite ports if given
+	if *peerPort != 0 {
+		glog.Info("Peer port overwritten to ",*peerPort)
+		ip := strings.Split(conf.Peers.Address[*id],":")[0]
+		conf.Peers.Address[*id]=ip+":"+strconv.Itoa(*peerPort)
+	}
+
+	if *clientPort != 0 {
+		glog.Info("Client port overwritten to ",*clientPort)
+		ip := strings.Split(conf.Clients.Address[*id],":")[0]
+		conf.Clients.Address[*id]=ip+":"+strconv.Itoa(*clientPort)
 	}
 
 	// logging

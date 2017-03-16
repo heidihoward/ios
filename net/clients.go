@@ -134,7 +134,7 @@ func SetupClients(port string, app *app.StateMachine) {
 	go stateMachine()
 
 	// set up client server
-	glog.Info("Starting up client server")
+	glog.Info("Starting up client server on port ",port)
 	listeningPort := ":" + port
 	ln, err := net.Listen("tcp", listeningPort)
 	if err != nil {
