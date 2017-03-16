@@ -52,5 +52,20 @@ func TestOutOfOrder(t *testing.T) {
 	if window.windowStart != 2 {
 		t.Error(fmt.Printf("Window has not moved to expected position. Actual position: %v", window.windowStart))
 	}
+}
 
+func TestWrapAroundWindowSize(t *testing.T) {
+	glog.Info("Starting enough requests to wrap around array")
+	window := newReplicationWindow(-1, 5)
+
+	for i := 0; i < 100; i++ {
+		index := window.nextIndex()
+		if index != i {
+			t.Fatal(fmt.Printf("Unexpected index at %v", i))
+		}
+		window.indexCompleted(i)
+		if window.windowStart != i {
+			t.Fatal(fmt.Printf("Window has not moved to expected position. Actual position: %v, Expected Position: %v", window.windowStart, i))
+		}
+	}
 }
