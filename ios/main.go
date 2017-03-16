@@ -26,6 +26,11 @@ func main() {
 	flag.Parse()
 	defer glog.Flush()
 
+	// check go path is set
+	if os.Getenv("GOPATH")=="" {
+		glog.Fatal("GOPATH not set")
+	}
+
 	// parse configuration file
 	conf := config.ParseServerConfig(*configFile)
 	if *id == -1 {
