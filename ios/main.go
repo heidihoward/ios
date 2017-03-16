@@ -13,7 +13,7 @@ import (
 
 // command line flags
 var id = flag.Int("id", -1, "server ID [REQUIRED]")                                                                                          // required flag
-var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/server/example.conf", "Server configuration file") // optional flag
+var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/ios/example.conf", "Server configuration file") // optional flag
 var diskPath = flag.String("disk", ".", "Path to directory to store persistent storage")                                                     // optional flag
 
 // entry point of server executable
