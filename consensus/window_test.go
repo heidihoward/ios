@@ -1,8 +1,10 @@
 package consensus
 
 import (
-	"github.com/golang/glog"
+	"fmt"
 	"testing"
+
+	"github.com/golang/glog"
 )
 
 func TestNextIndex(t *testing.T) {
@@ -18,4 +20,37 @@ func TestNextIndex(t *testing.T) {
 	if index2 != 1 {
 		t.Error("ReplicationWindow giving wrong index", index2)
 	}
+}
+
+func TestOutOfOrder(t *testing.T) {
+	glog.Info("Starting out of order window test")
+	window := newReplicationWindow(-1, 5)
+
+	// Get first 5 indices
+	for i := 0; i < 5; i++ {
+		index := window.nextIndex()
+		if index != i {
+			t.Error(fmt.Printf("Unexpected index at %v", i))
+		}
+	}
+	if window.windowStart != -1 {
+		t.Error("Window has moved before any indices marked completed")
+	}
+	//Mark index 1 as completed, window should not have moved
+	window.indexCompleted(1)
+	if window.windowStart != -1 {
+		t.Error("Window has moved before first index marked completed")
+	}
+	//Mark index 2 as completed, window should not have moved
+	window.indexCompleted(2)
+	if window.windowStart != -1 {
+		t.Error("Window has moved before first index marked completed")
+	}
+
+	//Mark first index completed, window should move 3
+	window.indexCompleted(0)
+	if window.windowStart != 2 {
+		t.Error(fmt.Printf("Window has not moved to expected position. Actual position: %v", window.windowStart))
+	}
+
 }
