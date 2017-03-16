@@ -16,7 +16,8 @@ before_install:
 - docker logs node1
 - docker logs node2
 - docker stop node0
-- docker run --net=ios -it --name test --entrypoint test ios -config src/github.com/heidi-ann/ios/dockerscripts/dockerClientExample3.conf -logtostderr=true
+- docker start test
+- docker exec -it test test -config src/github.com/heidi-ann/ios/dockerscripts/dockerClientExample3.conf -logtostderr=true
 - docker logs node1
 - docker logs node2
 - docker exec -t test cat latency.csv
