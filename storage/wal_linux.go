@@ -19,13 +19,13 @@ func openWriteAheadFile(filename string, mode string) WAL {
 	var err error
 	switch mode {
 	case "osync":
-		file, err = syscall.Open(filename, syscall.O_SYNC|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		file, err = syscall.Open(filename, syscall.O_SYNC|os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	case "dsync":
-		file, err = syscall.Open(filename, syscall.O_DSYNC|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		file, err = syscall.Open(filename, syscall.O_DSYNC|os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	case "direct":
-		file, err = syscall.Open(filename, syscall.O_DIRECT|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		file, err = syscall.Open(filename, syscall.O_DIRECT|os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	case "none", "fsync":
-		file, err = syscall.Open(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		file, err = syscall.Open(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	default:
 		glog.Fatal("PersistenceMode not reconised")
 	}
@@ -43,6 +43,7 @@ func openWriteAheadFile(filename string, mode string) WAL {
 func (w WAL) writeAhead(bytes []byte) {
 	startTime := time.Now()
 	_, err := syscall.Write(w.fd, bytes)
+	_,_ = syscall.Write(w.fd, []byte("\n"))
 	if err != nil {
 		glog.Fatal(err)
 	}

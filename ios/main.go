@@ -27,7 +27,7 @@ func main() {
 	defer glog.Flush()
 
 	// check go path is set
-	if os.Getenv("GOPATH")=="" {
+	if os.Getenv("GOPATH") == "" {
 		glog.Fatal("GOPATH not set")
 	}
 

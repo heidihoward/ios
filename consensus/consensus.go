@@ -1,4 +1,6 @@
 //Package consensus implements the core of the Ios consensus algorithm.
+//Package consensus is pure and does not perform any of its own IO operations such as writing to disk or sending packets.
+//It is uses msgs.Io for this purpose.
 package consensus
 
 import (
@@ -21,19 +23,22 @@ type Config struct {
 	IndexExclusivity    bool      // if enabled, Ios will assign each index to at most one request
 }
 
+// state describes the current state of the consensus algorithm
 type state struct {
-	View         int               // local view number (persistent)
-	Log          *Log              // log entries, index from 0 (persistent)
-	CommitIndex  int               // index of the last entry applied to the state machine, -1 means no entries have been applied yet
-	MasterID     int               // ID of the current master, calculated from View
-	LastSnapshot int               // index of the last state machine snapshot
-	StateMachine *app.StateMachine // ref to current state machine
-	Failures     *msgs.FailureNotifier
+	View         int                   // local view number (persistent)
+	Log          *Log                  // log entries, index from 0 (persistent)
+	CommitIndex  int                   // index of the last entry applied to the state machine, -1 means no entries have been applied yet
+	MasterID     int                   // ID of the current master, calculated from View
+	LastSnapshot int                   // index of the last state machine snapshot
+	StateMachine *app.StateMachine     // ref to current state machine
+	Failures     *msgs.FailureNotifier // ref to failure notifier to subscribe to failure notification
 }
 
+// noop is a explicitly empty request
 var noop = msgs.ClientRequest{-1, -1, false, "noop"}
 
-// Init runs the consensus algorithm.
+// Init runs a fresh instance of the consensus algorithm.
+// The caller is requried to process Io requests using msgs.Io
 // It will not return until the application is terminated.
 func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureNotifier) {
 
@@ -64,9 +69,12 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 
 }
 
+// Recover restores an instance of the consensus algorithm.
+// The caller is requried to process Io requests using msgs.Io
+// It will not return until the application is terminated.
 func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int, fail *msgs.FailureNotifier) {
 	// setup
-	glog.V(1).Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
+	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
 
 	// restore previous state
 	state := state{
@@ -92,14 +100,13 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 			}
 		}
 	}
-	glog.V(1).Info("Recovered ", state.CommitIndex+1, " committed entries")
+	glog.Info("Recovered ", state.CommitIndex+1, " committed entries")
 
 	//  do not start leader without view change
 
 	// operator as normal node
-	glog.V(1).Info("Starting participant module, ID ", config.ID)
+	glog.Info("Starting participant module, ID ", config.ID)
 	go runCoordinator(&state, io, config)
 	go monitorMaster(&state, io, config, false)
 	runParticipant(&state, io, config)
-
 }

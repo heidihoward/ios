@@ -27,6 +27,8 @@ _testmain.go
 
 # project specific
 *.temp
+*.out
+*.html
 *.csv
 *.log
 results

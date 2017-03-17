@@ -18,7 +18,7 @@ func openWriteAheadFile(filename string, mode string) WAL {
 	var err error
 	switch mode {
 	case "none", "fsync":
-		file, err = os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		file, err = os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	default:
 		glog.Fatal("PersistenceMode not recognised, only fsync and none are avalible on darwin")
 	}
@@ -34,6 +34,7 @@ func openWriteAheadFile(filename string, mode string) WAL {
 func (w WAL) writeAhead(bytes []byte) {
 	startTime := time.Now()
 	_, err := w.file.Write(bytes)
+	_,_ = w.file.Write([]byte("\n"))
 	if err != nil {
 		glog.Fatal(err)
 	}

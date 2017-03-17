@@ -6,6 +6,7 @@ import (
 
 type Service interface {
 	Process(req string) string
+	CheckFormat(req string) bool
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON(snap []byte) error
 }

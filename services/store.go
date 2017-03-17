@@ -1,4 +1,4 @@
-// Package store provides a simple key value store
+// Package services provides a simple key value store
 // Not safe for concurreny access
 // TODO: replace map with https://github.com/orcaman/concurrent-map
 package services
@@ -83,6 +83,20 @@ func (s *store) Process(req string) string {
 		}
 	}
 	return reply
+}
+
+func (s *store) CheckFormat(req string) bool {
+	request := strings.Split(strings.Trim(req, "\n"), " ")
+	switch request[0] {
+	case "update":
+		return len(request) == 3
+	case "exists", "get", "delete":
+		return len(request) == 2
+	case "count","print":
+		return len(request) == 1
+	default:
+		return false
+	}
 }
 
 func (s *store) print() string {

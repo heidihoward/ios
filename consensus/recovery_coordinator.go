@@ -14,7 +14,7 @@ func runRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 	} else if endIndex < startIndex {
 		glog.Fatal("Invalid recovery range ", startIndex, endIndex)
 	}
-	glog.V(1).Info("Starting recovery for indexes ", startIndex, " to ", endIndex)
+	glog.Info("Starting recovery for indexes ", startIndex, " to ", endIndex)
 
 	// dispatch query to all
 	query := msgs.QueryRequest{config.ID, view, startIndex, endIndex}
@@ -79,7 +79,7 @@ func runRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 			}
 		}
 	}
-	glog.V(1).Info("New view phase is finished")
+	glog.Info("New view phase is finished")
 
 	// set the next view and marked as uncommitted
 	// TODO: add shortcut to skip prepare phase is entries are already committed.
@@ -92,6 +92,6 @@ func runRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 	<-io.Incoming.Responses.Coordinate
 	// TODO: check msg replies to the msg we just sent
 
-	glog.V(1).Info("Recovery completed for indexes ", startIndex, " to ", endIndex)
+	glog.Info("Recovery completed for indexes ", startIndex, " to ", endIndex)
 	return true
 }

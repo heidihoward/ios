@@ -5,20 +5,22 @@ import (
 	"gopkg.in/gcfg.v1"
 )
 
+// ConfigAuto describes a client workload to be generated.
 type ConfigAuto struct {
-	Reads     int // percentage of read requests
-	Interval  int // milliseconand delay between client request and response
+	Reads     int // percentage of read requests, the remaining requests are writes.
+	Interval  int // milliseconand delay between recieving a response and sending next request
 	KeySize   int // size of key for generated requests, unit is string characters
 	ValueSize int // size of value for generated requests, unit is string characters
-	Requests  int // terminate after this number of requests
+	Requests  int // terminate after this number of requests have been completed
 	Keys      int // number of keys to operate on
 }
 
+// WorkloadConfig is a wrapper around ConfigAuto.
 type WorkloadConfig struct {
 	Config ConfigAuto
 }
 
-// ParseAuto filenames parses workload configation file
+// ParseWorkloadConfig filenames parses the given workload configation file.
 func ParseWorkloadConfig(filename string) WorkloadConfig {
 	var config WorkloadConfig
 	err := gcfg.ReadFileInto(&config, filename)
