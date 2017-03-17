@@ -34,7 +34,7 @@ func (rw *rwindow) nextIndex() int {
 func (rw *rwindow) indexCompleted(index int) {
 	// remove from outstanding
 	rw.Lock()
-	glog.V(1).Info("marking index no longer oustanding: ", index%rw.windowSize)
+	glog.V(1).Info("marking index no longer outstanding: ", index%rw.windowSize)
 	glog.V(1).Info("Window start is: ", rw.windowStart)
 	rw.outstanding[index%rw.windowSize] = false
 
@@ -43,7 +43,7 @@ func (rw *rwindow) indexCompleted(index int) {
 	for !rw.outstanding[index%rw.windowSize] && (index%rw.windowSize == (rw.windowStart+1)%rw.windowSize) {
 		glog.V(1).Info("Moving window")
 		rw.windowStart++
-		glog.V(1).Info("marking index as oustanding: ", (rw.windowStart+rw.windowSize)%rw.windowSize)
+		glog.V(1).Info("marking index as outstanding: ", (rw.windowStart+rw.windowSize)%rw.windowSize)
 		rw.outstanding[(rw.windowStart+rw.windowSize)%rw.windowSize] = true
 		rw.ready <- rw.windowStart + rw.windowSize
 		index++

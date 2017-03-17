@@ -2,6 +2,7 @@ package msgs
 
 // MESSAGE FORMATS
 
+// ClientRequest desribes a request.
 type ClientRequest struct {
 	ClientID        int
 	RequestID       int
@@ -9,6 +10,7 @@ type ClientRequest struct {
 	Request         string
 }
 
+// ClientResponse desribes a request response.
 type ClientResponse struct {
 	ClientID  int
 	RequestID int
@@ -16,17 +18,20 @@ type ClientResponse struct {
 	Response  string
 }
 
+// Client wraps a ClientRequest and ClientResponse.
 type Client struct {
 	Request  ClientRequest
 	Response ClientResponse
 }
 
+// Entry describes a item stored in the replicated log.
 type Entry struct {
 	View      int
 	Committed bool
 	Requests  []ClientRequest
 }
 
+// PrepareRequest describes a Prepare messages.
 type PrepareRequest struct {
 	SenderID   int
 	View       int
@@ -35,16 +40,19 @@ type PrepareRequest struct {
 	Entries    []Entry
 }
 
+// PrepareResponse describes a Prepare response messages.
 type PrepareResponse struct {
 	SenderID int
 	Success  bool
 }
 
+// Prepare wraps a PrepareRequest and PrepareResponse.
 type Prepare struct {
 	Request  PrepareRequest
 	Response PrepareResponse
 }
 
+// CommitRequest describes a Commit messages.
 type CommitRequest struct {
 	SenderID   int
 	StartIndex int
@@ -52,12 +60,14 @@ type CommitRequest struct {
 	Entries    []Entry
 }
 
+// CommitResponse describes a Commit response messages.
 type CommitResponse struct {
 	SenderID    int
 	Success     bool
 	CommitIndex int
 }
 
+// Commit wraps a CommitRequest and CommitResponse.
 type Commit struct {
 	Request  CommitRequest
 	Response CommitResponse

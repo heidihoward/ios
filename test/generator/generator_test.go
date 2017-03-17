@@ -2,53 +2,31 @@ package generator
 
 import (
 	"github.com/heidi-ann/ios/config"
+	"github.com/heidi-ann/ios/services"
 	"strings"
 	"testing"
 )
 
-func checkKey(t *testing.T, str string, key string) {
-	if key != str {
-		t.Errorf("Invalid key: '%s' '%s'", str, key)
-	}
-	if len(str) != 8 {
-		t.Errorf("Wrong key length")
-	}
-}
-
-func checkValue(t *testing.T, str string) {
-	if len(str) != 8 {
-		t.Errorf("Invalid value: '%s'", str)
-	}
-}
-
-func checkFormat(t *testing.T, req string, key string) {
+func checkFormatSize(t *testing.T, req string, keySize int, valueSize int) {
 	request := strings.Split(strings.Trim(req, "\n"), " ")
 
-	switch request[0] {
-	case "update":
-		if len(request) != 3 {
-			t.Errorf("Misformatted update request: '%s'", req)
-		}
-		checkKey(t, request[1], key)
-		checkValue(t, request[2])
-	case "get":
-		if len(request) != 2 {
-			t.Errorf("Misformatted get request: '%s'", req)
-		}
-		checkKey(t, request[1], key)
-	default:
-		t.Errorf("Request is neither get or update: '%s'", req)
+	// check key size
+	if len(request[1]) != keySize {
+		t.Errorf("Incorrect key length: '%s'", req)
+	}
+	// check value size
+	if request[0] == "update" && len(request[2]) != valueSize {
+		t.Errorf("Incorrect key length: '%s'", req)
 	}
 }
 
-// check that the generator is producing valid commands
-func TestGenerate(t *testing.T) {
-	conf := config.WorkloadConfig{config.ConfigAuto{50, 0, 8, 8, 20, 1}}
-
+func checkGenerateConfig(t *testing.T, conf config.WorkloadConfig) {
+	kv := services.StartService("kv-store")
 	gen := Generate(conf)
-	key := ""
-	for i := 0; i < 100; i++ {
+
+	for i := 0; i < conf.Config.Requests; i++ {
 		str, ok := gen.Next()
+		// check for early termination
 		if !ok {
 			if conf.Config.Requests != i {
 				t.Errorf("Generator terminated a request %d, should terminate at %d",
@@ -56,10 +34,30 @@ func TestGenerate(t *testing.T) {
 			}
 			break
 		}
-		if i == 0 {
-			key = strings.Split(strings.Trim(str, "\n"), " ")[1]
+		// check format
+		checkFormatSize(t, str, conf.Config.KeySize, conf.Config.ValueSize)
+		if !kv.CheckFormat(str) {
+			t.Errorf("incorrect format for kv store")
 		}
-		checkFormat(t, str, key)
 	}
+	// check for late termination
+	_, ok := gen.Next()
+	if ok {
+		t.Errorf("Generator not terminated at %d", conf.Config.Requests+1)
+	}
+
+}
+
+// TestGenerates check that the generator is producing valid key value store commands
+func TestGenerates(t *testing.T) {
+	conf := config.WorkloadConfig{config.ConfigAuto{
+		Reads:     50,
+		Interval:  0,
+		KeySize:   8,
+		ValueSize: 8,
+		Requests:  20,
+		Keys:      1,
+	}}
+	checkGenerateConfig(t, conf)
 
 }

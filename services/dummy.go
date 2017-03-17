@@ -20,6 +20,15 @@ func (d *dummy) Process(request string) string {
 	return ""
 }
 
+func (d *dummy) CheckFormat(req string) bool {
+	switch req {
+	case "ping":
+		return true
+	default:
+		return false
+	}
+}
+
 func (d *dummy) MarshalJSON() ([]byte, error) {
 	return json.Marshal(*d)
 }
