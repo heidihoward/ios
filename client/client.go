@@ -4,16 +4,17 @@ package client
 import (
 	"bufio"
 	"errors"
-	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/config"
-	"github.com/heidi-ann/ios/msgs"
 	"io"
 	"math/rand"
 	"net"
 	"time"
+
+	"github.com/golang/glog"
+	"github.com/heidi-ann/ios/config"
+	"github.com/heidi-ann/ios/msgs"
 )
 
-type client struct {
+type Client struct {
 	id        int
 	requestID int //TODO: write this value to disk
 	stats     *statsFile
@@ -108,7 +109,7 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 
 // StartClient creates an Ios client and tries to connect to an Ios cluster
 // If ID is -1 then a random one will be generated
-func StartClient(id int, statFile string, addrs []string, timeout time.Duration) *client {
+func StartClient(id int, statFile string, addrs []string, timeout time.Duration) *Client {
 	// TODO: find a better way to handle required flags
 	if id == -1 {
 		rand.Seed(time.Now().UTC().UnixNano())
@@ -129,10 +130,10 @@ func StartClient(id int, statFile string, addrs []string, timeout time.Duration)
 	rd := bufio.NewReader(conn)
 
 	glog.Info("Client is ready to start processing incoming requests")
-	return &client{id, 1, stats, addrs, conn, rd, timeout, master}
+	return &Client{id, 1, stats, addrs, conn, rd, timeout, master}
 }
 
-func (c *client) SubmitRequest(text string) (bool, string) {
+func (c *Client) SubmitRequest(text string) (bool, string) {
 	glog.V(1).Info("Request ", c.requestID, " is: ", text)
 
 	// prepare request
@@ -220,13 +221,13 @@ func (c *client) SubmitRequest(text string) (bool, string) {
 
 // StartClientFromConfigFile creates an Ios client
 // If ID is -1 then a random one will be generated
-func StartClientFromConfigFile(id int, statFile string, configFile string) *client {
+func StartClientFromConfigFile(id int, statFile string, configFile string) *Client {
 	conf := config.ParseClientConfig(configFile)
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	return StartClient(id, statFile, conf.Addresses.Address, timeout)
 }
 
-func (c *client) StopClient() {
+func (c *Client) StopClient() {
 	glog.V(1).Info("Shutting down client ", c.id)
 	// close stats file
 	c.stats.closeStatsFile()
