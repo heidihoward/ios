@@ -19,7 +19,7 @@ func openWriteAheadFile(filename string, mode string) WAL {
 	var err error
 	switch mode {
 	case "none", "fsync":
-		file, err = syscall.Open(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		file, err = syscall.Open(filename, os.O_WRONLY|os.O_CREATE| os.O_APPEND, 0666)
 	default:
 		glog.Fatal("PersistenceMode not recognised, only fsync and none are avalible on darwin")
 	}
@@ -34,8 +34,8 @@ func openWriteAheadFile(filename string, mode string) WAL {
 
 func (w WAL) writeAhead(bytes []byte) {
 	startTime := time.Now()
-	_, err := syscall.Write(w.fd, bytes)
-	if err != nil {
+	n, err := syscall.Write(w.fd, bytes)
+	if err != nil || n != len(bytes) {
 		glog.Fatal(err)
 	}
 	if w.mode == "fsync" || w.mode == "direct" {
@@ -45,7 +45,7 @@ func (w WAL) writeAhead(bytes []byte) {
 		}
 	}
 	if time.Since(startTime) > time.Millisecond {
-		glog.Info(" bytes written & synced to persistent log in ", time.Since(startTime).String())
+		glog.Info("Slow disk warning - ",n," bytes written & synced to persistent log in ", time.Since(startTime).String())
 	}
 	glog.V(1).Info(" bytes written & synced to persistent log in ", time.Since(startTime).String())
 }
