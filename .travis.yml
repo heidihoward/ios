@@ -3,7 +3,7 @@ go:
 - 1.6
 - 1.7.x
 install:
-- go get github.com/heidi-ann/ios/...
+- go get -t github.com/heidi-ann/ios/...
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
 script:
