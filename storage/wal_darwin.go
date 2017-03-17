@@ -35,6 +35,7 @@ func openWriteAheadFile(filename string, mode string) WAL {
 func (w WAL) writeAhead(bytes []byte) {
 	startTime := time.Now()
 	n, err := syscall.Write(w.fd, bytes)
+	_,_ = syscall.Write(w.fd, []byte("\n"))
 	if err != nil || n != len(bytes) {
 		glog.Fatal(err)
 	}
