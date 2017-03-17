@@ -33,5 +33,6 @@ _testmain.go
 *.log
 results
 *.dat
+*.cover*
 server/server
 client/client
