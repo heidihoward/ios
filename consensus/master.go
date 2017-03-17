@@ -10,7 +10,7 @@ func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 
 	// if initial master, start master goroutine
 	if config.ID == 0 && new {
-		glog.V(1).Info("Starting leader module")
+		glog.Info("Starting leader module")
 		runMaster(0, -1, true, io, config, s)
 	}
 
