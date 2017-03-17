@@ -43,7 +43,7 @@ func openWriteAheadFile(filename string, mode string) WAL {
 func (w WAL) writeAhead(bytes []byte) {
 	startTime := time.Now()
 	_, err := syscall.Write(w.fd, bytes)
-	_,_ = syscall.Write(w.fd, byte[]('\n'))
+	_,_ = syscall.Write(w.fd, []byte("\n"))
 	if err != nil {
 		glog.Fatal(err)
 	}
