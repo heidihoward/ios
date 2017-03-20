@@ -1,9 +1,13 @@
+sudo: required
 language: go
 go:
 - 1.6
 - 1.7.x
+services:
+- docker
 install:
 - go get -t github.com/heidi-ann/ios/...
+- docker build -t ios .
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
 script:
