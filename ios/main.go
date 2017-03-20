@@ -27,7 +27,7 @@ func main() {
 	defer glog.Flush()
 
 	// check go path is set
-	if os.Getenv("GOPATH") == "" {
+	if *configFile == "/src/github.com/heidi-ann/ios/ios/example.conf" {
 		glog.Fatal("GOPATH not set")
 	}
 
