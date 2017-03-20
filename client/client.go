@@ -72,6 +72,12 @@ func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
 
 // send bytes and wait for reply, return bytes returned if succussful or error otherwise
 func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration) ([]byte, error) {
+	// check for nil connection
+	if conn == nil {
+		glog.Warning("connection missing")
+		return nil, errors.New("Connection closed")
+	}
+
 	// setup channels for timeout implementation
 	errCh := make(chan error, 1)
 	replyCh := make(chan []byte, 1)
