@@ -29,7 +29,7 @@ func TestIosServerRestart(t *testing.T) {
 	defer os.RemoveAll(dir) // clean up
 
 	//parse configuration
-	configPath := os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/config/testConfigs/example.conf"
+	configPath := os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/config/testfiles/example.conf"
 	config := config.ParseServerConfig(configPath)
 
 	// start server

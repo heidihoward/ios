@@ -9,7 +9,7 @@ import (
 
 // TestParseServerConfig calls ParseServerConfig for the two example configuration files
 func TestParseSingleServerConfig(t *testing.T) {
-	conf := ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/config/testConfigs/example.conf")
+	conf := ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/config/testfiles/example.conf")
 	addresses := conf.Clients.Address
 	if len(addresses) != 1 && addresses[0] != "127.0.0.1:8080" {
 		t.Fatal("Error parsing client address, parsed value: ", addresses)
@@ -38,7 +38,7 @@ func TestParseSingleServerConfig(t *testing.T) {
 }
 
 func TestParseMultiServerConfig(t *testing.T) {
-	conf := ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/config/testConfigs/example3.conf")
+	conf := ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/config/testfiles/example3.conf")
 
 	addresses := conf.Clients.Address
 	assert.Equal(t, 3, len(addresses))
