@@ -66,8 +66,14 @@ func handlePeer(cn net.Conn, init bool) {
 	}
 
 	// check ID is expected
-	if peerID < 0 || peerID >= len(peers) || peerID == id {
-		glog.Fatal("Unexpected peer ID ", peerID)
+	if peerID < 0 {
+		glog.Fatal("Unexpected peer ID ", peerID, " ID must be > 0")
+	}
+	if peerID >= len(peers) {
+		glog.Fatal("Unexpected peer ID ", peerID, " IDs within this cluster should be between 0 and ",len(peers))
+	}
+	if peerID == id {
+		glog.Fatal("Unexpected peer ID ", peerID, " I seem to be talking to myself")
 	}
 
 	// check IP address is as expected
