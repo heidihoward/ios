@@ -32,6 +32,7 @@ type state struct {
 	LastSnapshot int                   // index of the last state machine snapshot
 	StateMachine *app.StateMachine     // ref to current state machine
 	Failures     *msgs.FailureNotifier // ref to failure notifier to subscribe to failure notification
+	Storage 		 msgs.Storage         // ref to persistent storage
 }
 
 // noop is a explicitly empty request
@@ -40,7 +41,7 @@ var noop = msgs.ClientRequest{-1, -1, false, "noop"}
 // Init runs a fresh instance of the consensus algorithm.
 // The caller is requried to process Io requests using msgs.Io
 // It will not return until the application is terminated.
-func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureNotifier) {
+func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureNotifier, storage msgs.Storage) {
 
 	// setup
 	glog.V(1).Infof("Starting node ID:%d of %d", config.ID, config.N)
@@ -51,15 +52,12 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 		MasterID:     0,
 		LastSnapshot: 0,
 		StateMachine: app,
-		Failures:     fail}
+		Failures:     fail,
+		Storage: storage}
 
 	// write initial term to persistent storage
 	// TODO: if not master then we need not wait until view has been fsynced
-	io.ViewPersist <- 0
-	written := <-io.ViewPersistFsync
-	if written != 0 {
-		glog.Fatal("Did not persistent view change")
-	}
+	storage.PersistView(0)
 
 	// operator as normal node
 	glog.V(1).Info("Starting participant module, ID ", config.ID)
@@ -72,7 +70,7 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 // Recover restores an instance of the consensus algorithm.
 // The caller is requried to process Io requests using msgs.Io
 // It will not return until the application is terminated.
-func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int, fail *msgs.FailureNotifier) {
+func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int, fail *msgs.FailureNotifier, storage msgs.Storage) {
 	// setup
 	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
 
@@ -84,7 +82,8 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 		MasterID:     mod(view, config.N),
 		LastSnapshot: snapshotIndex,
 		StateMachine: app,
-		Failures:     fail}
+		Failures:     fail,
+		Storage: storage}
 
 	// apply recovered requests to state machine
 	for i := snapshotIndex + 1; i <= state.Log.LastIndex; i++ {

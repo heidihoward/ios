@@ -3,7 +3,6 @@ package consensus
 import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
-	"reflect"
 )
 
 // PROTOCOL BODY
@@ -29,24 +28,15 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				written := <-io.ViewPersistFsync
-				if written != state.View {
-					glog.Fatal("Did not persistent view change")
-				}
-				io.ViewPersist <- state.View
+				state.Storage.PersistView(state.View)
 				state.MasterID = mod(state.View, config.N)
 			}
 
 			// add enties to the log (in-memory)
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
-			// add entries to the log (persistent storage)
+			// add entries to the log (persistent Storage)
 			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries}
-			io.LogPersist <- logUpdate
-			// TODO: find a better way to handle out-of-order log updates
-			lastWritten := <-io.LogPersistFsync
-			for !reflect.DeepEqual(lastWritten, logUpdate) {
-				lastWritten = <-io.LogPersistFsync
-			}
+			state.Storage.PersistLogUpdate(logUpdate)
 
 			// TODO: add implicit commits from window_size
 
@@ -76,7 +66,7 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 
 			// check if its time for another snapshot
 			if state.LastSnapshot+config.SnapshotInterval <= state.CommitIndex {
-				io.SnapshotPersist <- msgs.Snapshot{state.CommitIndex, state.StateMachine.MakeSnapshot()}
+				state.Storage.PersistSnapshot(msgs.Snapshot{state.CommitIndex, state.StateMachine.MakeSnapshot()})
 				state.LastSnapshot = state.CommitIndex
 			}
 
@@ -96,11 +86,7 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				io.ViewPersist <- state.View
-				written := <-io.ViewPersistFsync
-				if written != state.View {
-					glog.Fatal("Did not persistent view change")
-				}
+				state.Storage.PersistView(state.View)
 				state.MasterID = mod(state.View, config.N)
 			}
 
@@ -121,11 +107,7 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				io.ViewPersist <- state.View
-				written := <-io.ViewPersistFsync
-				if written != state.View {
-					glog.Fatal("Did not persistent view change")
-				}
+				state.Storage.PersistView(state.View)
 				state.MasterID = mod(state.View, config.N)
 			}
 

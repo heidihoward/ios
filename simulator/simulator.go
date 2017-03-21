@@ -15,6 +15,7 @@ func runSimulator(nodes int) ([]*msgs.Io, []*msgs.FailureNotifier) {
 		app := app.New("kv-store")
 		io := msgs.MakeIo(10, nodes)
 		fail := msgs.NewFailureNotifier(nodes)
+		storage := msgs.MakeDummyStorage()
 		config := consensus.Config{
 			ID:                  id,
 			N:                   nodes,
@@ -26,8 +27,7 @@ func runSimulator(nodes int) ([]*msgs.Io, []*msgs.FailureNotifier) {
 			SnapshotInterval:    100,
 			Quorum:              consensus.NewQuorum("strict majority", 3),
 			IndexExclusivity:    true}
-		go consensus.Init(io, config, app, fail)
-		go io.DumpPersistentStorage()
+		go consensus.Init(io, config, app, fail, storage)
 		ios[id] = io
 		failures[id] = fail
 	}
@@ -50,9 +50,9 @@ func runRecoverySimulator(nodes int, logs []*consensus.Log, views []int) []*msgs
 		app := app.New("kv-store")
 		io := msgs.MakeIo(10, nodes)
 		failure := msgs.NewFailureNotifier(nodes)
+		storage := msgs.MakeDummyStorage()
 		conf := consensus.Config{ID: id, N: nodes, LogLength: 1000}
-		go consensus.Recover(io, conf, views[id], logs[id], app, -1, failure)
-		go io.DumpPersistentStorage()
+		go consensus.Recover(io, conf, views[id], logs[id], app, -1, failure, storage)
 		ios[id] = io
 	}
 

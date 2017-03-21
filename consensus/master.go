@@ -24,11 +24,7 @@ func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 			if nextMaster == config.ID {
 				s.View++
 				glog.V(1).Info("Starting new master in view ", s.View, " at ", config.ID)
-				io.ViewPersist <- s.View
-				written := <-io.ViewPersistFsync
-				if written != s.View {
-					glog.Fatal("Did not persistent view change")
-				}
+				s.Storage.PersistView(s.View)
 				s.MasterID = nextMaster
 				runMaster(s.View, s.CommitIndex, false, io, config, s)
 			}
@@ -36,11 +32,7 @@ func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 		case req := <-io.IncomingRequestsForced:
 			glog.Warning("Forcing view change")
 			s.View = next(s.View, config.ID, config.N)
-			io.ViewPersist <- s.View
-			written := <-io.ViewPersistFsync
-			if written != s.View {
-				glog.Fatal("Did not persistent view change")
-			}
+			s.Storage.PersistView(s.View)
 			s.MasterID = config.ID
 			io.IncomingRequests <- req
 			runMaster(s.View, s.CommitIndex, false, io, config, s)

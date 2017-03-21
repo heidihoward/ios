@@ -29,7 +29,8 @@ func TestInit(t *testing.T) {
 		Quorum:              NewQuorum("strict majority", 3),
 		IndexExclusivity:    true}
 	failure := msgs.NewFailureNotifier(3)
-	go Init(io, config, store, failure)
+	storage := msgs.MakeExternalStorage()
+	go Init(io, config, store, failure, storage)
 
 	// TEST 1 - SIMPLE COMMIT
 
@@ -58,11 +59,11 @@ func TestInit(t *testing.T) {
 
 	// check view update is persisted
 	select {
-	case viewUpdate := <-io.ViewPersist:
+	case viewUpdate := <-storage.ViewPersist:
 		if viewUpdate != 0 {
 			t.Error(viewUpdate)
 		}
-		io.ViewPersistFsync <- viewUpdate
+		storage.ViewPersistFsync <- viewUpdate
 	case <-time.After(time.Second):
 		t.Error("Participant not responding")
 	}
@@ -71,11 +72,11 @@ func TestInit(t *testing.T) {
 
 	// check node tried to dispatch request correctly
 	select {
-	case logUpdate := <-io.LogPersist:
+	case logUpdate := <-storage.LogPersist:
 		if !reflect.DeepEqual(logUpdate.Entries, entries1) {
 			t.Error(logUpdate)
 		}
-		io.LogPersistFsync <- logUpdate
+		storage.LogPersistFsync <- logUpdate
 	case <-time.After(time.Second):
 		t.Error("Participant not responding")
 	}
