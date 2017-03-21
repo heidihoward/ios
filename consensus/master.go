@@ -158,6 +158,14 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 			exit := false
 			for exit == false {
 				select {
+				case req := <-io.IncomingRequestsForced:
+					reqsAll[reqsNum] = req
+					glog.V(1).Info("Request ", reqsNum, " is : ", req)
+					reqsNum = reqsNum + 1
+					if reqsNum == config.MaxBatch {
+						exit = true
+						break
+					}
 				case req := <-io.IncomingRequests:
 					reqsAll[reqsNum] = req
 					glog.V(1).Info("Request ", reqsNum, " is : ", req)
