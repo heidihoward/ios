@@ -1,3 +1,5 @@
+// +build linux
+
 package storage
 
 import (
@@ -22,6 +24,8 @@ func TestWAL(t *testing.T) {
 	//create file
   testFile := dir + "/test.temp"
 	wal := openWriteAheadFile(testFile, "fsync")
+	actualBytes, err := ioutil.ReadFile(testFile)
+	assert.Equal(64*1000*1000,len(actualBytes), "File is expected size")
 
 	//verfiy that write ahead logging works
   expectedBytes := make([]byte, 100)
@@ -30,6 +34,6 @@ func TestWAL(t *testing.T) {
   actualBytes, err := ioutil.ReadFile(testFile)
   assert.Nil(err)
   //assert.Equal(1001,len(actualBytes), "Number of bytes read is not same as bytes written")
-  assert.Equal(expectedBytes,actualBytes[:100], "Bytes read are not same as written")
+  assert.Equal(expectedBytes,actualBytes[len(actualBytes)-100:], "Bytes read are not same as written")
 
 }
