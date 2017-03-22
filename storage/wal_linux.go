@@ -34,7 +34,7 @@ func openWriteAheadFile(filename string, mode string) wal {
 	}
 	// TOD0: remove hardcoded filesize
 	SEEK_CUR := 1
-	start, err := syscall.seek(file,0,SEEK_CUR)
+	start, err := syscall.Seek(file,0,SEEK_CUR)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func openWriteAheadFile(filename string, mode string) wal {
 		glog.Fatal(err)
 	}
 	SEEK_SET := 0
-	finish, err := syscall.seek(file,start,SEEK_SET)
+	finish, err := syscall.Seek(file,start,SEEK_SET)
 	if err != nil {
 		glog.Fatal(err)
 	}
