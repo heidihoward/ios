@@ -26,14 +26,14 @@ func openWriteAheadFile(filename string, mode string) wal {
 	if err != nil {
 		glog.Fatal(err)
 	}
-	glog.Info("Opened file: ",filename)
+	glog.Info("Opened file: ", filename)
 	return wal{file, mode}
 }
 
 func (w wal) writeAhead(bytes []byte) {
 	startTime := time.Now()
 	n, err := syscall.Write(w.fd, bytes)
-	_,_ = syscall.Write(w.fd, []byte("\n"))
+	_, _ = syscall.Write(w.fd, []byte("\n"))
 	if err != nil || n != len(bytes) {
 		glog.Fatal(err)
 	}

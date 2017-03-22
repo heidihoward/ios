@@ -5,15 +5,14 @@ import (
 	"github.com/heidi-ann/ios/app"
 	"github.com/heidi-ann/ios/consensus"
 	"github.com/heidi-ann/ios/msgs"
-  "strconv"
-  "strings"
+	"io"
 	"os"
-  "io"
+	"strconv"
+	"strings"
 )
 
-
 func restoreLog(logFilename string, maxLength int, snapshotIndex int) (bool, *consensus.Log) {
-  exists, logFile := openReader(logFilename)
+	exists, logFile := openReader(logFilename)
 
 	if !exists {
 		return false, consensus.NewLog(maxLength)
@@ -38,46 +37,46 @@ func restoreLog(logFilename string, maxLength int, snapshotIndex int) (bool, *co
 		log.AddEntries(update.StartIndex, update.EndIndex, update.Entries)
 		glog.V(1).Info("Adding from persistent storage :", update)
 	}
-  logFile.closeReader()
+	logFile.closeReader()
 	return found, log
 }
 
 func restoreView(viewFilename string) (bool, int) {
-  exists, viewFile := openReader(viewFilename)
+	exists, viewFile := openReader(viewFilename)
 	if !exists {
-    glog.Info("No view update file found")
+		glog.Info("No view update file found")
 		return false, 0
 	}
 
-  found := 0
-  view := 0
+	found := 0
+	view := 0
 
 	for {
 		b, err := viewFile.read()
 		if err == io.EOF {
-      break
+			break
 		}
-    if err != nil {
-      glog.Fatal("View storage corrupted")
-    }
-    view, err = strconv.Atoi(strings.Trim(string(b), "\n"))
-    if err != nil {
-      glog.Fatal("View storage corrupted", string(b))
-    }
+		if err != nil {
+			glog.Fatal("View storage corrupted")
+		}
+		view, err = strconv.Atoi(strings.Trim(string(b), "\n"))
+		if err != nil {
+			glog.Fatal("View storage corrupted", string(b))
+		}
 		found++
 	}
 
-  if found>0 {
-    glog.Info("No more view updates in persistent storage, most recent view is ", view)
-  } else {
-    glog.Info("No view updates found in persistent storage")
-  }
-  viewFile.closeReader()
-  return found>0, view
+	if found > 0 {
+		glog.Info("No more view updates in persistent storage, most recent view is ", view)
+	} else {
+		glog.Info("No view updates found in persistent storage")
+	}
+	viewFile.closeReader()
+	return found > 0, view
 }
 
 func restoreSnapshot(snapFilename string, appConfig string) (bool, int, *app.StateMachine) {
-  exists, snapFile := openReader(snapFilename)
+	exists, snapFile := openReader(snapFilename)
 	if !exists {
 		return false, -1, app.New(appConfig)
 	}
@@ -101,21 +100,21 @@ func restoreSnapshot(snapFilename string, appConfig string) (bool, int, *app.Sta
 		return false, -1, app.New(appConfig)
 	}
 
-  snapFile.closeReader()
+	snapFile.closeReader()
 	return true, index, app.RestoreSnapshot(snapshot, appConfig)
 }
 
 func RestoreStorage(diskPath string, maxLength int, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
-  // check if disk directory exists
-  if _, err := os.Stat(diskPath); os.IsNotExist(err) {
-    return false, 0, consensus.NewLog(maxLength),  -1, app.New(appConfig)
-  }
+	// check if disk directory exists
+	if _, err := os.Stat(diskPath); os.IsNotExist(err) {
+		return false, 0, consensus.NewLog(maxLength), -1, app.New(appConfig)
+	}
 
-  logFile := diskPath + "/log.temp"
-  dataFile := diskPath + "/view.temp"
-  snapFile := diskPath + "/snapshot.temp"
+	logFile := diskPath + "/log.temp"
+	dataFile := diskPath + "/view.temp"
+	snapFile := diskPath + "/snapshot.temp"
 
-  // check persistent storage for view
+	// check persistent storage for view
 	foundView, view := restoreView(dataFile)
 	// check persistent storage for snapshots
 	foundSnapshot, index, state := restoreSnapshot(snapFile, appConfig)

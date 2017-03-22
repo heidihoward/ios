@@ -32,7 +32,7 @@ type state struct {
 	LastSnapshot int                   // index of the last state machine snapshot
 	StateMachine *app.StateMachine     // ref to current state machine
 	Failures     *msgs.FailureNotifier // ref to failure notifier to subscribe to failure notification
-	Storage 		 msgs.Storage         // ref to persistent storage
+	Storage      msgs.Storage          // ref to persistent storage
 }
 
 // noop is a explicitly empty request
@@ -53,7 +53,7 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 		LastSnapshot: 0,
 		StateMachine: app,
 		Failures:     fail,
-		Storage: storage}
+		Storage:      storage}
 
 	// write initial term to persistent storage
 	// TODO: if not master then we need not wait until view has been fsynced
@@ -83,7 +83,7 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 		LastSnapshot: snapshotIndex,
 		StateMachine: app,
 		Failures:     fail,
-		Storage: storage}
+		Storage:      storage}
 
 	// apply recovered requests to state machine
 	for i := snapshotIndex + 1; i <= state.Log.LastIndex; i++ {

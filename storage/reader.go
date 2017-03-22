@@ -19,8 +19,8 @@ func openReader(filename string) (exists bool, reader fileReader) {
 	}
 
 	// open file
-  glog.Info("Opening file: ", filename)
-	file, err := os.OpenFile(filename, os.O_RDONLY| os.O_CREATE, 0777)
+	glog.Info("Opening file: ", filename)
+	file, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -31,12 +31,12 @@ func openReader(filename string) (exists bool, reader fileReader) {
 }
 
 func (r fileReader) read() ([]byte, error) {
-  return r.rd.ReadBytes(byte('\n'))
+	return r.rd.ReadBytes(byte('\n'))
 }
 
 func (r fileReader) closeReader() {
-  err := r.fd.Close()
-  if err != nil {
-    glog.Fatal(err)
-  }
+	err := r.fd.Close()
+	if err != nil {
+		glog.Fatal(err)
+	}
 }

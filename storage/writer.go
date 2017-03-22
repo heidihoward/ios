@@ -14,8 +14,8 @@ type fileWriter struct {
 
 func openWriter(filename string) fileWriter {
 	// open file
-  glog.Info("Opening file: ", filename)
-	file, err := os.OpenFile(filename, os.O_CREATE | os.O_WRONLY | os.O_APPEND, 0777)
+	glog.Info("Opening file: ", filename)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -40,9 +40,8 @@ func (w fileWriter) write(b []byte) {
 	if n != len(b) {
 		glog.Fatal("Short write")
 	}
-  return
+	return
 }
-
 
 func (w fileWriter) closeWriter() {
 	// first flush bufio
@@ -51,8 +50,8 @@ func (w fileWriter) closeWriter() {
 		glog.Fatal(err)
 	}
 	// then close file
-  err = w.fd.Close()
-  if err != nil {
-    glog.Fatal(err)
-  }
+	err = w.fd.Close()
+	if err != nil {
+		glog.Fatal(err)
+	}
 }
