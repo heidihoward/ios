@@ -70,7 +70,7 @@ func handlePeer(cn net.Conn, init bool) {
 		glog.Fatal("Unexpected peer ID ", peerID, " ID must be > 0")
 	}
 	if peerID >= len(peers) {
-		glog.Fatal("Unexpected peer ID ", peerID, " IDs within this cluster should be between 0 and ",len(peers))
+		glog.Fatal("Unexpected peer ID ", peerID, " IDs within this cluster should be between 0 and ", len(peers))
 	}
 	if peerID == id {
 		glog.Fatal("Unexpected peer ID ", peerID, " I seem to be talking to myself")

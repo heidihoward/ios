@@ -92,7 +92,7 @@ func (s *store) CheckFormat(req string) bool {
 		return len(request) == 3
 	case "exists", "get", "delete":
 		return len(request) == 2
-	case "count","print":
+	case "count", "print":
 		return len(request) == 1
 	default:
 		return false

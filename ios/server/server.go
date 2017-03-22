@@ -8,7 +8,6 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 	"github.com/heidi-ann/ios/net"
 	"github.com/heidi-ann/ios/storage"
-	"strconv"
 	"strings"
 )
 
@@ -21,12 +20,14 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 	iO := msgs.MakeIo(2000, len(conf.Peers.Address))
 
 	// setup persistent storage
-	logFile := diskPath + "/persistent_log_" + strconv.Itoa(id) + ".temp"
-	dataFile := diskPath + "/persistent_data_" + strconv.Itoa(id) + ".temp"
-	snapFile := diskPath + "/persistent_snapshot_" + strconv.Itoa(id) + ".temp"
-	found, view, log, index, state := storage.SetupStorage(
-		logFile, dataFile, snapFile, iO, conf.Options.Length,
-		conf.Unsafe.DumpPersistentStorage, conf.Unsafe.PersistenceMode, conf.Options.Application)
+	found, view, log, index, state := storage.RestoreStorage(
+		diskPath, conf.Options.Length, conf.Options.Application)
+	var store msgs.Storage
+	if conf.Unsafe.DumpPersistentStorage {
+		store = msgs.MakeDummyStorage()
+	} else {
+		store = storage.MakeFileStorage(diskPath, conf.Unsafe.PersistenceMode)
+	}
 
 	// setup peers & clients
 	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))
@@ -50,9 +51,9 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 	// setup consensus algorithm
 	if !found {
 		glog.Info("Starting fresh consensus instance")
-		consensus.Init(iO, configuration, state, failureDetector)
+		consensus.Init(iO, configuration, state, failureDetector, store)
 	} else {
 		glog.Info("Restoring consensus instance")
-		consensus.Recover(iO, configuration, view, log, state, index, failureDetector)
+		consensus.Recover(iO, configuration, view, log, state, index, failureDetector, store)
 	}
 }

@@ -1,4 +1,4 @@
-// +build !linux
+// +build ignore
 
 package server
 
@@ -56,7 +56,7 @@ func TestIosServerRestart(t *testing.T) {
 	for i, file := range files {
 		filenames[i] = file.Name()
 	}
-	assert.EqualValues(t, []string{"persistent_data_0.temp", "persistent_log_0.temp", "persistent_snapshot_0.temp"}, filenames)
+	assert.EqualValues(t, []string{"log.temp", "view.temp"}, filenames)
 
 	tmpfile, err := ioutil.TempFile(dir, "latency")
 	if err != nil {

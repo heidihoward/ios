@@ -36,11 +36,6 @@ type Io struct {
 	Incoming               ProtoMsgs
 	OutgoingBroadcast      ProtoMsgs
 	OutgoingUnicast        map[int]*ProtoMsgs
-	ViewPersist            chan int
-	ViewPersistFsync       chan int
-	LogPersist             chan LogUpdate
-	LogPersistFsync        chan LogUpdate
-	SnapshotPersist        chan Snapshot
 }
 
 // TODO: find a more generic method
@@ -173,12 +168,7 @@ func MakeIo(buf int, n int) *Io {
 		OutgoingRequestsFailed: make(chan ClientRequest, buf),
 		Incoming:               MakeProtoMsgs(buf),
 		OutgoingBroadcast:      MakeProtoMsgs(buf),
-		OutgoingUnicast:        make(map[int]*ProtoMsgs),
-		ViewPersist:            make(chan int, buf),
-		ViewPersistFsync:       make(chan int, buf),
-		LogPersist:             make(chan LogUpdate, buf),
-		LogPersistFsync:        make(chan LogUpdate, buf),
-		SnapshotPersist:        make(chan Snapshot, buf)}
+		OutgoingUnicast:        make(map[int]*ProtoMsgs)}
 
 	for id := 0; id < n; id++ {
 		protomsgs := MakeProtoMsgs(buf)
@@ -187,19 +177,4 @@ func MakeIo(buf int, n int) *Io {
 
 	go io.Broadcaster()
 	return &io
-}
-
-func (io *Io) DumpPersistentStorage() {
-	for {
-		select {
-		case view := <-io.ViewPersist:
-			io.ViewPersistFsync <- view
-			glog.V(1).Info("Updating view to ", view)
-		case log := <-io.LogPersist:
-			io.LogPersistFsync <- log
-			glog.V(1).Info("Updating log with ", log)
-		case snap := <-io.SnapshotPersist:
-			glog.V(1).Info("Updating snap with ", snap)
-		}
-	}
 }
