@@ -41,7 +41,10 @@ func main() {
 	}
 
 	// add ID to diskPath
-	disk := *diskPath + strconv.Itoa(*id)
+	disk := *diskPath
+	if disk == "persistent_id" {
+		disk = "persistent_id" + strconv.Itoa(*id)
+	}
 
 	// overwrite ports if given
 	if *peerPort != 0 {
