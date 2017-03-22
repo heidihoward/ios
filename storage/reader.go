@@ -20,7 +20,7 @@ func openReader(filename string) (exists bool, reader fileReader) {
 
 	// open file
   glog.Info("Opening file: ", filename)
-	file, err := os.OpenFile(filename, os.O_RDONLY, 0777)
+	file, err := os.OpenFile(filename, os.O_RDONLY| os.O_CREATE, 0777)
 	if err != nil {
 		glog.Fatal(err)
 	}

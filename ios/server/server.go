@@ -8,7 +8,6 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 	"github.com/heidi-ann/ios/net"
 	"github.com/heidi-ann/ios/storage"
-	"strconv"
 	"strings"
 )
 
@@ -21,16 +20,13 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 	iO := msgs.MakeIo(2000, len(conf.Peers.Address))
 
 	// setup persistent storage
-	logFile := diskPath + "/persistent_log_" + strconv.Itoa(id) + ".temp"
-	dataFile := diskPath + "/persistent_data_" + strconv.Itoa(id) + ".temp"
-	snapFile := diskPath + "/persistent_snapshot_" + strconv.Itoa(id) + ".temp"
 	found, view, log, index, state := storage.RestoreStorage(
-		logFile, dataFile, snapFile, conf.Options.Length, conf.Options.Application)
+		diskPath, conf.Options.Length, conf.Options.Application)
 	var store msgs.Storage
 	if conf.Unsafe.DumpPersistentStorage {
 		store = msgs.MakeDummyStorage()
 	} else {
-		store = storage.MakeFileStorage(logFile, dataFile, snapFile, conf.Unsafe.PersistenceMode)
+		store = storage.MakeFileStorage(diskPath, conf.Unsafe.PersistenceMode)
 	}
 
 	// setup peers & clients

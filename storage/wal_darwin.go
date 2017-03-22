@@ -26,9 +26,7 @@ func openWriteAheadFile(filename string, mode string) wal {
 	if err != nil {
 		glog.Fatal(err)
 	}
-	if err != nil {
-		glog.Fatal(err)
-	}
+	glog.Info("Opened file: ",filename)
 	return wal{file, mode}
 }
 

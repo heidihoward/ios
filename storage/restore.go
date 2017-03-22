@@ -7,18 +7,20 @@ import (
 	"github.com/heidi-ann/ios/msgs"
   "strconv"
   "strings"
+	"os"
+  "io"
 )
 
 
-func restoreLog(logFilename string, MaxLength int, snapshotIndex int) (bool, *consensus.Log) {
+func restoreLog(logFilename string, maxLength int, snapshotIndex int) (bool, *consensus.Log) {
   exists, logFile := openReader(logFilename)
 
 	if !exists {
-		return false, consensus.NewLog(MaxLength)
+		return false, consensus.NewLog(maxLength)
 	}
 
 	found := false
-	log := consensus.RestoreLog(MaxLength, snapshotIndex)
+	log := consensus.RestoreLog(maxLength, snapshotIndex)
 
 	for {
 		b, err := logFile.read()
@@ -42,23 +44,36 @@ func restoreLog(logFilename string, MaxLength int, snapshotIndex int) (bool, *co
 
 func restoreView(viewFilename string) (bool, int) {
   exists, viewFile := openReader(viewFilename)
-	found := false
-	view := 0
-
 	if !exists {
-		return found, view
+    glog.Info("No view update file found")
+		return false, 0
 	}
+
+  found := 0
+  view := 0
 
 	for {
 		b, err := viewFile.read()
-		if err != nil {
-			glog.V(1).Info("No more view updates in persistent storage")
-      viewFile.closeReader()
-			return found, view
+		if err == io.EOF {
+      break
 		}
-		found = true
-		view, _ = strconv.Atoi(string(b))
+    if err != nil {
+      glog.Fatal("View storage corrupted")
+    }
+    view, err = strconv.Atoi(strings.Trim(string(b), "\n"))
+    if err != nil {
+      glog.Fatal("View storage corrupted", string(b))
+    }
+		found++
 	}
+
+  if found>0 {
+    glog.Info("No more view updates in persistent storage, most recent view is ", view)
+  } else {
+    glog.Info("No view updates found in persistent storage")
+  }
+  viewFile.closeReader()
+  return found>0, view
 }
 
 func restoreSnapshot(snapFilename string, appConfig string) (bool, int, *app.StateMachine) {
@@ -90,13 +105,22 @@ func restoreSnapshot(snapFilename string, appConfig string) (bool, int, *app.Sta
 	return true, index, app.RestoreSnapshot(snapshot, appConfig)
 }
 
-func RestoreStorage(logFile string, dataFile string, snapFile string, MaxLength int, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
-	// check persistent storage for view
+func RestoreStorage(diskPath string, maxLength int, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
+  // check if disk directory exists
+  if _, err := os.Stat(diskPath); os.IsNotExist(err) {
+    return false, 0, consensus.NewLog(maxLength),  -1, app.New(appConfig)
+  }
+
+  logFile := diskPath + "/log.temp"
+  dataFile := diskPath + "/view.temp"
+  snapFile := diskPath + "/snapshot.temp"
+
+  // check persistent storage for view
 	foundView, view := restoreView(dataFile)
 	// check persistent storage for snapshots
 	foundSnapshot, index, state := restoreSnapshot(snapFile, appConfig)
 	// check persistent storage for commands
-	foundLog, log := restoreLog(logFile, MaxLength, index)
+	foundLog, log := restoreLog(logFile, maxLength, index)
 
 	if foundLog && !foundView {
 		glog.Fatal("Log is present but view is not, this should not occur")

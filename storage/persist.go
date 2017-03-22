@@ -4,6 +4,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
   "strconv"
+  "os"
 )
 
 type FileStorage struct {
@@ -12,7 +13,19 @@ type FileStorage struct {
   snapFile fileWriter
 }
 
-func MakeFileStorage(logFilename string, dataFilename string, snapFilename string, persistenceMode string) *FileStorage {
+func MakeFileStorage(diskPath string, persistenceMode string) *FileStorage {
+  // create disk path if needs be
+  if _, err := os.Stat(diskPath); os.IsNotExist(err) {
+    err = os.MkdirAll(diskPath,0777)
+    if err != nil {
+      glog.Fatal(err)
+    }
+  }
+
+  logFilename := diskPath + "/log.temp"
+  dataFilename := diskPath + "/view.temp"
+  snapFilename := diskPath + "/snapshot.temp"
+
   viewFile := openWriteAheadFile(dataFilename, persistenceMode)
   logFile := openWriteAheadFile(logFilename, persistenceMode)
   snapFile := openWriter(snapFilename)

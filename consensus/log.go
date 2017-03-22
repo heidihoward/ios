@@ -7,12 +7,12 @@ import (
 )
 
 // Log holds the replication log used of Ios.
-// Only indexes between AbsoluteIndex and (AbsoluteIndex + MaxLength -1)  are accessible
+// Only indexes between AbsoluteIndex and (AbsoluteIndex + maxLength -1)  are accessible
 type Log struct {
-	LogEntries    []msgs.Entry // contents of log, indexed from 0 to MaxLength - 1
+	LogEntries    []msgs.Entry // contents of log, indexed from 0 to maxLength - 1
 	LastIndex     int          // greatest absolute index in log with entry, -1 means that the log has no entries
 	AbsoluteIndex int          // absolute index of first index in log
-	MaxLength     int          // maximum length of LogEntries
+	maxLength     int          // maximum length of LogEntries
 }
 
 // check protocol invariant
@@ -54,7 +54,7 @@ func (l *Log) AddEntries(startIndex int, endIndex int, entries []msgs.Entry) {
 		return
 	}
 	// check indexes are accessible
-	if endIndex > l.AbsoluteIndex+l.MaxLength-1 {
+	if endIndex > l.AbsoluteIndex+l.maxLength-1 {
 		glog.Fatal("Log index is too large, please snapshot log")
 	}
 	// add entries and check invariants
@@ -74,7 +74,7 @@ func (l *Log) AddEntry(index int, entry msgs.Entry) {
 
 func (l *Log) GetEntries(startIndex int, endIndex int) []msgs.Entry {
 	// check indexes are accessible
-	if startIndex < l.AbsoluteIndex || endIndex > l.AbsoluteIndex+l.MaxLength-1 {
+	if startIndex < l.AbsoluteIndex || endIndex > l.AbsoluteIndex+l.maxLength-1 {
 		glog.Fatal("Trying to access log out of bounds")
 	}
 	return l.LogEntries[startIndex-l.AbsoluteIndex : endIndex-l.AbsoluteIndex]
@@ -82,7 +82,7 @@ func (l *Log) GetEntries(startIndex int, endIndex int) []msgs.Entry {
 
 func (l *Log) GetEntry(index int) msgs.Entry {
 	// check indexes are accessible
-	if index < l.AbsoluteIndex || index > l.AbsoluteIndex+l.MaxLength-1 {
+	if index < l.AbsoluteIndex || index > l.AbsoluteIndex+l.maxLength-1 {
 		glog.Fatal("Trying to access log out of bounds")
 	}
 	return l.LogEntries[index-l.AbsoluteIndex]
