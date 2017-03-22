@@ -50,11 +50,11 @@ func (w wal) writeAhead(bytes []byte) {
 		glog.Fatal("Short write")
 	}
 	delim := []byte("\n")
-	n, err = syscall.Write(w.fd, delim)
+	n2, err = syscall.Write(w.fd, delim)
 	if err != nil {
 		glog.Fatal(err)
 	}
-	if n != len(delim) {
+	if n2 != len(delim) {
 		glog.Fatal("Short write")
 	}
 	if w.mode == "fsync" || w.mode == "direct" {
@@ -64,7 +64,7 @@ func (w wal) writeAhead(bytes []byte) {
 		}
 	}
 	if time.Since(startTime) > time.Millisecond {
-		glog.Info(" bytes written & synced to persistent log in ", time.Since(startTime).String())
+		glog.Info(n+n2," bytes written & synced to persistent log in ", time.Since(startTime).String())
 	}
-	glog.V(1).Info(" bytes written & synced to persistent log in ", time.Since(startTime).String())
+	glog.V(1).Info(n+n2" bytes written & synced to persistent log in ", time.Since(startTime).String())
 }

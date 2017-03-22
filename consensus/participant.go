@@ -22,7 +22,6 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 				reply := msgs.PrepareResponse{config.ID, false}
 				io.OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.Prepare{req, reply}
 				break
-
 			}
 
 			if req.View > state.View {
@@ -66,7 +65,7 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 
 			// check if its time for another snapshot
 			if state.LastSnapshot+config.SnapshotInterval <= state.CommitIndex {
-				state.Storage.PersistSnapshot(msgs.Snapshot{state.CommitIndex, state.StateMachine.MakeSnapshot()})
+				state.Storage.PersistSnapshot(state.CommitIndex, state.StateMachine.MakeSnapshot())
 				state.LastSnapshot = state.CommitIndex
 			}
 

@@ -131,8 +131,3 @@ type LogUpdate struct {
 	EndIndex   int
 	Entries    []Entry
 }
-
-type Snapshot struct {
-	Index int
-	Bytes []byte
-}

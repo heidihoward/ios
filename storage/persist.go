@@ -48,9 +48,9 @@ func (fs *FileStorage) PersistLogUpdate(log msgs.LogUpdate) {
 	fs.logFile.writeAhead(b)
 }
 
-func (fs *FileStorage) PersistSnapshot(snap msgs.Snapshot) {
-	glog.Info("Saving request cache and state machine snapshot upto index", snap.Index,
-		" of size ", len(snap.Bytes))
-	fs.snapFile.write([]byte(strconv.Itoa(snap.Index)))
-	fs.snapFile.write(snap.Bytes)
+func (fs *FileStorage) PersistSnapshot(index int, bytes []byte) {
+	glog.Info("Saving request cache and state machine snapshot upto index", index,
+		" of size ", len(bytes))
+	fs.snapFile.write([]byte(strconv.Itoa(index)))
+	fs.snapFile.write(bytes)
 }
