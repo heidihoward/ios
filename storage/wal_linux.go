@@ -50,7 +50,7 @@ func (w wal) writeAhead(bytes []byte) {
 		glog.Fatal("Short write")
 	}
 	delim := []byte("\n")
-	n2, err = syscall.Write(w.fd, delim)
+	n2, err := syscall.Write(w.fd, delim)
 	if err != nil {
 		glog.Fatal(err)
 	}
