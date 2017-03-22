@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-type WAL struct {
+type wal struct {
 	file *os.File
 	mode string
 }
 
-func openWriteAheadFile(filename string, mode string) WAL {
+func openWriteAheadFile(filename string, mode string) wal {
 	var file *os.File
 	var err error
 	switch mode {
@@ -28,10 +28,10 @@ func openWriteAheadFile(filename string, mode string) WAL {
 	if err != nil {
 		glog.Fatal(err)
 	}
-	return WAL{file, mode}
+	return wal{file, mode}
 }
 
-func (w WAL) writeAhead(bytes []byte) {
+func (w wal) writeAhead(bytes []byte) {
 	startTime := time.Now()
 	_, err := w.file.Write(bytes)
 	_,_ = w.file.Write([]byte("\n"))
