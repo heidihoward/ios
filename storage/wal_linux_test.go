@@ -34,6 +34,6 @@ func TestWAL(t *testing.T) {
   actualBytes, err = ioutil.ReadFile(testFile)
   assert.Nil(err)
   //assert.Equal(1001,len(actualBytes), "Number of bytes read is not same as bytes written")
-  assert.Equal(append(expectedBytes,0xa),actualBytes[len(actualBytes)-100-1:], "Bytes read are not same as written")
+  assert.Equal(append(expectedBytes,0xa),actualBytes[:101], "Bytes read are not same as written")
 
 }
