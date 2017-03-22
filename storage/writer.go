@@ -33,7 +33,7 @@ func (w fileWriter) write(b []byte) {
 	if n != len(b) {
 		glog.Fatal("Short write")
 	}
-	n, err = w.wt.Write([]byte("\n"))
+	_, err = w.wt.Write([]byte("\n"))
 	if err != nil {
 		glog.Fatal(err)
 	}
