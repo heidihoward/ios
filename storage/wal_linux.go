@@ -66,5 +66,5 @@ func (w wal) writeAhead(bytes []byte) {
 	if time.Since(startTime) > time.Millisecond {
 		glog.Info(n+n2," bytes written & synced to persistent log in ", time.Since(startTime).String())
 	}
-	glog.V(1).Info(n+n2" bytes written & synced to persistent log in ", time.Since(startTime).String())
+	glog.V(1).Info(n+n2," bytes written & synced to persistent log in ", time.Since(startTime).String())
 }
