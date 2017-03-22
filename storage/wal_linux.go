@@ -42,10 +42,20 @@ func openWriteAheadFile(filename string, mode string) wal {
 
 func (w wal) writeAhead(bytes []byte) {
 	startTime := time.Now()
-	_, err := syscall.Write(w.fd, bytes)
-	_,_ = syscall.Write(w.fd, []byte("\n"))
+	n, err := syscall.Write(w.fd, bytes)
 	if err != nil {
 		glog.Fatal(err)
+	}
+	if n != len(bytes) {
+		glog.Fatal("Short write")
+	}
+	delim := []byte("\n")
+	n, err = syscall.Write(w.fd, delim)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	if n != len(delim) {
+		glog.Fatal("Short write")
 	}
 	if w.mode == "fsync" || w.mode == "direct" {
 		err = syscall.Fdatasync(w.fd)
