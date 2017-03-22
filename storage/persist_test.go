@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 
 
 	"github.com/golang/glog"
@@ -25,7 +24,6 @@ func TestPersistentStorage(t *testing.T) {
 
 	//check file creation
 	fs := MakeFileStorage(dir,"fsync")
-	time.Sleep(100 * time.Millisecond)
 
 	//verify files were created in directory
 	files, err := ioutil.ReadDir(dir)
