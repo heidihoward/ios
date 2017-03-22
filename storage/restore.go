@@ -61,7 +61,7 @@ func restoreView(viewFilename string) (bool, int) {
 		}
 		view, err = strconv.Atoi(strings.Trim(string(b), "\n"))
 		if err != nil {
-			glog.Fatal("View storage corrupted", string(b))
+			glog.Fatal("View storage corrupted ", string(b))
 		}
 		found++
 	}

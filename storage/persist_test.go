@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+  "flag"
 
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
@@ -11,6 +12,8 @@ import (
 )
 
 func TestPersistentStorage(t *testing.T) {
+  flag.Parse()
+  defer glog.Flush()
 	assert := assert.New(t)
 
 	//Create temp directory
