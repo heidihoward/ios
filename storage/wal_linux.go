@@ -14,7 +14,7 @@ type wal struct {
 	mode string
 }
 
-func openWriteAheadFile(filename string, mode string) wal {
+func openWriteAheadFile(filename string, mode string, size int) wal {
 	var file int
 	var err error
 	switch mode {
@@ -32,34 +32,17 @@ func openWriteAheadFile(filename string, mode string) wal {
 	if err != nil {
 		glog.Fatal(err)
 	}
-	glog.Info("Opened file: ",filename)
-	// TOD0: remove hardcoded filesize
-	SEEK_CUR := 1
-	start, err := syscall.Seek(file,0,SEEK_CUR)
+	glog.Info("Opened file: ", filename)
+	start, err := syscall.Seek(file, 0, 2)
 	if err != nil {
 		glog.Fatal(err)
 	}
 
-	glog.Info("Starting file pointer ",start)
-	err = syscall.Fallocate(file, 0, 0, int64(64*1000*1000)) // 64MB
+	glog.Info("Starting file pointer ", start)
+	err = syscall.Fallocate(file, 0, 0, int64(size)) // 64MB
 	if err != nil {
 		glog.Fatal(err)
 	}
-	curr, err := syscall.Seek(file,0,SEEK_CUR)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	glog.Info("Current file pointer ",curr)
-
-	SEEK_SET := 0
-	finish, err := syscall.Seek(file,start,SEEK_SET)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	if start != finish {
-		glog.Fatal("unsuccessful at resetting file pointer", start, finish)
-	}
-	glog.Info("Final file pointer ",finish)
 	return wal{file, mode}
 }
 
@@ -80,14 +63,13 @@ func (w wal) writeAhead(bytes []byte) {
 	if n2 != len(delim) {
 		glog.Fatal("Short write")
 	}
+	glog.V(1).Info(n+n2, " bytes written to persistent log in ", time.Since(startTime).String())
 	if w.mode == "fsync" || w.mode == "direct" {
 		err = syscall.Fdatasync(w.fd)
 		if err != nil {
 			glog.Fatal(err)
 		}
+		glog.V(1).Info(n+n2, " bytes synced to persistent log in ", time.Since(startTime).String())
 	}
-	if time.Since(startTime) > time.Millisecond {
-		glog.Info(n+n2," bytes written & synced to persistent log in ", time.Since(startTime).String())
-	}
-	glog.V(1).Info(n+n2," bytes written & synced to persistent log in ", time.Since(startTime).String())
+	slowDiskWarning(startTime, n+n2)
 }

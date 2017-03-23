@@ -10,7 +10,7 @@ import (
 type FileStorage struct {
 	viewFile wal
 	logFile  wal
-	snapFile fileWriter
+	snapFile wal
 }
 
 func MakeFileStorage(diskPath string, persistenceMode string) *FileStorage {
@@ -26,9 +26,9 @@ func MakeFileStorage(diskPath string, persistenceMode string) *FileStorage {
 	dataFilename := diskPath + "/view.temp"
 	snapFilename := diskPath + "/snapshot.temp"
 
-	viewFile := openWriteAheadFile(dataFilename, persistenceMode)
-	logFile := openWriteAheadFile(logFilename, persistenceMode)
-	snapFile := openWriter(snapFilename)
+	viewFile := openWriteAheadFile(dataFilename, persistenceMode, 64)
+	logFile := openWriteAheadFile(logFilename, persistenceMode, 64*1000*1000)
+	snapFile := openWriteAheadFile(snapFilename, persistenceMode, 64*1000*1000)
 	s := FileStorage{viewFile, logFile, snapFile}
 	return &s
 }
@@ -48,9 +48,12 @@ func (fs *FileStorage) PersistLogUpdate(log msgs.LogUpdate) {
 	fs.logFile.writeAhead(b)
 }
 
+// PersistSnapshot writes the provided snapshot to persistent storage
+// index should be the index of the last request applied to be state machine before snapshoting
 func (fs *FileStorage) PersistSnapshot(index int, bytes []byte) {
 	glog.Info("Saving request cache and state machine snapshot upto index", index,
 		" of size ", len(bytes))
-	fs.snapFile.write([]byte(strconv.Itoa(index)))
-	fs.snapFile.write(bytes)
+	fs.snapFile.writeAhead([]byte(strconv.Itoa(index)))
+	fs.snapFile.writeAhead(bytes)
+	// TODO: garbage collection - remove log entries/snapshots from before index
 }
