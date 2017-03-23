@@ -81,27 +81,37 @@ func restoreSnapshot(snapFilename string, appConfig string) (bool, int, *app.Sta
 		return false, -1, app.New(appConfig)
 	}
 
-	// fetching index from snapshot file
-	b, err := snapFile.read()
-	if err != nil {
-		glog.Warning("Snapshot corrupted, ignoring snapshot", err)
-		return false, -1, app.New(appConfig)
-	}
-	index, err := strconv.Atoi(strings.Trim(string(b), "\n"))
-	if err != nil {
-		glog.Warning("Snapshot corrupted, ignoring snapshot", err)
-		return false, -1, app.New(appConfig)
-	}
+	found := false
+	currIndex := -1
+	stateMachine := app.New(appConfig)
 
-	// fetch state machine snapshot from shapshot file
-	snapshot, err := snapFile.read()
-	if err != nil {
-		glog.Warning("Snapshot corrupted, ignoring snapshot", err)
-		return false, -1, app.New(appConfig)
+	for {
+		// fetching index from snapshot file
+		b, err := snapFile.read()
+		if err != nil {
+			glog.Warning("Snapshot corrupted, ignoring snapshot", err)
+			break
+		}
+		index, err := strconv.Atoi(strings.Trim(string(b), "\n"))
+		if err != nil {
+			glog.Warning("Snapshot corrupted, ignoring snapshot", err)
+			break
+		}
+		// fetch state machine snapshot from shapshot file
+		snapshot, err := snapFile.read()
+		if err != nil {
+			glog.Warning("Snapshot corrupted, ignoring snapshot", err)
+			break
+		}
+		// update with latest snapshot, now that it is completed
+		found = true
+		currIndex = index
+		stateMachine = app.RestoreSnapshot(snapshot, appConfig)
+
 	}
 
 	snapFile.closeReader()
-	return true, index, app.RestoreSnapshot(snapshot, appConfig)
+	return found, currIndex, stateMachine
 }
 
 func RestoreStorage(diskPath string, maxLength int, appConfig string) (bool, int, *consensus.Log, int, *app.StateMachine) {
