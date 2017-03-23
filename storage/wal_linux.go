@@ -33,8 +33,6 @@ func openWriteAheadFile(filename string, mode string, size int) wal {
 		glog.Fatal(err)
 	}
 	glog.Info("Opened file: ", filename)
-	// TOD0: remove hardcoded filesize
-	SEEK_CUR := 1
 	start, err := syscall.Seek(file, 0, 2)
 	if err != nil {
 		glog.Fatal(err)
