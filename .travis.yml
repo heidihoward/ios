@@ -11,7 +11,7 @@ install:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
 script:
-- go test ./... -logtostderr=true
+- go test -v ./... -logtostderr=true
 - PATH="$HOME/gopath/bin:$PATH"
 - scripts/coverage --coveralls
 env:

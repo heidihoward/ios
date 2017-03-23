@@ -60,4 +60,9 @@ func TestStartClient(t *testing.T) {
   assert.True(success,"Request not successful")
   assert.Equal("2",reply,"Response not as expected")
 
+
+  //stopping client
+  client.StopClient()
+  client2.StopClient()
+
 }
