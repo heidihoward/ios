@@ -48,7 +48,7 @@ func TestOpenWriteAheadFile(t *testing.T) {
 	}
 
 	//verfiy that write ahead logging continues after failures
-	walf := openWriteAheadFile(testFile, "fsync", 2560)
+	openWriteAheadFile(testFile, "fsync", 2560)
 	actualBytesf, err := ioutil.ReadFile(testFile)
 	assert.Nil(err)
 	glog.Info("File now of size ", len(actualBytes))
