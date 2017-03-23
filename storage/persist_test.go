@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/app"
@@ -76,6 +75,12 @@ func TestPersistentStorage(t *testing.T) {
 		ForceViewChange: false,
 		Request:         "update A 1"}
 
+	req2 := msgs.ClientRequest{
+		ClientID:        1,
+		RequestID:       2,
+		ForceViewChange: false,
+		Request:         "update B 2"}
+
 	entry1 := msgs.Entry{
 		View:      0,
 		Committed: false,
@@ -101,10 +106,17 @@ func TestPersistentStorage(t *testing.T) {
 	sm := app.New("kv-store")
 	sm.Apply(req1)
 	fs.PersistSnapshot(0, sm.MakeSnapshot())
-	time.Sleep(5)
 	found, index, actualSm = restoreSnapshot(snapFile, "kv-store")
 	assert.True(found, "Unexpected log missing")
 	assert.Equal(0, index, "Unexpected index")
+	assert.Equal(sm, actualSm, "Missing kv store")
+
+	// try 2nd snapshot
+	sm.Apply(req2)
+	fs.PersistSnapshot(1, sm.MakeSnapshot())
+	found, index, actualSm = restoreSnapshot(snapFile, "kv-store")
+	assert.True(found, "Unexpected log missing")
+	assert.Equal(1, index, "Unexpected index")
 	assert.Equal(sm, actualSm, "Missing kv store")
 
 }

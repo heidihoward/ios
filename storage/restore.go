@@ -88,6 +88,9 @@ func restoreSnapshot(snapFilename string, appConfig string) (bool, int, *app.Sta
 	for {
 		// fetching index from snapshot file
 		b, err := snapFile.read()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
 			glog.Warning("Snapshot corrupted, ignoring snapshot", err)
 			break
