@@ -35,7 +35,7 @@ func openWriteAheadFile(filename string, mode string, size int) wal {
 	glog.Info("Opened file: ", filename)
 	// TOD0: remove hardcoded filesize
 	SEEK_CUR := 1
-	start, err := syscall.Seek(file, 0, SEEK_CUR)
+	start, err := syscall.Seek(file, 0, 2)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -45,21 +45,6 @@ func openWriteAheadFile(filename string, mode string, size int) wal {
 	if err != nil {
 		glog.Fatal(err)
 	}
-	curr, err := syscall.Seek(file, 0, SEEK_CUR)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	glog.Info("Current file pointer ", curr)
-
-	SEEK_SET := 0
-	finish, err := syscall.Seek(file, start, SEEK_SET)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	if start != finish {
-		glog.Fatal("unsuccessful at resetting file pointer", start, finish)
-	}
-	glog.Info("Final file pointer ", finish)
 	return wal{file, mode}
 }
 
