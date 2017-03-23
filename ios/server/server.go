@@ -14,6 +14,10 @@ import (
 // RunIos id conf diskPath is the main entry point of Ios server
 // It does not return
 func RunIos(id int, conf config.ServerConfig, diskPath string) {
+	// check ID
+	if id >= len(conf.Peers.Address) {
+		glog.Fatal("Node ID is ", id, " but is configured with a ", len(conf.Peers.Address), " node cluster")
+	}
 
 	// setup iO
 	// TODO: remove this hardcoded limit on channel size

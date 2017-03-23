@@ -36,10 +36,6 @@ func main() {
 	if *id == -1 {
 		glog.Fatal("ID is required")
 	}
-	if *id >= len(conf.Peers.Address) {
-		glog.Fatal("Node ID is ", *id, " but is configured with a ", len(conf.Peers.Address), " node cluster")
-	}
-
 	// add ID to diskPath
 	disk := *diskPath
 	if disk == "persistent_id" {
