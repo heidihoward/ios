@@ -36,7 +36,7 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 	// setup peers & clients
 	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))
 	net.SetupPeers(id, conf.Peers.Address, iO, failureDetector)
-	net.SetupClients(strings.Split(conf.Clients.Address[id], ":")[1], state)
+	net.SetupClients(strings.Split(conf.Clients.Address[id], ":")[1], state,iO)
 
 	// configure consensus algorithms
 	quorum := consensus.NewQuorum(conf.Options.QuorumSystem, len(conf.Peers.Address))

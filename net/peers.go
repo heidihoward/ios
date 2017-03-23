@@ -15,23 +15,26 @@ type peer struct {
 	address string
 }
 
-var peers []peer
-var failures *msgs.FailureNotifier
-var id int
-var iO *msgs.Io
+type peerHandler struct {
+	id int
+	peers []peer
+	failures *msgs.FailureNotifier
+	iO *msgs.Io
+}
+
 
 // iterative through peers and check if there is a handler for each
 // try to create one if not, report failure if not possible
-func checkPeer() {
-	for i := range peers {
-		if !failures.IsConnected(i) {
+func (ph *peerHandler) checkPeer() {
+	for i := range ph.peers {
+		if !ph.failures.IsConnected(i) {
 			//glog.V(1).Info("Peer ", i, " is not currently connected")
-			cn, err := net.Dial("tcp", peers[i].address)
+			cn, err := net.Dial("tcp", ph.peers[i].address)
 
 			if err != nil {
 				//glog.Warning(err)
 			} else {
-				go handlePeer(cn, true)
+				go ph.handlePeer(cn, true)
 			}
 		} else {
 			//glog.V(1).Info("Peer ", i, " is currently connected")
@@ -39,7 +42,7 @@ func checkPeer() {
 	}
 }
 
-func handlePeer(cn net.Conn, init bool) {
+func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	addr := cn.RemoteAddr().String()
 	if init {
 		glog.Info("Outgoing peer connection to ", addr)
@@ -55,7 +58,7 @@ func handlePeer(cn net.Conn, init bool) {
 	writer := bufio.NewWriter(cn)
 
 	// exchange peer ID's via handshake
-	_, _ = writer.WriteString(strconv.Itoa(id) + "\n")
+	_, _ = writer.WriteString(strconv.Itoa(ph.id) + "\n")
 	_ = writer.Flush()
 	text, _ := reader.ReadString('\n')
 	glog.V(1).Info("Received ", text)
@@ -69,16 +72,16 @@ func handlePeer(cn net.Conn, init bool) {
 	if peerID < 0 {
 		glog.Fatal("Unexpected peer ID ", peerID, " ID must be > 0")
 	}
-	if peerID >= len(peers) {
-		glog.Fatal("Unexpected peer ID ", peerID, " IDs within this cluster should be between 0 and ", len(peers))
+	if peerID >= len(ph.peers) {
+		glog.Fatal("Unexpected peer ID ", peerID, " IDs within this cluster should be between 0 and ", len(ph.peers))
 	}
-	if peerID == id {
+	if peerID == ph.id {
 		glog.Fatal("Unexpected peer ID ", peerID, " I seem to be talking to myself")
 	}
 
 	// check IP address is as expected
 	// TODO: allow dynamic changes of IP
-	expectedAddr := strings.Split(peers[peerID].address, ":")[0]
+	expectedAddr := strings.Split(ph.peers[peerID].address, ":")[0]
 	actualAddr := strings.Split(addr, ":")[0]
 	if expectedAddr != actualAddr {
 		glog.Fatal("Peer ID ", peerID, " has connected from an unexpected address ", actualAddr,
@@ -86,7 +89,7 @@ func handlePeer(cn net.Conn, init bool) {
 	}
 
 	glog.Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
-	err = failures.NowConnected(peerID)
+	err = ph.failures.NowConnected(peerID)
 	if err != nil {
 		glog.Warning(err)
 		return
@@ -104,7 +107,7 @@ func handlePeer(cn net.Conn, init bool) {
 				break
 			}
 			glog.V(1).Infof("Read from peer %d: ", peerID, string(text))
-			iO.Incoming.BytesToProtoMsg(text)
+			ph.iO.Incoming.BytesToProtoMsg(text)
 
 		}
 	}()
@@ -113,7 +116,7 @@ func handlePeer(cn net.Conn, init bool) {
 		for {
 			// send reply
 			glog.V(1).Infof("Ready to send message to %d", peerID)
-			b, err := iO.OutgoingUnicast[peerID].ProtoMsgToBytes()
+			b, err := ph.iO.OutgoingUnicast[peerID].ProtoMsgToBytes()
 			if err != nil {
 				glog.Fatal("Could not marshal message")
 			}
@@ -141,23 +144,25 @@ func handlePeer(cn net.Conn, init bool) {
 
 	// tidy up
 	glog.Warningf("No longer able to handle traffic from peer %d at %s ", peerID, addr)
-	failures.NowDisconnected(peerID)
+	ph.failures.NowDisconnected(peerID)
 }
 
 func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.FailureNotifier) {
-	id = localId
-	iO = msgIo
-	failures = fail
-	//set up peer state
-	peers = make([]peer, len(addresses))
+	peerHandler := peerHandler{
+		id: localId,
+		peers: make([]peer, len(addresses)),
+		failures: fail,
+		iO: msgIo,
+	}
+
 	for i := range addresses {
-		peers[i] = peer{
+		peerHandler.peers[i] = peer{
 			i, addresses[i]}
 	}
 
 	//set up peer server
-	glog.Info("Starting up peer server on ", addresses[id])
-	peerPort := strings.Split(addresses[id], ":")[1]
+	glog.Info("Starting up peer server on ", addresses[peerHandler.id])
+	peerPort := strings.Split(addresses[peerHandler.id], ":")[1]
 	listeningPort := ":" + peerPort
 	lnPeers, err := net.Listen("tcp", listeningPort)
 	if err != nil {
@@ -165,9 +170,9 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.Fail
 	}
 
 	// handle local peer (without sending network traffic)
-	failures.NowConnected(id)
-	from := &(iO.Incoming)
-	go from.Forward(iO.OutgoingUnicast[id])
+	peerHandler.failures.NowConnected(peerHandler.id)
+	from := &(peerHandler.iO.Incoming)
+	go from.Forward(peerHandler.iO.OutgoingUnicast[peerHandler.id])
 
 	// handle for incoming peers
 	go func() {
@@ -176,14 +181,14 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.Fail
 			if err != nil {
 				glog.Fatal(err)
 			}
-			go handlePeer(conn, false)
+			go (&peerHandler).handlePeer(conn, false)
 		}
 	}()
 
 	// regularly check if all peers are connected and retry if not
 	go func() {
 		for {
-			checkPeer()
+			(&peerHandler).checkPeer()
 			time.Sleep(500 * time.Millisecond)
 		}
 	}()

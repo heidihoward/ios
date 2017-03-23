@@ -9,34 +9,37 @@ import (
 	"net"
 )
 
-var notifyClients *msgs.Notificator
-var application *app.StateMachine
+type clientHandler struct {
+	notify *msgs.Notificator
+	app *app.StateMachine
+	io *msgs.Io
+}
 
-func stateMachine() {
+func (ch *clientHandler) stateMachine() {
 	for {
 		var req msgs.ClientRequest
 		var reply msgs.ClientResponse
 
 		select {
-		case response := <-iO.OutgoingResponses:
+		case response := <-ch.io.OutgoingResponses:
 			req = response.Request
 			reply = response.Response
-		case req = <-iO.OutgoingRequestsFailed:
+		case req = <-ch.io.OutgoingRequestsFailed:
 			glog.V(1).Info("Request could not been safely replicated by consensus algorithm", req)
 			reply = msgs.ClientResponse{
 				req.ClientID, req.RequestID, false, ""}
 		}
 
 		// if any handleRequests are waiting on this reply, then reply to them
-		notifyClients.Notify(req, reply)
+		ch.notify.Notify(req, reply)
 	}
 }
 
-func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
+func (ch *clientHandler) handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	glog.V(1).Info("Handling ", req.Request)
 
 	// check if already applied
-	if found, res := application.Check(req); found {
+	if found, res := ch.app.Check(req); found {
 		glog.V(1).Info("Request found in cache")
 		return res // FAST PASS
 	}
@@ -44,17 +47,17 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	// CONSENESUS ALGORITHM HERE
 	glog.V(1).Info("Passing request to consensus algorithm")
 	if req.ForceViewChange {
-		iO.IncomingRequestsForced <- req
+		ch.io.IncomingRequestsForced <- req
 	} else {
-		iO.IncomingRequests <- req
+		ch.io.IncomingRequests <- req
 	}
 
-	if notifyClients.IsSubscribed(req) {
+	if ch.notify.IsSubscribed(req) {
 		glog.Warning("Client has multiple outstanding connections for the same request, usually not a good sign")
 	}
 
 	// wait for reply
-	reply := notifyClients.Subscribe(req)
+	reply := ch.notify.Subscribe(req)
 
 	// check reply is as expected
 	if reply.ClientID != req.ClientID {
@@ -67,7 +70,7 @@ func handleRequest(req msgs.ClientRequest) msgs.ClientResponse {
 	return reply
 }
 
-func handleConnection(cn net.Conn) {
+func (ch *clientHandler) handleConnection(cn net.Conn) {
 	glog.Info("Incoming client connection from ",
 		cn.RemoteAddr().String())
 
@@ -95,7 +98,7 @@ func handleConnection(cn net.Conn) {
 		}
 
 		// construct reply
-		reply := handleRequest(*req)
+		reply := ch.handleRequest(*req)
 		b, err := msgs.Marshal(reply)
 		if err != nil {
 			glog.Fatal("error:", err)
@@ -128,10 +131,13 @@ func handleConnection(cn net.Conn) {
 // SetupClients listen for client on the given port, it forwards their requests to the consensus algorithm and
 // then applies them to the state machine
 // SetupClients returns when setup is completed, spawning goroutines to listen for clients.
-func SetupClients(port string, app *app.StateMachine) {
-	application = app
-	notifyClients = msgs.NewNotificator()
-	go stateMachine()
+func SetupClients(port string, app *app.StateMachine, iO *msgs.Io) {
+	ch := clientHandler{
+		notify: msgs.NewNotificator(),
+		app: app,
+		io: iO}
+
+	go ch.stateMachine()
 
 	// set up client server
 	glog.Info("Starting up client server on port ", port)
@@ -148,7 +154,7 @@ func SetupClients(port string, app *app.StateMachine) {
 			if err != nil {
 				glog.Fatal(err)
 			}
-			go handleConnection(conn)
+			go ch.handleConnection(conn)
 		}
 	}()
 
