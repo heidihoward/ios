@@ -234,7 +234,7 @@ func StartClientFromConfigFile(id int, statFile string, configFile string) *Clie
 }
 
 func (c *Client) StopClient() {
-	glog.V(1).Info("Shutting down client ", c.id)
+	glog.Info("Shutting down client ", c.id)
 	// close stats file
 	c.stats.closeStatsFile()
 	// close connection
