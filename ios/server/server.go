@@ -21,7 +21,8 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 
 	// setup iO
 	// TODO: remove this hardcoded limit on channel size
-	iO := msgs.MakeIo(2000, len(conf.Peers.Address))
+	peerNet := msgs.MakePeerNet(2000, len(conf.Peers.Address))
+	clientNet := msgs.MakeClientNet(2000)
 
 	// setup persistent storage
 	found, view, log, index, state := storage.RestoreStorage(
@@ -35,8 +36,8 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 
 	// setup peers & clients
 	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))
-	net.SetupPeers(id, conf.Peers.Address, iO, failureDetector)
-	net.SetupClients(strings.Split(conf.Clients.Address[id], ":")[1], state,iO)
+	net.SetupPeers(id, conf.Peers.Address, peerNet, failureDetector)
+	net.SetupClients(strings.Split(conf.Clients.Address[id], ":")[1], state, clientNet)
 
 	// configure consensus algorithms
 	quorum := consensus.NewQuorum(conf.Options.QuorumSystem, len(conf.Peers.Address))
@@ -55,9 +56,9 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 	// setup consensus algorithm
 	if !found {
 		glog.Info("Starting fresh consensus instance")
-		consensus.Init(iO, configuration, state, failureDetector, store)
+		consensus.Init(peerNet, clientNet, configuration, state, failureDetector, store)
 	} else {
 		glog.Info("Restoring consensus instance")
-		consensus.Recover(iO, configuration, view, log, state, index, failureDetector, store)
+		consensus.Recover(peerNet, clientNet, configuration, view, log, state, index, failureDetector, store)
 	}
 }

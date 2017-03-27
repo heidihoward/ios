@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"syscall"
 	"testing"
 	"time"
-	"os/exec"
 
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/client/kvclient"

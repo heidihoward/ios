@@ -10,9 +10,9 @@ import (
 )
 
 type clientHandler struct {
-	notify *msgs.Notificator
-	app *app.StateMachine
-	io *msgs.Io
+	notify    *msgs.Notificator
+	app       *app.StateMachine
+	clientNet *msgs.ClientNet
 }
 
 func (ch *clientHandler) stateMachine() {
@@ -21,10 +21,10 @@ func (ch *clientHandler) stateMachine() {
 		var reply msgs.ClientResponse
 
 		select {
-		case response := <-ch.io.OutgoingResponses:
+		case response := <-ch.clientNet.OutgoingResponses:
 			req = response.Request
 			reply = response.Response
-		case req = <-ch.io.OutgoingRequestsFailed:
+		case req = <-ch.clientNet.OutgoingRequestsFailed:
 			glog.V(1).Info("Request could not been safely replicated by consensus algorithm", req)
 			reply = msgs.ClientResponse{
 				req.ClientID, req.RequestID, false, ""}
@@ -47,9 +47,9 @@ func (ch *clientHandler) handleRequest(req msgs.ClientRequest) msgs.ClientRespon
 	// CONSENESUS ALGORITHM HERE
 	glog.V(1).Info("Passing request to consensus algorithm")
 	if req.ForceViewChange {
-		ch.io.IncomingRequestsForced <- req
+		ch.clientNet.IncomingRequestsForced <- req
 	} else {
-		ch.io.IncomingRequests <- req
+		ch.clientNet.IncomingRequests <- req
 	}
 
 	if ch.notify.IsSubscribed(req) {
@@ -131,11 +131,11 @@ func (ch *clientHandler) handleConnection(cn net.Conn) {
 // SetupClients listen for client on the given port, it forwards their requests to the consensus algorithm and
 // then applies them to the state machine
 // SetupClients returns when setup is completed, spawning goroutines to listen for clients.
-func SetupClients(port string, app *app.StateMachine, iO *msgs.Io) {
+func SetupClients(port string, app *app.StateMachine, clientNet *msgs.ClientNet) {
 	ch := clientHandler{
-		notify: msgs.NewNotificator(),
-		app: app,
-		io: iO}
+		notify:    msgs.NewNotificator(),
+		app:       app,
+		clientNet: clientNet}
 
 	go ch.stateMachine()
 

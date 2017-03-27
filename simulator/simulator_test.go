@@ -9,13 +9,13 @@ import (
 	"time"
 )
 
-func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientResponse, ios []*msgs.Io, masterID int) {
+func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientResponse, clientNets []*msgs.ClientNet, masterID int) {
 	// send request direct to master
-	ios[masterID].IncomingRequests <- req
+	clientNets[masterID].IncomingRequests <- req
 
-	for id := range ios {
+	for id := range clientNets {
 		select {
-		case response := <-(ios[id]).OutgoingResponses:
+		case response := <-(clientNets[id]).OutgoingResponses:
 			if req != response.Request {
 				t.Error("Expected ", reply, " Received ", response)
 			}
@@ -33,11 +33,11 @@ func TestrunSimulator(t *testing.T) {
 	defer glog.Flush()
 
 	// create a system of 3 nodes
-	ios, _ := runSimulator(3)
+	peerNets, clientNets, _ := runSimulator(3)
 	app := app.New("kv-store")
 
 	// check that 3 nodes were created
-	if len(ios) != 3 {
+	if len(peerNets) != 3 {
 		t.Error("Correct number of nodes not created")
 	}
 
@@ -48,7 +48,7 @@ func TestrunSimulator(t *testing.T) {
 		ForceViewChange: false,
 		Request:         "update A 3"}
 
-	checkRequest(t, request1, app.Apply(request1), ios, 0)
+	checkRequest(t, request1, app.Apply(request1), clientNets, 0)
 
 	request2 := msgs.ClientRequest{
 		ClientID:        200,
@@ -56,7 +56,7 @@ func TestrunSimulator(t *testing.T) {
 		ForceViewChange: false,
 		Request:         "get A"}
 
-	checkRequest(t, request2, app.Apply(request2), ios, 0)
+	checkRequest(t, request2, app.Apply(request2), clientNets, 0)
 
 	request3 := msgs.ClientRequest{
 		ClientID:        400,
@@ -64,7 +64,7 @@ func TestrunSimulator(t *testing.T) {
 		ForceViewChange: false,
 		Request:         "get C"}
 
-	checkRequest(t, request3, app.Apply(request3), ios, 0)
+	checkRequest(t, request3, app.Apply(request3), clientNets, 0)
 
 	//check failure recovery by notifying node 1 that node 0 has failed
 	// failures[1].NowConnected(0)
@@ -76,7 +76,7 @@ func TestrunSimulator(t *testing.T) {
 		ForceViewChange: false,
 		Request:         "get A"}
 
-	checkRequest(t, request4, app.Apply(request4), ios, 0)
+	checkRequest(t, request4, app.Apply(request4), clientNets, 0)
 
 	//check 2nd failure by notifying node 2 that node 1 has failed
 	// failures[2].NowConnected(1)
@@ -88,6 +88,6 @@ func TestrunSimulator(t *testing.T) {
 		ForceViewChange: false,
 		Request:         "update B 3"}
 
-	checkRequest(t, request5, app.Apply(request5), ios, 0)
+	checkRequest(t, request5, app.Apply(request5), clientNets, 0)
 
 }

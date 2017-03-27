@@ -28,78 +28,79 @@ type ProtoMsgs struct {
 	Responses Responses
 }
 
-type Io struct {
+type ClientNet struct {
 	IncomingRequests       chan ClientRequest
 	IncomingRequestsForced chan ClientRequest
 	OutgoingResponses      chan Client
 	OutgoingRequestsFailed chan ClientRequest
-	Incoming               ProtoMsgs
-	OutgoingBroadcast      ProtoMsgs
-	OutgoingUnicast        map[int]*ProtoMsgs
 }
 
-// TODO: find a more generic method
-func (io *Io) Broadcaster() {
-	glog.V(1).Info("Setting up broadcaster for ", len(io.OutgoingUnicast), " nodes")
+type PeerNet struct {
+	Incoming          ProtoMsgs
+	OutgoingBroadcast ProtoMsgs
+	OutgoingUnicast   map[int]*ProtoMsgs
+}
+
+// broadcaster forwards messages on Outgoing broadcast channels to all outgoing unicast channels
+func broadcaster(broadcast *ProtoMsgs, unicast map[int]*ProtoMsgs) {
+	glog.Info("Setting up broadcaster for ", len(unicast), " nodes")
 	for {
+		// TODO: find a more generic method
 		select {
 		// Requests
-		case r := <-io.OutgoingBroadcast.Requests.Prepare:
+		case r := <-broadcast.Requests.Prepare:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Requests.Prepare <- r
+			for id := range unicast {
+				unicast[id].Requests.Prepare <- r
 			}
-		case r := <-io.OutgoingBroadcast.Requests.Commit:
+		case r := <-broadcast.Requests.Commit:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Requests.Commit <- r
+			for id := range unicast {
+				unicast[id].Requests.Commit <- r
 			}
-		case r := <-io.OutgoingBroadcast.Requests.NewView:
+		case r := <-broadcast.Requests.NewView:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Requests.NewView <- r
+			for id := range unicast {
+				unicast[id].Requests.NewView <- r
 			}
-		case r := <-io.OutgoingBroadcast.Requests.Query:
+		case r := <-broadcast.Requests.Query:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Requests.Query <- r
+			for id := range unicast {
+				unicast[id].Requests.Query <- r
 			}
-		case r := <-io.OutgoingBroadcast.Requests.Coordinate:
+		case r := <-broadcast.Requests.Coordinate:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Requests.Coordinate <- r
+			for id := range unicast {
+				unicast[id].Requests.Coordinate <- r
 			}
 			// Responses
-		case r := <-io.OutgoingBroadcast.Responses.Prepare:
+		case r := <-broadcast.Responses.Prepare:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Responses.Prepare <- r
+			for id := range unicast {
+				unicast[id].Responses.Prepare <- r
 			}
-		case r := <-io.OutgoingBroadcast.Responses.Commit:
+		case r := <-broadcast.Responses.Commit:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Responses.Commit <- r
+			for id := range unicast {
+				unicast[id].Responses.Commit <- r
 			}
-		case r := <-io.OutgoingBroadcast.Responses.NewView:
+		case r := <-broadcast.Responses.NewView:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Responses.NewView <- r
+			for id := range unicast {
+				unicast[id].Responses.NewView <- r
 			}
-		case r := <-io.OutgoingBroadcast.Responses.Query:
+		case r := <-broadcast.Responses.Query:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Responses.Query <- r
+			for id := range unicast {
+				unicast[id].Responses.Query <- r
 			}
-		case r := <-io.OutgoingBroadcast.Responses.Coordinate:
+		case r := <-broadcast.Responses.Coordinate:
 			glog.V(1).Info("Broadcasting ", r)
-			for id := range io.OutgoingUnicast {
-				io.OutgoingUnicast[id].Responses.Coordinate <- r
+			for id := range unicast {
+				unicast[id].Responses.Coordinate <- r
 			}
-
 		}
-
 	}
-
 }
 
 // Forward mesaages from one ProtoMsgs to another
@@ -139,9 +140,7 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 			glog.V(1).Info("Forwarding", r)
 			to.Responses.Coordinate <- r
 		}
-
 	}
-
 }
 
 func MakeProtoMsgs(buf int) ProtoMsgs {
@@ -160,21 +159,26 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 			make(chan Coordinate, buf)}}
 }
 
-func MakeIo(buf int, n int) *Io {
-	io := Io{
+func MakeClientNet(buf int) *ClientNet {
+	net := ClientNet{
 		IncomingRequests:       make(chan ClientRequest, buf),
 		IncomingRequestsForced: make(chan ClientRequest, buf),
 		OutgoingResponses:      make(chan Client, buf),
-		OutgoingRequestsFailed: make(chan ClientRequest, buf),
-		Incoming:               MakeProtoMsgs(buf),
-		OutgoingBroadcast:      MakeProtoMsgs(buf),
-		OutgoingUnicast:        make(map[int]*ProtoMsgs)}
+		OutgoingRequestsFailed: make(chan ClientRequest, buf)}
+	return &net
+}
+
+func MakePeerNet(buf int, n int) *PeerNet {
+	net := PeerNet{
+		Incoming:          MakeProtoMsgs(buf),
+		OutgoingBroadcast: MakeProtoMsgs(buf),
+		OutgoingUnicast:   make(map[int]*ProtoMsgs)}
 
 	for id := 0; id < n; id++ {
 		protomsgs := MakeProtoMsgs(buf)
-		io.OutgoingUnicast[id] = &protomsgs
+		net.OutgoingUnicast[id] = &protomsgs
 	}
 
-	go io.Broadcaster()
-	return &io
+	go broadcaster(&net.OutgoingBroadcast, net.OutgoingUnicast)
+	return &net
 }

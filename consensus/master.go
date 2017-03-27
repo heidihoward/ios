@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
+func monitorMaster(s *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, new bool) {
 
 	// if initial master, start master goroutine
 	if config.ID == 0 && new {
 		glog.Info("Starting leader module")
-		runMaster(0, -1, true, io, config, s)
+		runMaster(0, -1, true, peerNet, clientNet, config, s)
 	}
 
 	for {
@@ -26,37 +26,37 @@ func monitorMaster(s *state, io *msgs.Io, config Config, new bool) {
 				glog.V(1).Info("Starting new master in view ", s.View, " at ", config.ID)
 				s.Storage.PersistView(s.View)
 				s.MasterID = nextMaster
-				runMaster(s.View, s.CommitIndex, false, io, config, s)
+				runMaster(s.View, s.CommitIndex, false, peerNet, clientNet, config, s)
 			}
 
-		case req := <-io.IncomingRequestsForced:
+		case req := <-clientNet.IncomingRequestsForced:
 			glog.Warning("Forcing view change")
 			s.View = next(s.View, config.ID, config.N)
 			s.Storage.PersistView(s.View)
 			s.MasterID = config.ID
-			io.IncomingRequests <- req
-			runMaster(s.View, s.CommitIndex, false, io, config, s)
+			clientNet.IncomingRequests <- req
+			runMaster(s.View, s.CommitIndex, false, peerNet, clientNet, config, s)
 
-		case req := <-io.IncomingRequests:
+		case req := <-clientNet.IncomingRequests:
 			glog.Warning("Request received by non-master server ", req)
-			io.OutgoingRequestsFailed <- req
+			clientNet.OutgoingRequestsFailed <- req
 		}
 	}
 }
 
 // runRecovery executes the recovery phase of leadership election,
 // Returns if it was successful and the previous view's end index
-func runRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, int) {
+func runRecovery(view int, commitIndex int, peerNet *msgs.PeerNet, config Config) (bool, int) {
 	// dispatch new view requests
 	req := msgs.NewViewRequest{config.ID, view}
-	io.OutgoingBroadcast.Requests.NewView <- req
+	peerNet.OutgoingBroadcast.Requests.NewView <- req
 
 	// collect responses
 	glog.Info("Waiting for ", config.Quorum.RecoverySize, " new view responses")
 	endIndex := commitIndex
 
 	for replied := make([]bool, config.N); !config.Quorum.checkRecoveryQuorum(replied); {
-		msg := <-io.Incoming.Responses.NewView
+		msg := <-peerNet.Incoming.Responses.NewView
 		// check msg replies to the msg we just sent
 		if msg.Request == req {
 			res := msg.Response
@@ -86,12 +86,12 @@ func runRecovery(view int, commitIndex int, io *msgs.Io, config Config) (bool, i
 	}
 
 	// recover entries
-	result := runRecoveryCoordinator(view, commitIndex+1, startIndex+1, io, config)
+	result := runRecoveryCoordinator(view, commitIndex+1, startIndex+1, peerNet, config)
 	return result, startIndex
 }
 
 // runMaster implements the Master mode
-func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Config, s *state) {
+func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, s *state) {
 	// setup
 	glog.Info("Starting up master in view ", view)
 	glog.Info("Master is configured to delegate replication to ", config.DelegateReplication)
@@ -101,7 +101,7 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 
 	if !initial {
 		var success bool
-		success, startIndex = runRecovery(view, commitIndex, io, config)
+		success, startIndex = runRecovery(view, commitIndex, peerNet, config)
 		if !success {
 			glog.Warning("Recovery failed")
 			return
@@ -127,8 +127,8 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 		glog.V(1).Info("Ready to handle request")
 		var req1 msgs.ClientRequest
 		select {
-		case req1 = <-io.IncomingRequests:
-		case req1 = <-io.IncomingRequestsForced:
+		case req1 = <-clientNet.IncomingRequests:
+		case req1 = <-clientNet.IncomingRequestsForced:
 		}
 		glog.V(1).Info("Request received: ", req1)
 		var reqs []msgs.ClientRequest
@@ -150,7 +150,7 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 			exit := false
 			for exit == false {
 				select {
-				case req := <-io.IncomingRequestsForced:
+				case req := <-clientNet.IncomingRequestsForced:
 					reqsAll[reqsNum] = req
 					glog.V(1).Info("Request ", reqsNum, " is : ", req)
 					reqsNum = reqsNum + 1
@@ -158,7 +158,7 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 						exit = true
 						break
 					}
-				case req := <-io.IncomingRequests:
+				case req := <-clientNet.IncomingRequests:
 					reqsAll[reqsNum] = req
 					glog.V(1).Info("Request ", reqsNum, " is : ", req)
 					reqsNum = reqsNum + 1
@@ -180,11 +180,11 @@ func runMaster(view int, commitIndex int, initial bool, io *msgs.Io, config Conf
 		// dispatch to coordinator
 		entries := []msgs.Entry{{view, false, reqs}}
 		coord := msgs.CoordinateRequest{config.ID, view, index, index + 1, true, entries}
-		io.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
+		peerNet.OutgoingUnicast[coordinator].Requests.Coordinate <- coord
 		// TODO: BUG: need to handle coordinator failure
 
 		go func() {
-			reply := <-io.Incoming.Responses.Coordinate
+			reply := <-peerNet.Incoming.Responses.Coordinate
 			// TODO: check msg replies to the msg we just sent
 			if !reply.Response.Success {
 				glog.Warning("Commit unsuccessful")

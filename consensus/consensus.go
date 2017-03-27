@@ -41,10 +41,10 @@ var noop = msgs.ClientRequest{-1, -1, false, "noop"}
 // Init runs a fresh instance of the consensus algorithm.
 // The caller is requried to process Io requests using msgs.Io
 // It will not return until the application is terminated.
-func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureNotifier, storage msgs.Storage) {
+func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *app.StateMachine, fail *msgs.FailureNotifier, storage msgs.Storage) {
 
 	// setup
-	glog.V(1).Infof("Starting node ID:%d of %d", config.ID, config.N)
+	glog.Infof("Starting node ID:%d of %d", config.ID, config.N)
 	state := state{
 		View:         0,
 		Log:          NewLog(config.LogLength),
@@ -60,17 +60,17 @@ func Init(io *msgs.Io, config Config, app *app.StateMachine, fail *msgs.FailureN
 	storage.PersistView(0)
 
 	// operator as normal node
-	glog.V(1).Info("Starting participant module, ID ", config.ID)
-	go runCoordinator(&state, io, config)
-	go monitorMaster(&state, io, config, true)
-	runParticipant(&state, io, config)
+	glog.Info("Starting participant module, ID ", config.ID)
+	go runCoordinator(&state, peerNet, config)
+	go monitorMaster(&state, peerNet, clientNet, config, true)
+	runParticipant(&state, peerNet, clientNet, config)
 
 }
 
 // Recover restores an instance of the consensus algorithm.
 // The caller is requried to process Io requests using msgs.Io
 // It will not return until the application is terminated.
-func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int, fail *msgs.FailureNotifier, storage msgs.Storage) {
+func Recover(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int, fail *msgs.FailureNotifier, storage msgs.Storage) {
 	// setup
 	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
 
@@ -95,7 +95,7 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 		for _, request := range state.Log.GetEntry(i).Requests {
 			if request != noop {
 				reply := state.StateMachine.Apply(request)
-				io.OutgoingResponses <- msgs.Client{request, reply}
+				clientNet.OutgoingResponses <- msgs.Client{request, reply}
 			}
 		}
 	}
@@ -105,7 +105,7 @@ func Recover(io *msgs.Io, config Config, view int, log *Log, app *app.StateMachi
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
-	go runCoordinator(&state, io, config)
-	go monitorMaster(&state, io, config, false)
-	runParticipant(&state, io, config)
+	go runCoordinator(&state, peerNet, config)
+	go monitorMaster(&state, peerNet, clientNet, config, false)
+	runParticipant(&state, peerNet, clientNet, config)
 }

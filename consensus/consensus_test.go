@@ -15,7 +15,8 @@ func TestInit(t *testing.T) {
 	defer glog.Flush()
 
 	// create a node in system of 3 nodes
-	io := msgs.MakeIo(10, 3)
+	peerNet := msgs.MakePeerNet(10, 3)
+	clientNet := msgs.MakeClientNet(10)
 	store := app.New("kv-store")
 	config := Config{
 		ID:                  0,
@@ -30,7 +31,7 @@ func TestInit(t *testing.T) {
 		IndexExclusivity:    true}
 	failure := msgs.NewFailureNotifier(3)
 	storage := msgs.MakeExternalStorage()
-	go Init(io, config, store, failure, storage)
+	go Init(peerNet, clientNet, config, store, failure, storage)
 
 	// TEST 1 - SIMPLE COMMIT
 
@@ -68,7 +69,7 @@ func TestInit(t *testing.T) {
 		t.Error("Participant not responding")
 	}
 
-	io.Incoming.Requests.Prepare <- prepare1
+	peerNet.Incoming.Requests.Prepare <- prepare1
 
 	// check node tried to dispatch request correctly
 	select {
@@ -83,7 +84,7 @@ func TestInit(t *testing.T) {
 
 	// check node tried to dispatch request correctly
 	select {
-	case reply := <-io.OutgoingUnicast[0].Responses.Prepare:
+	case reply := <-peerNet.OutgoingUnicast[0].Responses.Prepare:
 		if reply.Response != prepare1Res {
 			t.Error(reply)
 		}
@@ -104,11 +105,11 @@ func TestInit(t *testing.T) {
 		Success:     true,
 		CommitIndex: 0}
 
-	io.Incoming.Requests.Commit <- commit1
+	peerNet.Incoming.Requests.Commit <- commit1
 
 	// check node replies correctly
 	select {
-	case reply := <-io.OutgoingUnicast[0].Responses.Commit:
+	case reply := <-peerNet.OutgoingUnicast[0].Responses.Commit:
 		if reply.Response != commit1Res {
 			t.Error(reply)
 		}
@@ -119,7 +120,7 @@ func TestInit(t *testing.T) {
 	// check if update A 3 was committed to state machine
 
 	select {
-	case reply := <-io.OutgoingResponses:
+	case reply := <-clientNet.OutgoingResponses:
 		if reply.Request != request1[0] {
 			t.Error(reply)
 		}

@@ -7,20 +7,20 @@ import (
 
 // PROTOCOL BODY
 
-func runParticipant(state *state, io *msgs.Io, config Config) {
+func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config) {
 	glog.V(1).Info("Ready for requests")
 	for {
 
 		// get request
 		select {
 
-		case req := <-io.Incoming.Requests.Prepare:
+		case req := <-peerNet.Incoming.Requests.Prepare:
 			glog.V(1).Info("Prepare requests received at ", config.ID, ": ", req)
 			// check view
 			if req.View < state.View {
 				glog.Warning("Sender ID:", req.SenderID, " is behind. Local view is ", state.View, ", sender's view was ", req.View)
 				reply := msgs.PrepareResponse{config.ID, false}
-				io.OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.Prepare{req, reply}
+				peerNet.OutgoingUnicast[req.SenderID].Responses.Prepare <- msgs.Prepare{req, reply}
 				break
 			}
 
@@ -41,22 +41,22 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 
 			// reply to coordinator
 			reply := msgs.PrepareResponse{config.ID, true}
-			(io.OutgoingUnicast[req.SenderID]).Responses.Prepare <- msgs.Prepare{req, reply}
+			(peerNet.OutgoingUnicast[req.SenderID]).Responses.Prepare <- msgs.Prepare{req, reply}
 			glog.V(1).Info("Response dispatched: ", reply)
 
-		case req := <-io.Incoming.Requests.Commit:
+		case req := <-peerNet.Incoming.Requests.Commit:
 			glog.V(1).Info("Commit requests received at ", config.ID, ": ", req)
 
 			// add enties to the log (in-memory)
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
-			//io.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
+			//peerNet.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
 
 			// pass requests to state machine if ready
 			for state.Log.GetEntry(state.CommitIndex + 1).Committed {
 				for _, request := range state.Log.GetEntry(state.CommitIndex + 1).Requests {
 					if request != noop {
 						reply := state.StateMachine.Apply(request)
-						io.OutgoingResponses <- msgs.Client{request, reply}
+						clientNet.OutgoingResponses <- msgs.Client{request, reply}
 						glog.V(1).Info("Request Committed: ", request)
 					}
 				}
@@ -71,10 +71,10 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 
 			// reply to coordinator
 			reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
-			(io.OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
+			(peerNet.OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
 			glog.V(1).Info("Commit response dispatched")
 
-		case req := <-io.Incoming.Requests.NewView:
+		case req := <-peerNet.Incoming.Requests.NewView:
 			glog.V(1).Info("New view requests received at ", config.ID, ": ", req)
 
 			// check view
@@ -90,10 +90,10 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 			}
 
 			reply := msgs.NewViewResponse{config.ID, state.View, state.Log.LastIndex}
-			io.OutgoingUnicast[req.SenderID].Responses.NewView <- msgs.NewView{req, reply}
+			peerNet.OutgoingUnicast[req.SenderID].Responses.NewView <- msgs.NewView{req, reply}
 			glog.V(1).Info("Response dispatched")
 
-		case req := <-io.Incoming.Requests.Query:
+		case req := <-peerNet.Incoming.Requests.Query:
 			glog.V(1).Info("Query requests received at ", config.ID, ": ", req)
 
 			// check view
@@ -111,7 +111,7 @@ func runParticipant(state *state, io *msgs.Io, config Config) {
 			}
 
 			reply := msgs.QueryResponse{config.ID, state.View, state.Log.GetEntries(req.StartIndex, req.EndIndex)}
-			io.OutgoingUnicast[req.SenderID].Responses.Query <- msgs.Query{req, reply}
+			peerNet.OutgoingUnicast[req.SenderID].Responses.Query <- msgs.Query{req, reply}
 		}
 	}
 }

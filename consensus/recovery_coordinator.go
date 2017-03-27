@@ -8,7 +8,7 @@ import (
 
 // returns true if successful
 // start index is inclusive and end index is exclusive
-func runRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io, config Config) bool {
+func runRecoveryCoordinator(view int, startIndex int, endIndex int, peerNet *msgs.PeerNet, config Config) bool {
 	if startIndex == endIndex {
 		return true
 	} else if endIndex < startIndex {
@@ -18,7 +18,7 @@ func runRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 
 	// dispatch query to all
 	query := msgs.QueryRequest{config.ID, view, startIndex, endIndex}
-	io.OutgoingBroadcast.Requests.Query <- query
+	peerNet.OutgoingBroadcast.Requests.Query <- query
 
 	// collect responses
 	noopEntry := msgs.Entry{0, false, []msgs.ClientRequest{noop}}
@@ -30,7 +30,7 @@ func runRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 	//check only one response is received per sender, index= node ID
 
 	for replied := make([]bool, config.N); !config.Quorum.checkRecoveryQuorum(replied); {
-		msg := <-io.Incoming.Responses.Query
+		msg := <-peerNet.Incoming.Responses.Query
 		if msg.Request == query {
 
 			// check this is not a duplicate
@@ -88,8 +88,8 @@ func runRecoveryCoordinator(view int, startIndex int, endIndex int, io *msgs.Io,
 	}
 
 	coord := msgs.CoordinateRequest{config.ID, view, startIndex, endIndex, true, candidates}
-	io.OutgoingUnicast[config.ID].Requests.Coordinate <- coord
-	<-io.Incoming.Responses.Coordinate
+	peerNet.OutgoingUnicast[config.ID].Requests.Coordinate <- coord
+	<-peerNet.Incoming.Responses.Coordinate
 	// TODO: check msg replies to the msg we just sent
 
 	glog.Info("Recovery completed for indexes ", startIndex, " to ", endIndex)

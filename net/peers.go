@@ -16,28 +16,21 @@ type peer struct {
 }
 
 type peerHandler struct {
-	id int
-	peers []peer
+	id       int
+	peers    []peer
 	failures *msgs.FailureNotifier
-	iO *msgs.Io
+	net      *msgs.PeerNet
 }
-
 
 // iterative through peers and check if there is a handler for each
 // try to create one if not, report failure if not possible
 func (ph *peerHandler) checkPeer() {
 	for i := range ph.peers {
 		if !ph.failures.IsConnected(i) {
-			//glog.V(1).Info("Peer ", i, " is not currently connected")
 			cn, err := net.Dial("tcp", ph.peers[i].address)
-
-			if err != nil {
-				//glog.Warning(err)
-			} else {
+			if err == nil {
 				go ph.handlePeer(cn, true)
 			}
-		} else {
-			//glog.V(1).Info("Peer ", i, " is currently connected")
 		}
 	}
 }
@@ -107,7 +100,7 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 				break
 			}
 			glog.V(1).Infof("Read from peer %d: ", peerID, string(text))
-			ph.iO.Incoming.BytesToProtoMsg(text)
+			ph.net.Incoming.BytesToProtoMsg(text)
 
 		}
 	}()
@@ -116,7 +109,7 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 		for {
 			// send reply
 			glog.V(1).Infof("Ready to send message to %d", peerID)
-			b, err := ph.iO.OutgoingUnicast[peerID].ProtoMsgToBytes()
+			b, err := ph.net.OutgoingUnicast[peerID].ProtoMsgToBytes()
 			if err != nil {
 				glog.Fatal("Could not marshal message")
 			}
@@ -147,12 +140,12 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	ph.failures.NowDisconnected(peerID)
 }
 
-func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.FailureNotifier) {
+func SetupPeers(localId int, addresses []string, peerNet *msgs.PeerNet, fail *msgs.FailureNotifier) {
 	peerHandler := peerHandler{
-		id: localId,
-		peers: make([]peer, len(addresses)),
+		id:       localId,
+		peers:    make([]peer, len(addresses)),
 		failures: fail,
-		iO: msgIo,
+		net:      peerNet,
 	}
 
 	for i := range addresses {
@@ -171,8 +164,8 @@ func SetupPeers(localId int, addresses []string, msgIo *msgs.Io, fail *msgs.Fail
 
 	// handle local peer (without sending network traffic)
 	peerHandler.failures.NowConnected(peerHandler.id)
-	from := &(peerHandler.iO.Incoming)
-	go from.Forward(peerHandler.iO.OutgoingUnicast[peerHandler.id])
+	from := &(peerHandler.net.Incoming)
+	go from.Forward(peerHandler.net.OutgoingUnicast[peerHandler.id])
 
 	// handle for incoming peers
 	go func() {

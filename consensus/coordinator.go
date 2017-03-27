@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry, io *msgs.Io, config Config, prepare bool) bool {
+func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry, peerNet *msgs.PeerNet, config Config, prepare bool) bool {
 	// PHASE 2: prepare
 	if prepare {
 
@@ -17,12 +17,12 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 
 		prepare := msgs.PrepareRequest{config.ID, view, startIndex, endIndex, entries}
 		glog.V(1).Info("Starting prepare phase", prepare)
-		io.OutgoingBroadcast.Requests.Prepare <- prepare
+		peerNet.OutgoingBroadcast.Requests.Prepare <- prepare
 
 		// collect responses
 		glog.V(1).Info("Waiting for ", config.Quorum.ReplicateSize, " prepare responses")
 		for replied := make([]bool, config.N); !config.Quorum.checkReplicationQuorum(replied); {
-			msg := <-io.Incoming.Responses.Prepare
+			msg := <-peerNet.Incoming.Responses.Prepare
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, prepare) {
 				glog.V(1).Info("Received ", msg)
@@ -44,12 +44,12 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 	// dispatch commit requests to all
 	commit := msgs.CommitRequest{config.ID, startIndex, endIndex, entries}
 	glog.V(1).Info("Starting commit phase", commit)
-	io.OutgoingBroadcast.Requests.Commit <- commit
+	peerNet.OutgoingBroadcast.Requests.Commit <- commit
 
 	// TODO: handle replies properly
 	go func() {
 		for replied := make([]bool, config.N); !config.Quorum.checkReplicationQuorum(replied); {
-			msg := <-io.Incoming.Responses.Commit
+			msg := <-peerNet.Incoming.Responses.Commit
 			// check msg replies to the msg we just sent
 			if reflect.DeepEqual(msg.Request, commit) {
 				glog.V(1).Info("Received ", msg)
@@ -62,15 +62,15 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 }
 
 // runCoordinator eturns true if successful
-func runCoordinator(state *state, io *msgs.Io, config Config) {
+func runCoordinator(state *state, peerNet *msgs.PeerNet, config Config) {
 
 	for {
 		glog.V(1).Info("Coordinator is ready to handle request")
-		req := <-io.Incoming.Requests.Coordinate
-		success := doCoordination(req.View, req.StartIndex, req.EndIndex, req.Entries, io, config, req.Prepare)
+		req := <-peerNet.Incoming.Requests.Coordinate
+		success := doCoordination(req.View, req.StartIndex, req.EndIndex, req.Entries, peerNet, config, req.Prepare)
 		// TODO: check view
 		reply := msgs.CoordinateResponse{config.ID, success}
-		io.OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
+		peerNet.OutgoingUnicast[req.SenderID].Responses.Coordinate <- msgs.Coordinate{req, reply}
 		glog.V(1).Info("Coordinator is finished handling request")
 		// TOD0: handle failure
 	}

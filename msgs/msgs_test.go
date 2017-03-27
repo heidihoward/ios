@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestMakeIo(t *testing.T) {
+func TestPeerNet(t *testing.T) {
 	flag.Parse()
 	defer glog.Flush()
 
@@ -40,18 +40,18 @@ func TestMakeIo(t *testing.T) {
 
 	// create a node in system of 3 nodes
 	nodes := 3
-	io := MakeIo(10, nodes)
+	peerNet := MakePeerNet(10, nodes)
 
 	// TEST
-	if len(io.OutgoingUnicast) != nodes {
+	if len(peerNet.OutgoingUnicast) != nodes {
 		t.Error("Wrong number of unicast channels created")
 	}
 
 	// TEST
-	io.Incoming.Requests.Prepare <- prepare
+	peerNet.Incoming.Requests.Prepare <- prepare
 
 	select {
-	case reply := <-io.Incoming.Requests.Prepare:
+	case reply := <-peerNet.Incoming.Requests.Prepare:
 		if !reflect.DeepEqual(reply, prepare) {
 			t.Error(reply)
 		}
@@ -60,7 +60,7 @@ func TestMakeIo(t *testing.T) {
 	}
 
 	// TEST
-	out := io.OutgoingUnicast[0]
+	out := peerNet.OutgoingUnicast[0]
 	(*out).Responses.Prepare <- prep
 	select {
 	case reply := <-(*out).Responses.Prepare:
@@ -72,13 +72,13 @@ func TestMakeIo(t *testing.T) {
 	}
 
 	//TEST
-	go io.Broadcaster()
-	io.OutgoingBroadcast.Responses.Prepare <- prep
+	go broadcaster(&peerNet.OutgoingBroadcast, peerNet.OutgoingUnicast)
+	peerNet.OutgoingBroadcast.Responses.Prepare <- prep
 
 	for id := 0; id < nodes; id++ {
 		// check each receives it
 		select {
-		case reply := <-io.OutgoingUnicast[id].Responses.Prepare:
+		case reply := <-peerNet.OutgoingUnicast[id].Responses.Prepare:
 			if reply.Response != prepareRes {
 				t.Error(reply)
 			}
