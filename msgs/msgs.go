@@ -13,6 +13,7 @@ type Requests struct {
 	NewView    chan NewViewRequest
 	Query      chan QueryRequest
 	Coordinate chan CoordinateRequest
+	Forward    chan ClientRequest
 }
 
 type Responses struct {
@@ -30,7 +31,6 @@ type ProtoMsgs struct {
 
 type ClientNet struct {
 	IncomingRequests       chan ClientRequest
-	IncomingRequestsForced chan ClientRequest
 	OutgoingResponses      chan Client
 	OutgoingRequestsFailed chan ClientRequest
 }
@@ -123,6 +123,9 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 		case r := <-from.Requests.Coordinate:
 			glog.V(1).Info("Forwarding", r)
 			to.Requests.Coordinate <- r
+		case r := <-from.Requests.Forward:
+			glog.V(1).Info("Forwarding", r)
+			to.Requests.Forward <- r
 			// Responses
 		case r := <-from.Responses.Prepare:
 			glog.V(1).Info("Forwarding", r)
@@ -143,6 +146,29 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 	}
 }
 
+// Forward mesaages from one ProtoMsgs to another
+func (from *ProtoMsgs) Discard() {
+	for {
+		select {
+		// Requests
+		case <-from.Requests.Prepare:
+		case <-from.Requests.Commit:
+		case <-from.Requests.NewView:
+		case <-from.Requests.Query:
+		case <-from.Requests.Coordinate:
+		case <-from.Requests.Forward:
+			// Responses
+		case <-from.Responses.Prepare:
+		case <-from.Responses.Commit:
+		case <-from.Responses.NewView:
+		case <-from.Responses.Query:
+		case <-from.Responses.Coordinate:
+		default:
+			return
+		}
+	}
+}
+
 func MakeProtoMsgs(buf int) ProtoMsgs {
 	return ProtoMsgs{
 		Requests{
@@ -150,7 +176,8 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 			make(chan CommitRequest, buf),
 			make(chan NewViewRequest, buf),
 			make(chan QueryRequest, buf),
-			make(chan CoordinateRequest, buf)},
+			make(chan CoordinateRequest, buf),
+			make(chan ClientRequest, buf)},
 		Responses{
 			make(chan Prepare, buf),
 			make(chan Commit, buf),
@@ -162,7 +189,6 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 func MakeClientNet(buf int) *ClientNet {
 	net := ClientNet{
 		IncomingRequests:       make(chan ClientRequest, buf),
-		IncomingRequestsForced: make(chan ClientRequest, buf),
 		OutgoingResponses:      make(chan Client, buf),
 		OutgoingRequestsFailed: make(chan ClientRequest, buf)}
 	return &net

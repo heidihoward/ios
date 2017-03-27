@@ -28,7 +28,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 				glog.Warning("Participant is behind")
 				state.View = req.View
 				state.Storage.PersistView(state.View)
-				state.MasterID = mod(state.View, config.N)
+				state.masterID = mod(state.View, config.N)
 			}
 
 			// add enties to the log (in-memory)
@@ -75,7 +75,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			glog.V(1).Info("Commit response dispatched")
 
 		case req := <-peerNet.Incoming.Requests.NewView:
-			glog.V(1).Info("New view requests received at ", config.ID, ": ", req)
+			glog.Info("New view requests received at ", config.ID, ": ", req)
 
 			// check view
 			if req.View < state.View {
@@ -86,12 +86,12 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 				glog.Warning("Participant is behind")
 				state.View = req.View
 				state.Storage.PersistView(state.View)
-				state.MasterID = mod(state.View, config.N)
+				state.masterID = mod(state.View, config.N)
 			}
 
 			reply := msgs.NewViewResponse{config.ID, state.View, state.Log.LastIndex}
 			peerNet.OutgoingUnicast[req.SenderID].Responses.NewView <- msgs.NewView{req, reply}
-			glog.V(1).Info("Response dispatched")
+			glog.Info("Response dispatched")
 
 		case req := <-peerNet.Incoming.Requests.Query:
 			glog.V(1).Info("Query requests received at ", config.ID, ": ", req)
@@ -107,7 +107,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 				glog.Warning("Participant is behind")
 				state.View = req.View
 				state.Storage.PersistView(state.View)
-				state.MasterID = mod(state.View, config.N)
+				state.masterID = mod(state.View, config.N)
 			}
 
 			reply := msgs.QueryResponse{config.ID, state.View, state.Log.GetEntries(req.StartIndex, req.EndIndex)}

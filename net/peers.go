@@ -30,6 +30,8 @@ func (ph *peerHandler) checkPeer() {
 			cn, err := net.Dial("tcp", ph.peers[i].address)
 			if err == nil {
 				go ph.handlePeer(cn, true)
+			} else {
+				go ph.net.OutgoingUnicast[i].Discard()
 			}
 		}
 	}
@@ -115,9 +117,18 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 			}
 			glog.V(1).Infof("Sending to %d: %s", peerID, string(b))
 			_, err = writer.Write(b)
+			if err != nil {
+				glog.Warning(err)
+				// return packet for retry
+				ph.net.OutgoingUnicast[peerID].BytesToProtoMsg(b)
+				closeErr <- err
+				break
+			}
 			_, err = writer.Write([]byte("\n"))
 			if err != nil {
 				glog.Warning(err)
+				// return packet for retry
+				ph.net.OutgoingUnicast[peerID].BytesToProtoMsg(b)
 				closeErr <- err
 				break
 			}
@@ -125,6 +136,8 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 			err = writer.Flush()
 			if err != nil {
 				glog.Warning(err)
+				// return packet for retry
+				ph.net.OutgoingUnicast[peerID].BytesToProtoMsg(b)
 				closeErr <- err
 				break
 			}

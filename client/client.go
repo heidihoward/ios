@@ -129,7 +129,7 @@ func StartClient(id int, statFile string, addrs []string, timeout time.Duration)
 	stats := openStatsFile(statFile)
 
 	// connecting to server
-	conn, master, err := connect(addrs, 10, 0)
+	conn, master, err := connect(addrs, 1, 0)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -189,7 +189,7 @@ func (c *Client) SubmitRequest(text string) (bool, string) {
 					glog.Warning(err)
 				}
 			}
-			c.conn, c.master, err = connect(c.servers, 10, c.master+1)
+			c.conn, c.master, err = connect(c.servers, 1, c.master+1)
 			if err == nil {
 				break
 			}

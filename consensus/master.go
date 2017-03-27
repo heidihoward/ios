@@ -6,40 +6,40 @@ import (
 	"time"
 )
 
-func monitorMaster(s *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, new bool) {
+func monitorMaster(s *state, peerNet *msgs.PeerNet, config Config, new bool) {
 
 	// if initial master, start master goroutine
 	if config.ID == 0 && new {
 		glog.Info("Starting leader module")
-		runMaster(0, -1, true, peerNet, clientNet, config, s)
+		runMaster(0, -1, true, peerNet, config, s)
 	}
 
 	for {
 		select {
-		case <-s.Failures.NotifyOnFailure(s.MasterID):
+		case <-s.Failures.NotifyOnFailure(s.masterID):
 			nextMaster := mod(s.View+1, config.N)
-			glog.Warningf("Master (ID:%d,View:%d) failed, next up is ID:%d in View:%d", s.MasterID, s.View, nextMaster, s.View+1)
-			s.MasterID = nextMaster
+			glog.Warningf("Master (ID:%d,View:%d) failed, next up is ID:%d in View:%d", s.masterID, s.View, nextMaster, s.View+1)
+			s.masterID = nextMaster
 			s.View++
 			if nextMaster == config.ID {
 				s.View++
 				glog.V(1).Info("Starting new master in view ", s.View, " at ", config.ID)
 				s.Storage.PersistView(s.View)
-				s.MasterID = nextMaster
-				runMaster(s.View, s.CommitIndex, false, peerNet, clientNet, config, s)
+				s.masterID = nextMaster
+				runMaster(s.View, s.CommitIndex, false, peerNet, config, s)
 			}
 
-		case req := <-clientNet.IncomingRequestsForced:
-			glog.Warning("Forcing view change")
-			s.View = next(s.View, config.ID, config.N)
-			s.Storage.PersistView(s.View)
-			s.MasterID = config.ID
-			clientNet.IncomingRequests <- req
-			runMaster(s.View, s.CommitIndex, false, peerNet, clientNet, config, s)
-
-		case req := <-clientNet.IncomingRequests:
+		case req := <-peerNet.Incoming.Requests.Forward:
 			glog.Warning("Request received by non-master server ", req)
-			clientNet.OutgoingRequestsFailed <- req
+			if req.ForceViewChange {
+				glog.Warning("Forcing view change")
+				s.View = next(s.View, config.ID, config.N)
+				s.Storage.PersistView(s.View)
+				s.masterID = config.ID
+				req.ForceViewChange = false
+				peerNet.Incoming.Requests.Forward <- req
+				runMaster(s.View, s.CommitIndex, false, peerNet, config, s)
+			}
 		}
 	}
 }
@@ -91,10 +91,11 @@ func runRecovery(view int, commitIndex int, peerNet *msgs.PeerNet, config Config
 }
 
 // runMaster implements the Master mode
-func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, s *state) {
+func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, config Config, s *state) {
 	// setup
 	glog.Info("Starting up master in view ", view)
 	glog.Info("Master is configured to delegate replication to ", config.DelegateReplication)
+	s.masterID = config.ID
 
 	// determine next safe index
 	startIndex := -1
@@ -125,11 +126,8 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		}
 
 		glog.V(1).Info("Ready to handle request")
-		var req1 msgs.ClientRequest
-		select {
-		case req1 = <-clientNet.IncomingRequests:
-		case req1 = <-clientNet.IncomingRequestsForced:
-		}
+		req1 := <- peerNet.Incoming.Requests.Forward
+
 		glog.V(1).Info("Request received: ", req1)
 		var reqs []msgs.ClientRequest
 
@@ -150,15 +148,7 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 			exit := false
 			for exit == false {
 				select {
-				case req := <-clientNet.IncomingRequestsForced:
-					reqsAll[reqsNum] = req
-					glog.V(1).Info("Request ", reqsNum, " is : ", req)
-					reqsNum = reqsNum + 1
-					if reqsNum == config.MaxBatch {
-						exit = true
-						break
-					}
-				case req := <-clientNet.IncomingRequests:
+				case req := <-peerNet.Incoming.Requests.Forward:
 					reqsAll[reqsNum] = req
 					glog.V(1).Info("Request ", reqsNum, " is : ", req)
 					reqsNum = reqsNum + 1

@@ -46,11 +46,7 @@ func (ch *clientHandler) handleRequest(req msgs.ClientRequest) msgs.ClientRespon
 
 	// CONSENESUS ALGORITHM HERE
 	glog.V(1).Info("Passing request to consensus algorithm")
-	if req.ForceViewChange {
-		ch.clientNet.IncomingRequestsForced <- req
-	} else {
-		ch.clientNet.IncomingRequests <- req
-	}
+	ch.clientNet.IncomingRequests <- req
 
 	if ch.notify.IsSubscribed(req) {
 		glog.Warning("Client has multiple outstanding connections for the same request, usually not a good sign")

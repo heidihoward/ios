@@ -26,6 +26,7 @@ type ServerConfig struct {
 		SnapshotInterval    int    // how often to record state machine snapshots
 		QuorumSystem        string // which quorum system to use: either "strict majority", "non-strict majority", "all-in", "one-in" or "fixed:n"
 		IndexExclusivity    bool   // if enabled, Ios will assign each index to at most one request
+		ParticipantResponse string // how should non-master servers response to client requests, either "redirect" or "forward"
 		Application         string // which application should Ios serve: either "kv-store" or "dummy"
 	}
 	Unsafe struct {
@@ -59,6 +60,9 @@ func ParseServerConfig(filename string) ServerConfig {
 	}
 	if config.Options.WindowSize <= 0 {
 		glog.Fatal("Window Size must be greater than one")
+	}
+	if config.Options.ParticipantResponse != "redirect" && config.Options.ParticipantResponse != "forward" {
+		glog.Fatal("Participant response mode must be either redirect or forward but is ", config.Options.ParticipantResponse)
 	}
 	if config.Options.Application != "kv-store" && config.Options.Application != "dummy" {
 		glog.Fatal("Application must be either kv-store or dummy but is ", config.Options.Application)

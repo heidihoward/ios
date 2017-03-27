@@ -21,6 +21,7 @@ type Config struct {
 	SnapshotInterval    int       // how often to record state machine snapshots
 	Quorum              QuorumSys // which quorum system to use
 	IndexExclusivity    bool      // if enabled, Ios will assign each index to at most one request
+	ParticipantResponse string    // how should non-master nodes response to client requests
 }
 
 // state describes the current state of the consensus algorithm
@@ -28,7 +29,7 @@ type state struct {
 	View         int                   // local view number (persistent)
 	Log          *Log                  // log entries, index from 0 (persistent)
 	CommitIndex  int                   // index of the last entry applied to the state machine, -1 means no entries have been applied yet
-	MasterID     int                   // ID of the current master, calculated from View
+	masterID     int                   // ID of the current master, calculated from View
 	LastSnapshot int                   // index of the last state machine snapshot
 	StateMachine *app.StateMachine     // ref to current state machine
 	Failures     *msgs.FailureNotifier // ref to failure notifier to subscribe to failure notification
@@ -49,7 +50,7 @@ func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *
 		View:         0,
 		Log:          NewLog(config.LogLength),
 		CommitIndex:  -1,
-		MasterID:     0,
+		masterID:     0,
 		LastSnapshot: 0,
 		StateMachine: app,
 		Failures:     fail,
@@ -62,7 +63,8 @@ func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
 	go runCoordinator(&state, peerNet, config)
-	go monitorMaster(&state, peerNet, clientNet, config, true)
+	go monitorMaster(&state, peerNet,  config, true)
+	go runClientHandler(&state, peerNet, clientNet, config)
 	runParticipant(&state, peerNet, clientNet, config)
 
 }
@@ -79,7 +81,7 @@ func Recover(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, vi
 		View:         view,
 		Log:          log,
 		CommitIndex:  snapshotIndex,
-		MasterID:     mod(view, config.N),
+		masterID:     mod(view, config.N),
 		LastSnapshot: snapshotIndex,
 		StateMachine: app,
 		Failures:     fail,
@@ -106,6 +108,7 @@ func Recover(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, vi
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
 	go runCoordinator(&state, peerNet, config)
-	go monitorMaster(&state, peerNet, clientNet, config, false)
+	go monitorMaster(&state, peerNet, config, false)
+	go runClientHandler(&state, peerNet, clientNet, config)
 	runParticipant(&state, peerNet, clientNet, config)
 }

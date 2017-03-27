@@ -22,11 +22,11 @@ func NewFailureNotifier(n int) *FailureNotifier {
 }
 
 func (f *FailureNotifier) NotifyOnFailure(id int) chan bool {
-	note := make(chan bool)
+	note := make(chan bool,1)
 	f.subscribed[id] = note
-	if !f.up[id] {
-		note <- true
-	}
+	// if !f.up[id] {
+	// 	note <- true
+	// }
 	return note
 }
 
