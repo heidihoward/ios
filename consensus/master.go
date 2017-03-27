@@ -126,7 +126,7 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		}
 
 		glog.V(1).Info("Ready to handle request")
-		req1 := <- peerNet.Incoming.Requests.Forward
+		req1 := <-peerNet.Incoming.Requests.Forward
 
 		glog.V(1).Info("Request received: ", req1)
 		var reqs []msgs.ClientRequest

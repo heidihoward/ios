@@ -63,7 +63,7 @@ func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.ID)
 	go runCoordinator(&state, peerNet, config)
-	go monitorMaster(&state, peerNet,  config, true)
+	go monitorMaster(&state, peerNet, config, true)
 	go runClientHandler(&state, peerNet, clientNet, config)
 	runParticipant(&state, peerNet, clientNet, config)
 

@@ -19,9 +19,9 @@ func TestFailureNotifier(t *testing.T) {
 
 	// check on false failures
 	select {
-	case <- fn.NotifyOnFailure(3):
+	case <-fn.NotifyOnFailure(3):
 		t.Error("Unexpected failure")
-	case <- time.After(100 *time.Millisecond):
+	case <-time.After(100 * time.Millisecond):
 	}
 
 	wait := fn.NotifyOnFailure(3)
@@ -30,7 +30,7 @@ func TestFailureNotifier(t *testing.T) {
 	// check on false failures
 	select {
 	case <-wait:
-	case <- time.After(100 *time.Millisecond):
+	case <-time.After(100 * time.Millisecond):
 		t.Error("Failure not reported")
 	}
 
