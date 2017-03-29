@@ -22,25 +22,25 @@ func StartKvClient(id int, statFile string, addrs []string, timeout time.Duratio
 }
 
 func (kvc *KvClient) Update(key string, value string) {
-	kvc.iosClient.SubmitRequest(fmt.Sprintf("update %v %v", key, value))
+	kvc.iosClient.SubmitRequest(fmt.Sprintf("update %v %v", key, value), false)
 }
 
 func (kvc *KvClient) Get(key string) string {
-	_, reply := kvc.iosClient.SubmitRequest(fmt.Sprintf("get %v", key))
+	_, reply := kvc.iosClient.SubmitRequest(fmt.Sprintf("get %v", key), true)
 	return reply
 }
 
 func (kvc *KvClient) Delete(key string) {
-	kvc.iosClient.SubmitRequest(fmt.Sprintf("delete %v", key))
+	kvc.iosClient.SubmitRequest(fmt.Sprintf("delete %v", key), false)
 }
 
 func (kvc *KvClient) Count() int {
-	_, reply := kvc.iosClient.SubmitRequest("count")
+	_, reply := kvc.iosClient.SubmitRequest("count", true)
 	count, _ := strconv.Atoi(reply)
 	return count
 }
 
 func (kvc *KvClient) Print() string {
-	_, reply := kvc.iosClient.SubmitRequest("print")
+	_, reply := kvc.iosClient.SubmitRequest("print", true)
 	return reply
 }

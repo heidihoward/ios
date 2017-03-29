@@ -14,6 +14,7 @@ func TestApply(t *testing.T) {
 		ClientID:        1,
 		RequestID:       1,
 		ForceViewChange: false,
+		ReadOnly:        false,
 		Request:         "update A 1",
 	}
 	expectedResponse1 := msgs.ClientResponse{
@@ -49,6 +50,7 @@ func TestApply(t *testing.T) {
 		ClientID:        1,
 		RequestID:       2,
 		ForceViewChange: false,
+		ReadOnly:        true,
 		Request:         "get A",
 	}
 	expectedResponse2 := msgs.ClientResponse{

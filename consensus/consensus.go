@@ -37,7 +37,7 @@ type state struct {
 }
 
 // noop is a explicitly empty request
-var noop = msgs.ClientRequest{-1, -1, false, "noop"}
+var noop = msgs.ClientRequest{-1, -1, false, false, "noop"}
 
 // Init runs a fresh instance of the consensus algorithm.
 // The caller is requried to process Io requests using msgs.Io

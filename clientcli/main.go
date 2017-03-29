@@ -38,13 +38,13 @@ func main() {
 	go func() {
 		for {
 			// get next command
-			text, ok := ioapi.Next()
+			text, read, ok := ioapi.Next()
 			if !ok {
 				finish <- true
 				break
 			}
 			// pass to ios client
-			success, reply := c.SubmitRequest(text)
+			success, reply := c.SubmitRequest(text, read)
 			if !success {
 				finish <- true
 				break

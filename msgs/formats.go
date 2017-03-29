@@ -7,6 +7,7 @@ type ClientRequest struct {
 	ClientID        int
 	RequestID       int
 	ForceViewChange bool
+	ReadOnly        bool
 	Request         string
 }
 
@@ -147,8 +148,8 @@ type Coordinate struct {
 
 type ForwardRequest struct {
 	SenderID int
-	View int
-	Request ClientRequest
+	View     int
+	Request  ClientRequest
 }
 
 type LogUpdate struct {

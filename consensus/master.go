@@ -128,7 +128,7 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		glog.V(1).Info("Ready to handle request")
 		forwarded := <-peerNet.Incoming.Requests.Forward
 
-		glog.V(1).Info("Request received: ", forwarded.Request, " Received from ",forwarded.SenderID)
+		glog.V(1).Info("Request received: ", forwarded.Request, " Received from ", forwarded.SenderID)
 		var reqs []msgs.ClientRequest
 
 		//wait for window slot

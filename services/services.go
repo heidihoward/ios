@@ -7,6 +7,7 @@ import (
 type Service interface {
 	Process(req string) string
 	CheckFormat(req string) bool
+	CheckRead(req string) bool
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON(snap []byte) error
 }
@@ -44,4 +45,12 @@ func GetInteractiveText(config string) string {
 `
 	}
 	return s
+}
+
+func Parse(config string, request string) (bool, bool) {
+	serv := StartService(config)
+	if !serv.CheckFormat(request) {
+		return false, false
+	}
+	return true, serv.CheckRead(request)
 }

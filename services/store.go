@@ -86,6 +86,7 @@ func (s *store) Process(req string) string {
 }
 
 func (s *store) CheckFormat(req string) bool {
+	// TODO: check all requests, not just first
 	request := strings.Split(strings.Trim(req, "\n"), " ")
 	switch request[0] {
 	case "update":
@@ -94,6 +95,17 @@ func (s *store) CheckFormat(req string) bool {
 		return len(request) == 2
 	case "count", "print":
 		return len(request) == 1
+	default:
+		return false
+	}
+}
+
+func (s *store) CheckRead(req string) bool {
+	// TODO: check all request, not just first
+	request := strings.Split(strings.Trim(req, "\n"), " ")
+	switch request[0] {
+	case "exists", "get", "count", "print":
+		return true
 	default:
 		return false
 	}

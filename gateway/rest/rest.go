@@ -67,15 +67,16 @@ func Create(port int) *Rest {
 }
 
 // Next returns the next request for the state machine or false if wishes to terminate
-func (r *Rest) Next() (string, bool) {
+func (r *Rest) Next() (string, bool, bool) {
 	glog.V(1).Info("Waiting for next request")
 	restreq, ok := <-waiting
 	if !ok {
-		return "", false
+		return "", false, false
 	}
 	outstanding <- restreq
 	glog.V(1).Info("Next request received: ", restreq.Req)
-	return restreq.Req, true
+	// TODO: work out if request is read or write
+	return restreq.Req, false, true
 }
 
 // Return provides the REST API with the response to the current outstanding request

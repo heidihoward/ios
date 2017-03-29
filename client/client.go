@@ -139,11 +139,16 @@ func StartClient(id int, statFile string, addrs []string, timeout time.Duration)
 	return &Client{id, 1, stats, addrs, conn, rd, timeout, master}
 }
 
-func (c *Client) SubmitRequest(text string) (bool, string) {
+func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 	glog.V(1).Info("Request ", c.requestID, " is: ", text)
 
 	// prepare request
-	req := msgs.ClientRequest{c.id, c.requestID, false, text}
+	req := msgs.ClientRequest{
+		ClientID:        c.id,
+		RequestID:       c.requestID,
+		ForceViewChange: false,
+		ReadOnly:        readonly,
+		Request:         text}
 	b, err := msgs.Marshal(req)
 	if err != nil {
 		glog.Fatal(err)

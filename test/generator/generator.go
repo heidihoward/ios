@@ -40,10 +40,10 @@ func Generate(config config.WorkloadConfig) *Generator {
 }
 
 // Next return the next request in the workload or false if no more are available.
-func (g *Generator) Next() (string, bool) {
+func (g *Generator) Next() (string, bool, bool) {
 	//handle termination after n requests
 	if g.config.Requests == 0 {
-		return "", false
+		return "", false, false
 	}
 	g.config.Requests--
 
@@ -59,11 +59,11 @@ func (g *Generator) Next() (string, bool) {
 
 	if rand.Intn(100) < g.config.Reads {
 		g.request = fmt.Sprintf("get %s", key)
-		return g.request, true
+		return g.request, true, true
 	}
 	value := randStringBytes(g.config.ValueSize)
 	g.request = fmt.Sprintf("update %s %s", key, value)
-	return g.request, true
+	return g.request, false, true
 }
 
 // Return notifies the generator of Ios's response so it can check consistency

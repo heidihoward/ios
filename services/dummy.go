@@ -29,6 +29,10 @@ func (d *dummy) CheckFormat(req string) bool {
 	}
 }
 
+func (D *dummy) CheckRead(req string) bool {
+	return false
+}
+
 func (d *dummy) MarshalJSON() ([]byte, error) {
 	return json.Marshal(*d)
 }

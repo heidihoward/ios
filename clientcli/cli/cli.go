@@ -19,7 +19,7 @@ func Create(app string) *Interative {
 
 }
 
-func (i *Interative) Next() (string, bool) {
+func (i *Interative) Next() (string, bool, bool) {
 	b := (*bufio.Reader)(i)
 	fmt.Print("Enter command: ")
 	text, err := b.ReadString('\n')
@@ -29,7 +29,9 @@ func (i *Interative) Next() (string, bool) {
 	text = strings.Trim(text, "\n")
 	text = strings.Trim(text, "\r")
 	glog.V(1).Info("User entered", text)
-	return text, true
+	// TODO: remove hack
+	_, read := services.Parse("kv-store", text)
+	return text, read, true
 }
 
 func (_ *Interative) Return(str string) {

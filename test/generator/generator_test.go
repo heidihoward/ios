@@ -25,7 +25,7 @@ func checkGenerateConfig(t *testing.T, conf config.WorkloadConfig) {
 	gen := Generate(conf)
 
 	for i := 0; i < conf.Config.Requests; i++ {
-		str, ok := gen.Next()
+		str, _, ok := gen.Next()
 		// check for early termination
 		if !ok {
 			if conf.Config.Requests != i {
@@ -41,7 +41,7 @@ func checkGenerateConfig(t *testing.T, conf config.WorkloadConfig) {
 		}
 	}
 	// check for late termination
-	_, ok := gen.Next()
+	_, _, ok := gen.Next()
 	if ok {
 		t.Errorf("Generator not terminated at %d", conf.Config.Requests+1)
 	}
