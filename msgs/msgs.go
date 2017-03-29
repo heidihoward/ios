@@ -14,7 +14,7 @@ type Requests struct {
 	Query      chan QueryRequest
 	Copy       chan CopyRequest
 	Coordinate chan CoordinateRequest
-	Forward    chan ClientRequest
+	Forward    chan ForwardRequest
 }
 
 type Responses struct {
@@ -79,6 +79,11 @@ func broadcaster(broadcast *ProtoMsgs, unicast map[int]*ProtoMsgs) {
 			glog.V(1).Info("Broadcasting ", r)
 			for id := range unicast {
 				unicast[id].Requests.Coordinate <- r
+			}
+		case r := <-broadcast.Requests.Forward:
+			glog.V(1).Info("Broadcasting ", r)
+			for id := range unicast {
+				unicast[id].Requests.Forward <- r
 			}
 			// Responses
 		case r := <-broadcast.Responses.Prepare:
@@ -198,7 +203,7 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 			make(chan QueryRequest, buf),
 			make(chan CopyRequest, buf),
 			make(chan CoordinateRequest, buf),
-			make(chan ClientRequest, buf)},
+			make(chan ForwardRequest, buf)},
 		Responses{
 			make(chan Prepare, buf),
 			make(chan Commit, buf),

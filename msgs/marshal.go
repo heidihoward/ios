@@ -144,7 +144,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Fatal("Buffer overflow, dropping message", msg)
 		}
 	case 10:
-		var msg ClientRequest
+		var msg ForwardRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
 			glog.Warning("Cannot parse message", err)

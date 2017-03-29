@@ -21,7 +21,7 @@ type ServerConfig struct {
 		Length              int    // max log size
 		BatchInterval       int    // how often to batch process request in ms, 0 means no batching
 		MaxBatch            int    // maximum requests in a batch, unused if BatchInterval=0
-		DelegateReplication int    // how many replication coordinators to delegate to when master
+		DelegateReplication int    // how many replication coordinators to delegate to when master, -1 means use reverse delegation
 		WindowSize          int    // how many requests can the master have inflight at once
 		SnapshotInterval    int    // how often to record state machine snapshots
 		QuorumSystem        string // which quorum system to use: either "strict majority", "non-strict majority", "all-in", "one-in" or "fixed:n"
@@ -55,8 +55,8 @@ func ParseServerConfig(filename string) ServerConfig {
 	if config.Options.MaxBatch < 0 {
 		glog.Fatal("Max batch size must be positive")
 	}
-	if config.Options.DelegateReplication < 0 || config.Options.DelegateReplication > len(config.Peers.Address) {
-		glog.Fatal("Batch interval must be positive")
+	if config.Options.DelegateReplication < -1 || config.Options.DelegateReplication > len(config.Peers.Address) {
+		glog.Fatal("DelegateReplication must be within range, or -1 for reverse delegation")
 	}
 	if config.Options.WindowSize <= 0 {
 		glog.Fatal("Window Size must be greater than one")

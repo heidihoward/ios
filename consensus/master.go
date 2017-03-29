@@ -31,12 +31,12 @@ func monitorMaster(s *state, peerNet *msgs.PeerNet, config Config, new bool) {
 
 		case req := <-peerNet.Incoming.Requests.Forward:
 			glog.Warning("Request received by non-master server ", req)
-			if req.ForceViewChange {
+			if req.Request.ForceViewChange {
 				glog.Warning("Forcing view change")
 				s.View = next(s.View, config.ID, config.N)
 				s.Storage.PersistView(s.View)
 				s.masterID = config.ID
-				req.ForceViewChange = false
+				req.Request.ForceViewChange = false
 				peerNet.Incoming.Requests.Forward <- req
 				runMaster(s.View, s.CommitIndex, false, peerNet, config, s)
 			}
@@ -126,9 +126,9 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		}
 
 		glog.V(1).Info("Ready to handle request")
-		req1 := <-peerNet.Incoming.Requests.Forward
+		forwarded := <-peerNet.Incoming.Requests.Forward
 
-		glog.V(1).Info("Request received: ", req1)
+		glog.V(1).Info("Request received: ", forwarded.Request, " Received from ",forwarded.SenderID)
 		var reqs []msgs.ClientRequest
 
 		//wait for window slot
@@ -137,20 +137,20 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		if config.BatchInterval == 0 || config.MaxBatch == 1 {
 			glog.V(1).Info("No batching enabled")
 			// handle client requests (1 at a time)
-			reqs = []msgs.ClientRequest{req1}
+			reqs = []msgs.ClientRequest{forwarded.Request}
 		} else {
 			glog.V(1).Info("Ready to handle more requests. Batch every ", config.BatchInterval, " milliseconds")
 			// setup for holding requests
 			reqsAll := make([]msgs.ClientRequest, config.MaxBatch)
 			reqsNum := 1
-			reqsAll[0] = req1
+			reqsAll[0] = forwarded.Request
 
 			exit := false
 			for exit == false {
 				select {
-				case req := <-peerNet.Incoming.Requests.Forward:
-					reqsAll[reqsNum] = req
-					glog.V(1).Info("Request ", reqsNum, " is : ", req)
+				case nextForwarded := <-peerNet.Incoming.Requests.Forward:
+					reqsAll[reqsNum] = nextForwarded.Request
+					glog.V(1).Info("Request ", reqsNum, " is : ", nextForwarded.Request)
 					reqsNum = reqsNum + 1
 					if reqsNum == config.MaxBatch {
 						exit = true

@@ -145,6 +145,12 @@ type Coordinate struct {
 	Response CoordinateResponse
 }
 
+type ForwardRequest struct {
+	SenderID int
+	View int
+	Request ClientRequest
+}
+
 type LogUpdate struct {
 	StartIndex int
 	EndIndex   int
