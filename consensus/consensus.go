@@ -65,7 +65,7 @@ func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *
 	go runCoordinator(&state, peerNet, config)
 	go monitorMaster(&state, peerNet, config, true)
 	go runClientHandler(&state, peerNet, clientNet, config)
-	runParticipant(&state, peerNet, clientNet, config, )
+	runParticipant(&state, peerNet, clientNet, config)
 
 }
 

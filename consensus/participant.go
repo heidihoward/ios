@@ -64,9 +64,9 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			}
 
 			// if blocked on request out-of-window send a copy to solicit a commit
-			if state.CommitIndex < state.Log.LastIndex - config.WindowSize && config.N >1 {
-				peerID := randPeer(config.N,config.ID)
-				peerNet.OutgoingUnicast[peerID].Requests.Copy <- msgs.CopyRequest{config.ID,state.CommitIndex+1}
+			if state.CommitIndex < state.Log.LastIndex-config.WindowSize && config.N > 1 {
+				peerID := randPeer(config.N, config.ID)
+				peerNet.OutgoingUnicast[peerID].Requests.Copy <- msgs.CopyRequest{config.ID, state.CommitIndex + 1}
 
 			}
 
@@ -76,10 +76,12 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 				state.LastSnapshot = state.CommitIndex
 			}
 
-			// reply to coordinator
-			reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
-			(peerNet.OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
-			glog.V(1).Info("Commit response dispatched")
+			// reply to coordinator if required
+			if req.ResponseRequired {
+				reply := msgs.CommitResponse{config.ID, true, state.CommitIndex}
+				(peerNet.OutgoingUnicast[req.SenderID]).Responses.Commit <- msgs.Commit{req, reply}
+				glog.V(1).Info("Commit response dispatched")
+			}
 
 		case req := <-peerNet.Incoming.Requests.NewView:
 			glog.Info("New view requests received at ", config.ID, ": ", req)
@@ -123,7 +125,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 		case req := <-peerNet.Incoming.Requests.Copy:
 			glog.V(1).Info("Copy requests received at ", config.ID, ": ", req)
 			if state.CommitIndex > req.StartIndex {
-				reply := msgs.CommitRequest{config.ID, req.StartIndex, state.CommitIndex, state.Log.GetEntries(req.StartIndex, state.CommitIndex)}
+				reply := msgs.CommitRequest{config.ID, false, req.StartIndex, state.CommitIndex, state.Log.GetEntries(req.StartIndex, state.CommitIndex)}
 				peerNet.OutgoingUnicast[req.SenderID].Requests.Commit <- reply
 			}
 		}

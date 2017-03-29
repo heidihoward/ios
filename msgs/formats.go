@@ -54,10 +54,11 @@ type Prepare struct {
 
 // CommitRequest describes a Commit messages.
 type CommitRequest struct {
-	SenderID   int
-	StartIndex int
-	EndIndex   int
-	Entries    []Entry
+	SenderID         int
+	ResponseRequired bool
+	StartIndex       int
+	EndIndex         int
+	Entries          []Entry
 }
 
 // CommitResponse describes a Commit response messages.
@@ -116,7 +117,7 @@ type CopyRequest struct {
 type CopyResponse struct {
 	SenderID int
 	View     int
-	Success   bool
+	Success  bool
 	Entries  []Entry
 }
 

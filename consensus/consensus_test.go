@@ -95,10 +95,11 @@ func TestInit(t *testing.T) {
 	// tell node to commit update A 3
 	entries1[0].Committed = true
 	commit1 := msgs.CommitRequest{
-		SenderID:   0,
-		StartIndex: 0,
-		EndIndex:   1,
-		Entries:    entries1}
+		SenderID:         0,
+		ResponseRequired: true,
+		StartIndex:       0,
+		EndIndex:         1,
+		Entries:          entries1}
 
 	commit1Res := msgs.CommitResponse{
 		SenderID:    0,

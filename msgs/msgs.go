@@ -12,7 +12,7 @@ type Requests struct {
 	Commit     chan CommitRequest
 	NewView    chan NewViewRequest
 	Query      chan QueryRequest
-	Copy 			 chan CopyRequest
+	Copy       chan CopyRequest
 	Coordinate chan CoordinateRequest
 	Forward    chan ClientRequest
 }

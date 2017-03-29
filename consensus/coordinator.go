@@ -42,7 +42,7 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 		entries[i].Committed = true
 	}
 	// dispatch commit requests to all
-	commit := msgs.CommitRequest{config.ID, startIndex, endIndex, entries}
+	commit := msgs.CommitRequest{config.ID, true, startIndex, endIndex, entries}
 	glog.V(1).Info("Starting commit phase", commit)
 	peerNet.OutgoingBroadcast.Requests.Commit <- commit
 
