@@ -63,6 +63,13 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 				state.CommitIndex++
 			}
 
+			// if blocked on request out-of-window send a copy to solicit a commit
+			if state.CommitIndex < state.Log.LastIndex - config.WindowSize && config.N >1 {
+				peerID := randPeer(config.N,config.ID)
+				peerNet.OutgoingUnicast[peerID].Requests.Copy <- msgs.CopyRequest{config.ID,state.CommitIndex+1}
+
+			}
+
 			// check if its time for another snapshot
 			if state.LastSnapshot+config.SnapshotInterval <= state.CommitIndex {
 				state.Storage.PersistSnapshot(state.CommitIndex, state.StateMachine.MakeSnapshot())
@@ -112,6 +119,13 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 
 			reply := msgs.QueryResponse{config.ID, state.View, state.Log.GetEntries(req.StartIndex, req.EndIndex)}
 			peerNet.OutgoingUnicast[req.SenderID].Responses.Query <- msgs.Query{req, reply}
+
+		case req := <-peerNet.Incoming.Requests.Copy:
+			glog.V(1).Info("Copy requests received at ", config.ID, ": ", req)
+			if state.CommitIndex > req.StartIndex {
+				reply := msgs.CommitRequest{config.ID, req.StartIndex, state.CommitIndex, state.Log.GetEntries(req.StartIndex, state.CommitIndex)}
+				peerNet.OutgoingUnicast[req.SenderID].Requests.Commit <- reply
+			}
 		}
 	}
 }

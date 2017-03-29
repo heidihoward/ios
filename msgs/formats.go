@@ -107,6 +107,24 @@ type Query struct {
 	Response QueryResponse
 }
 
+type CopyRequest struct {
+	SenderID   int
+	StartIndex int // inclusive
+}
+
+// CopyResponse is not currently used
+type CopyResponse struct {
+	SenderID int
+	View     int
+	Success   bool
+	Entries  []Entry
+}
+
+type Copy struct {
+	Request  CopyRequest
+	Response CopyResponse
+}
+
 type CoordinateRequest struct {
 	SenderID   int
 	View       int

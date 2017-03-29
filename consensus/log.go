@@ -80,6 +80,14 @@ func (l *Log) GetEntries(startIndex int, endIndex int) []msgs.Entry {
 	return l.LogEntries[startIndex-l.AbsoluteIndex : endIndex-l.AbsoluteIndex]
 }
 
+func (l *Log) GetEntriesFrom(startIndex int) []msgs.Entry {
+	// check indexes are accessible
+	if startIndex < l.AbsoluteIndex {
+		glog.Fatal("Trying to access log out of bounds")
+	}
+	return l.LogEntries[startIndex-l.AbsoluteIndex : l.LastIndex-l.AbsoluteIndex]
+}
+
 func (l *Log) GetEntry(index int) msgs.Entry {
 	// check indexes are accessible
 	if index < l.AbsoluteIndex || index > l.AbsoluteIndex+l.maxLength-1 {

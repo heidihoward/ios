@@ -131,6 +131,18 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		default:
 			glog.Fatal("Buffer overflow, dropping message", msg)
 		}
+	case 0:
+		var msg Query
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Warning("Cannot parse message", err)
+		}
+		glog.V(1).Info("Unmarshalled ", msg)
+		select {
+		case msgch.Responses.Query <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	case 10:
 		var msg ClientRequest
 		err := Unmarshal(b[1:], &msg)
@@ -143,15 +155,27 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		default:
 			glog.Fatal("Buffer overflow, dropping message", msg)
 		}
-	case 0:
-		var msg Query
+	case 11:
+		var msg CopyRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
 			glog.Warning("Cannot parse message", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
-		case msgch.Responses.Query <- msg:
+		case msgch.Requests.Copy <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
+	case 12:
+		var msg Copy
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Warning("Cannot parse message", err)
+		}
+		glog.V(1).Info("Unmarshalled ", msg)
+		select {
+		case msgch.Responses.Copy <- msg:
 		default:
 			glog.Fatal("Buffer overflow, dropping message", msg)
 		}
@@ -227,16 +251,29 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 		snd := appendr(byte(9), b)
 		return snd, err
 
+	case msg := <-msgch.Responses.Query:
+		glog.V(1).Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(0), b)
+		return snd, err
+
+	case msg := <-msgch.Requests.Copy:
+		glog.V(1).Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(11), b)
+		return snd, err
+
+	case msg := <-msgch.Responses.Copy:
+		glog.V(1).Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(12), b)
+		return snd, err
+
 	case msg := <-msgch.Requests.Forward:
 		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(10), b)
 		return snd, err
 
-	case msg := <-msgch.Responses.Query:
-		glog.V(1).Info("Marshalling ", msg)
-		b, err := Marshal(msg)
-		snd := appendr(byte(0), b)
-		return snd, err
 	}
 }
