@@ -167,6 +167,11 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		}
 		glog.V(1).Info("Request assigned index: ", index)
 
+		// if reverse delegation is enabled then assign to node who forwarded request
+		if config.DelegateReplication == -1 {
+			coordinator = forwarded.SenderID
+		}
+
 		// dispatch to coordinator
 		entries := []msgs.Entry{{view, false, reqs}}
 		coord := msgs.CoordinateRequest{config.ID, view, index, index + 1, true, entries}
