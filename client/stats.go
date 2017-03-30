@@ -30,9 +30,14 @@ func (sf *statsFile) startRequest(requestID int) {
 	sf.startTime = time.Now()
 }
 
-func (sf *statsFile) stopRequest(tries int) {
+func (sf *statsFile) stopRequest(tries int, readonly bool) {
 	latency := strconv.FormatInt(time.Since(sf.startTime).Nanoseconds(), 10)
-	err := sf.w.Write([]string{strconv.FormatInt(sf.startTime.UnixNano(), 10), strconv.Itoa(sf.requestID), latency, strconv.Itoa(tries)})
+	err := sf.w.Write([]string{
+		strconv.FormatInt(sf.startTime.UnixNano(), 10),
+		strconv.Itoa(sf.requestID),
+		latency,
+		strconv.Itoa(tries),
+		strconv.FormatBool(readonly)})
 	if err != nil {
 		glog.Fatal(err)
 	}

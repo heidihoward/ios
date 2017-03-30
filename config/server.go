@@ -27,7 +27,7 @@ type ServerConfig struct {
 		QuorumSystem        string // which quorum system to use: either "strict majority", "non-strict majority", "all-in", "one-in" or "fixed:n"
 		IndexExclusivity    bool   // if enabled, Ios will assign each index to at most one request
 		ParticipantResponse string // how should non-master servers response to client requests, either "redirect" or "forward"
-		ParticipantRead			bool   // if set then non-master servers can service reads after getting backing from a read quorum. "forward mode only"
+		ParticipantRead     bool   // if set then non-master servers can service reads after getting backing from a read quorum. "forward mode only"
 		Application         string // which application should Ios serve: either "kv-store" or "dummy"
 	}
 	Unsafe struct {

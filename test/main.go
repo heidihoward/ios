@@ -15,6 +15,7 @@ import (
 var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
 var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/test/workload.conf", "Configure file for workload")
 var statFile = flag.String("stat", "latency.csv", "File to write stats to")
+var consistencyCheck = flag.Bool("check", false, "Enable consistency checking (use with only one client)")
 var id = flag.Int("id", -1, "ID of client (must be unique) or random number will be generated")
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 	c := client.StartClient(*id, *statFile, conf.Addresses.Address, timeout)
 
 	// setup API
-	ioapi := generator.Generate(config.ParseWorkloadConfig(*autoFile))
+	ioapi := generator.Generate(config.ParseWorkloadConfig(*autoFile), *consistencyCheck)
 
 	go func() {
 		for {

@@ -15,6 +15,7 @@ type Requests struct {
 	Copy       chan CopyRequest
 	Coordinate chan CoordinateRequest
 	Forward    chan ForwardRequest
+	Check      chan CheckRequest
 }
 
 type Responses struct {
@@ -24,6 +25,7 @@ type Responses struct {
 	Query      chan Query
 	Copy       chan Copy
 	Coordinate chan Coordinate
+	Check      chan Check
 }
 
 type ProtoMsgs struct {
@@ -80,6 +82,11 @@ func broadcaster(broadcast *ProtoMsgs, unicast map[int]*ProtoMsgs) {
 			for id := range unicast {
 				unicast[id].Requests.Coordinate <- r
 			}
+		case r := <-broadcast.Requests.Check:
+			glog.V(1).Info("Broadcasting ", r)
+			for id := range unicast {
+				unicast[id].Requests.Check <- r
+			}
 		case r := <-broadcast.Requests.Forward:
 			glog.V(1).Info("Broadcasting ", r)
 			for id := range unicast {
@@ -116,6 +123,11 @@ func broadcaster(broadcast *ProtoMsgs, unicast map[int]*ProtoMsgs) {
 			for id := range unicast {
 				unicast[id].Responses.Coordinate <- r
 			}
+		case r := <-broadcast.Responses.Check:
+			glog.V(1).Info("Broadcasting ", r)
+			for id := range unicast {
+				unicast[id].Responses.Check <- r
+			}
 		}
 	}
 }
@@ -143,6 +155,9 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 		case r := <-from.Requests.Coordinate:
 			glog.V(1).Info("Forwarding", r)
 			to.Requests.Coordinate <- r
+		case r := <-from.Requests.Check:
+			glog.V(1).Info("Forwarding", r)
+			to.Requests.Check <- r
 		case r := <-from.Requests.Forward:
 			glog.V(1).Info("Forwarding", r)
 			to.Requests.Forward <- r
@@ -165,6 +180,9 @@ func (to *ProtoMsgs) Forward(from *ProtoMsgs) {
 		case r := <-from.Responses.Coordinate:
 			glog.V(1).Info("Forwarding", r)
 			to.Responses.Coordinate <- r
+		case r := <-from.Responses.Check:
+			glog.V(1).Info("Forwarding", r)
+			to.Responses.Check <- r
 		}
 	}
 }
@@ -180,6 +198,7 @@ func (from *ProtoMsgs) Discard() {
 		case <-from.Requests.Query:
 		case <-from.Requests.Copy:
 		case <-from.Requests.Coordinate:
+		case <-from.Requests.Check:
 		case <-from.Requests.Forward:
 			// Responses
 		case <-from.Responses.Prepare:
@@ -188,6 +207,7 @@ func (from *ProtoMsgs) Discard() {
 		case <-from.Responses.Query:
 		case <-from.Requests.Copy:
 		case <-from.Responses.Coordinate:
+		case <-from.Responses.Check:
 		default:
 			return
 		}
@@ -203,14 +223,16 @@ func MakeProtoMsgs(buf int) ProtoMsgs {
 			make(chan QueryRequest, buf),
 			make(chan CopyRequest, buf),
 			make(chan CoordinateRequest, buf),
-			make(chan ForwardRequest, buf)},
+			make(chan ForwardRequest, buf),
+			make(chan CheckRequest, buf)},
 		Responses{
 			make(chan Prepare, buf),
 			make(chan Commit, buf),
 			make(chan NewView, buf),
 			make(chan Query, buf),
 			make(chan Copy, buf),
-			make(chan Coordinate, buf)}}
+			make(chan Coordinate, buf),
+			make(chan Check, buf)}}
 }
 
 func MakeClientNet(buf int) *ClientNet {

@@ -13,10 +13,11 @@ import (
 
 // Generator generates workloads for the key value store application.
 type Generator struct {
-	config  config.ConfigAuto // workload configuration.
-	keys    []string          // key value store keys for the workload to operate on
-	store   services.Service  // a local kv store to check consistency of responses
-	request string            // current outstanding request
+	config           config.ConfigAuto // workload configuration.
+	keys             []string          // key value store keys for the workload to operate on
+	store            services.Service  // a local kv store to check consistency of responses
+	request          string            // current outstanding request
+	consistencyCheck bool              // is consistency checking enabled
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -31,12 +32,12 @@ func randStringBytes(n int) string {
 }
 
 // Generate creates a workload generator with the specific configuration.
-func Generate(config config.WorkloadConfig) *Generator {
+func Generate(config config.WorkloadConfig, consistencyCheck bool) *Generator {
 	keys := make([]string, config.Config.Keys)
 	for i := range keys {
 		keys[i] = randStringBytes(config.Config.KeySize)
 	}
-	return &Generator{config.Config, keys, services.StartService("kv-store"), ""}
+	return &Generator{config.Config, keys, services.StartService("kv-store"), "", consistencyCheck}
 }
 
 // Next return the next request in the workload or false if no more are available.
@@ -68,8 +69,10 @@ func (g *Generator) Next() (string, bool, bool) {
 
 // Return notifies the generator of Ios's response so it can check consistency
 func (g *Generator) Return(response string) {
-	expected := g.store.Process(g.request)
-	if expected != response {
-		glog.Fatal("Unexpected response ", response, " expected ", expected)
+	if g.consistencyCheck {
+		expected := g.store.Process(g.request)
+		if expected != response {
+			glog.Fatal("Unexpected response ", response, " expected ", expected)
+		}
 	}
 }

@@ -152,6 +152,22 @@ type ForwardRequest struct {
 	Request  ClientRequest
 }
 
+// Check is used to see if a state machine is up-to-date
+type CheckRequest struct {
+	SenderID    int
+	CommitIndex int
+}
+
+type CheckResponse struct {
+	SenderID int
+	Success  bool
+}
+
+type Check struct {
+	Request  CheckRequest
+	Response CheckResponse
+}
+
 type LogUpdate struct {
 	StartIndex int
 	EndIndex   int

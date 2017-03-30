@@ -225,7 +225,7 @@ func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 	}
 
 	// write to latency to log
-	c.stats.stopRequest(tries)
+	c.stats.stopRequest(tries, readonly)
 	c.requestID++
 	return true, reply.Response
 }

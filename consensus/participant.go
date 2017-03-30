@@ -128,6 +128,11 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 				reply := msgs.CommitRequest{config.ID, false, req.StartIndex, state.CommitIndex, state.Log.GetEntries(req.StartIndex, state.CommitIndex)}
 				peerNet.OutgoingUnicast[req.SenderID].Requests.Commit <- reply
 			}
+
+		case req := <-peerNet.Incoming.Requests.Check:
+			glog.V(1).Info("Check requests received at ", config.ID, ": ", req)
+			reply := msgs.CheckResponse{config.ID, req.CommitIndex == state.CommitIndex && req.CommitIndex == state.Log.LastIndex}
+			peerNet.OutgoingUnicast[req.SenderID].Responses.Check <- msgs.Check{req, reply}
 		}
 	}
 }
