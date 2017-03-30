@@ -22,6 +22,7 @@ type Config struct {
 	Quorum              QuorumSys // which quorum system to use
 	IndexExclusivity    bool      // if enabled, Ios will assign each index to at most one request
 	ParticipantResponse string    // how should non-master nodes response to client requests
+	ParticipantRead     bool      // if enabled, non-master nodes can serve reads
 }
 
 // state describes the current state of the consensus algorithm
