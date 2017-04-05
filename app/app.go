@@ -34,6 +34,13 @@ func (s *StateMachine) Apply(req msgs.ClientRequest) msgs.ClientResponse {
 	return reply
 }
 
+// ApplyRead request will apply a read request and return the result. It will not cache the result
+func (s *StateMachine) ApplyRead(req msgs.ClientRequest) msgs.ClientResponse {
+	glog.V(1).Info("Read request has been passed by consensus algorithm", req)
+	return msgs.ClientResponse{
+		req.ClientID, req.RequestID, true, s.Store.Process(req.Request)}
+}
+
 // Check request return true and the result of the request if the request has already been applied to the state machine
 func (s *StateMachine) Check(req msgs.ClientRequest) (bool, msgs.ClientResponse) {
 	return s.Cache.check(req)

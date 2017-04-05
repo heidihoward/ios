@@ -57,10 +57,10 @@ func (ch *clientHandler) handleRequest(req msgs.ClientRequest) msgs.ClientRespon
 
 	// check reply is as expected
 	if reply.ClientID != req.ClientID {
-		glog.Fatal("ClientID is different")
+		glog.Fatal("ClientID is different ",reply.ClientID,req.ClientID)
 	}
 	if reply.RequestID != req.RequestID {
-		glog.Fatal("RequestID is different")
+		glog.Fatal("RequestID is different",reply.RequestID, req.RequestID)
 	}
 
 	return reply

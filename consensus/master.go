@@ -14,6 +14,14 @@ func monitorMaster(s *state, peerNet *msgs.PeerNet, config Config, new bool) {
 		runMaster(0, -1, true, peerNet, config, s)
 	}
 
+	// if only node, start master
+	if config.N == 1 {
+		s.View++
+		s.Storage.PersistView(s.View)
+		s.masterID = config.ID
+		runMaster(s.View, s.CommitIndex, false, peerNet, config, s)
+	}
+
 	for {
 		select {
 		case <-s.Failures.NotifyOnFailure(s.masterID):

@@ -4,6 +4,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
 	"reflect"
+	"time"
 )
 
 // runReader takes read only requests from the incoming channels and applies them to the state machine
@@ -11,31 +12,64 @@ import (
 // Channels used to ensure only one instance of runReader at a time
 func runReader(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, incoming chan msgs.ClientRequest) {
 	for {
+		// wait for readonly request
 		req := <-incoming
 		glog.V(1).Info("Read-only request received ", req)
 
 		// dispatch check request
-		check := msgs.CheckRequest{config.ID, state.CommitIndex}
+		check := msgs.CheckRequest{config.ID, req}
 		peerNet.OutgoingBroadcast.Requests.Check <- check
 
 		// collect responses
-		glog.V(1).Info("Waiting for ", config.Quorum.RecoverySize, " check responses")
-		for replied := make([]bool, config.N); !config.Quorum.checkRecoveryQuorum(replied); {
-			msg := <-peerNet.Incoming.Responses.Check
-			// check msg replies to the msg we just sent
-			if reflect.DeepEqual(msg.Request, check) {
-				glog.V(1).Info("Received ", msg)
-				if msg.Response.Success {
-					replied[msg.Response.SenderID] = true
-					glog.V(1).Info("Successful response received, waiting for more")
+		success := make(chan msgs.ClientResponse)
+		failure := make(chan bool)
+		go func(){
+			glog.V(1).Info("Waiting for ", config.Quorum.RecoverySize, " successful check responses")
+			var reply msgs.ClientResponse // holds reply associated with commitIndex
+			commitIndex := -2 // holds greatest commit index seen
+			replies := config.N //number of responses minus N, successful or otherwise
+			successful := make([]bool, config.N) //holds positive responses
+
+			for {
+				msg := <-peerNet.Incoming.Responses.Check
+				// check msg replies to the msg we just sent
+				if reflect.DeepEqual(msg.Request, check) {
+					glog.V(1).Info("Received ", msg)
+					if msg.Response.Success {
+						successful[msg.Response.SenderID] = true
+						glog.V(1).Info("Successful response received")
+						if msg.Response.CommitIndex > commitIndex {
+							commitIndex = msg.Response.CommitIndex
+							reply = msg.Response.Reply
+						}
+						if config.Quorum.checkRecoveryQuorum(successful) {
+							success <- reply
+							break
+						}
+					}
+					replies--
+					if replies == 0 {
+						failure <- true
+						break
+					}
 				}
 			}
-		}
+		}()
 
-		// apply and reply
-		reply := state.StateMachine.Apply(req)
-		clientNet.OutgoingResponses <- msgs.Client{req, reply}
-		glog.V(1).Info("Finished handling read-only request ", req)
+		// timeout or complete
+		select {
+    case reply := <-success:
+			// apply and reply
+			clientNet.OutgoingResponses <- msgs.Client{req, reply}
+			glog.V(1).Info("Finished handling read-only request ", req)
+    case <-failure:
+			incoming <- req
+      glog.Warning("Check unsuccessful, will try again ",req)
+		case <-time.After(time.Millisecond * 20):
+			incoming <- req
+      glog.Warning("Check unsuccessful due to timeout, will try again", req)
+    }
+
 	}
 }
 
@@ -55,6 +89,7 @@ func runClientHandler(state *state, peerNet *msgs.PeerNet, clientNet *msgs.Clien
 		} else {
 			if config.ParticipantResponse == "forward" {
 				if req.ReadOnly && config.ParticipantRead {
+					glog.V(1).Info("Request recieved, handling read locally ",req)
 					readOnly <- req
 				} else {
 					glog.V(1).Info("Request received, forwarding to ", state.masterID, req)

@@ -152,15 +152,17 @@ type ForwardRequest struct {
 	Request  ClientRequest
 }
 
-// Check is used to see if a state machine is up-to-date
+// Check is used to see apply a read without the master
 type CheckRequest struct {
 	SenderID    int
-	CommitIndex int
+	Request 		ClientRequest
 }
 
 type CheckResponse struct {
 	SenderID int
 	Success  bool
+	CommitIndex int
+	Reply ClientResponse
 }
 
 type Check struct {
