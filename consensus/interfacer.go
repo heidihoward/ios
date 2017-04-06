@@ -106,7 +106,7 @@ func runReader(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, c
 }
 
 func runClientHandler(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config ConfigAll, configInterfacer ConfigInterfacer) {
-	glog.Info("Starting client handler, in ", configInterfacer.ParticipantResponse, " mode.")
+	glog.Info("Starting client handler")
 
 	//setup readonly Handling
 	readOnly := make(chan msgs.ClientRequest, 100)
@@ -119,7 +119,7 @@ func runClientHandler(state *state, peerNet *msgs.PeerNet, clientNet *msgs.Clien
 			glog.Warning("Forcing view change received with ", req)
 			peerNet.OutgoingUnicast[config.ID].Requests.Forward <- msgs.ForwardRequest{config.ID, state.View, req}
 		} else {
-			if configInterfacer.ParticipantResponse == "forward" {
+			if configInterfacer.ParticipantHandle {
 				if req.ReadOnly && configInterfacer.ParticipantRead {
 					glog.V(1).Info("Request recieved, handling read locally ", req)
 					readOnly <- req

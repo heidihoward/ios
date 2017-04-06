@@ -37,7 +37,7 @@ func TestInit(t *testing.T) {
 			LogLength:            10000,
 		},
 		Interfacer: ConfigInterfacer{
-			ParticipantResponse: "forward",
+			ParticipantHandle: true,
 			ParticipantRead:     true,
 		},
 	}

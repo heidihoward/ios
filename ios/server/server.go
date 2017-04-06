@@ -59,7 +59,7 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 			LogLength:            conf.Options.Length,
 		},
 		Interfacer: consensus.ConfigInterfacer{
-			ParticipantResponse: conf.Options.ParticipantResponse,
+			ParticipantHandle: conf.Options.ParticipantHandle,
 			ParticipantRead:     conf.Options.ParticipantRead,
 		},
 	}

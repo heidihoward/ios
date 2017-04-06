@@ -53,7 +53,7 @@ func TestrunSimulator(t *testing.T) {
 			LogLength:            10000,
 		},
 		Interfacer: consensus.ConfigInterfacer{
-			ParticipantResponse: "forward",
+			ParticipantHandle: true,
 			ParticipantRead:     true,
 		},
 	}
