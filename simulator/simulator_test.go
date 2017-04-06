@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/app"
+	"github.com/heidi-ann/ios/consensus"
 	"github.com/heidi-ann/ios/msgs"
 	"testing"
 	"time"
@@ -33,7 +34,31 @@ func TestrunSimulator(t *testing.T) {
 	defer glog.Flush()
 
 	// create a system of 3 nodes
-	peerNets, clientNets, _ := runSimulator(3)
+	config := consensus.Config{
+		All: consensus.ConfigAll{
+			ID:         0,
+			N:          3,
+			WindowSize: 1,
+			Quorum:     consensus.NewQuorum("strict majority", 3),
+		},
+		Master: consensus.ConfigMaster{
+			BatchInterval:       0,
+			MaxBatch:            1,
+			DelegateReplication: 0,
+			IndexExclusivity:    true,
+		},
+		Participant: consensus.ConfigParticipant{
+			SnapshotInterval:     1000,
+			ImplicitWindowCommit: true,
+			LogLength:            10000,
+		},
+		Interfacer: consensus.ConfigInterfacer{
+			ParticipantResponse: "forward",
+			ParticipantRead:     true,
+		},
+	}
+
+	peerNets, clientNets, _ := runSimulator(config)
 	app := app.New("kv-store")
 
 	// check that 3 nodes were created

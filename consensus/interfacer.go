@@ -40,7 +40,7 @@ func replace(incoming chan msgs.ClientRequest, requests []msgs.ClientRequest) {
 // runReader takes read only requests from the incoming channels and applies them to the state machine
 // non-terminating
 // Channels used to ensure only one instance of runReader at a time
-func runReader(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, incoming chan msgs.ClientRequest) {
+func runReader(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config ConfigAll, incoming chan msgs.ClientRequest) {
 	for {
 		// wait for readonly request
 		requests := flush(incoming)
@@ -105,8 +105,8 @@ func runReader(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, c
 	}
 }
 
-func runClientHandler(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config) {
-	glog.Info("Starting client handler, in ", config.ParticipantResponse, " mode.")
+func runClientHandler(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config ConfigAll, configInterfacer ConfigInterfacer) {
+	glog.Info("Starting client handler, in ", configInterfacer.ParticipantResponse, " mode.")
 
 	//setup readonly Handling
 	readOnly := make(chan msgs.ClientRequest, 100)
@@ -119,8 +119,8 @@ func runClientHandler(state *state, peerNet *msgs.PeerNet, clientNet *msgs.Clien
 			glog.Warning("Forcing view change received with ", req)
 			peerNet.OutgoingUnicast[config.ID].Requests.Forward <- msgs.ForwardRequest{config.ID, state.View, req}
 		} else {
-			if config.ParticipantResponse == "forward" {
-				if req.ReadOnly && config.ParticipantRead {
+			if configInterfacer.ParticipantResponse == "forward" {
+				if req.ReadOnly && configInterfacer.ParticipantRead {
 					glog.V(1).Info("Request recieved, handling read locally ", req)
 					readOnly <- req
 				} else {

@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-func monitorMaster(s *state, peerNet *msgs.PeerNet, config Config, new bool) {
+func monitorMaster(s *state, peerNet *msgs.PeerNet, config ConfigAll, configMaster ConfigMaster, new bool) {
 
 	// if initial master, start master goroutine
 	if config.ID == 0 && new {
 		glog.Info("Starting leader module")
-		runMaster(0, -1, true, peerNet, config, s)
+		runMaster(0, -1, true, peerNet, config, configMaster, s)
 	}
 
 	// if only node, start master
@@ -19,7 +19,7 @@ func monitorMaster(s *state, peerNet *msgs.PeerNet, config Config, new bool) {
 		s.View++
 		s.Storage.PersistView(s.View)
 		s.masterID = config.ID
-		runMaster(s.View, s.CommitIndex, false, peerNet, config, s)
+		runMaster(s.View, s.CommitIndex, false, peerNet, config, configMaster, s)
 	}
 
 	for {
@@ -34,7 +34,7 @@ func monitorMaster(s *state, peerNet *msgs.PeerNet, config Config, new bool) {
 				glog.V(1).Info("Starting new master in view ", s.View, " at ", config.ID)
 				s.Storage.PersistView(s.View)
 				s.masterID = nextMaster
-				runMaster(s.View, s.CommitIndex, false, peerNet, config, s)
+				runMaster(s.View, s.CommitIndex, false, peerNet, config, configMaster, s)
 			}
 
 		case req := <-peerNet.Incoming.Requests.Forward:
@@ -46,7 +46,7 @@ func monitorMaster(s *state, peerNet *msgs.PeerNet, config Config, new bool) {
 				s.masterID = config.ID
 				req.Request.ForceViewChange = false
 				peerNet.Incoming.Requests.Forward <- req
-				runMaster(s.View, s.CommitIndex, false, peerNet, config, s)
+				runMaster(s.View, s.CommitIndex, false, peerNet, config, configMaster, s)
 			}
 		}
 	}
@@ -54,7 +54,7 @@ func monitorMaster(s *state, peerNet *msgs.PeerNet, config Config, new bool) {
 
 // runRecovery executes the recovery phase of leadership election,
 // Returns if it was successful and the previous view's end index
-func runRecovery(view int, commitIndex int, peerNet *msgs.PeerNet, config Config) (bool, int) {
+func runRecovery(view int, commitIndex int, peerNet *msgs.PeerNet, config ConfigAll, indexExclusivity bool) (bool, int) {
 	// dispatch new view requests
 	req := msgs.NewViewRequest{config.ID, view}
 	peerNet.OutgoingBroadcast.Requests.NewView <- req
@@ -83,7 +83,7 @@ func runRecovery(view int, commitIndex int, peerNet *msgs.PeerNet, config Config
 
 	glog.Info("End index of the previous views is ", endIndex)
 	startIndex := endIndex
-	if config.IndexExclusivity {
+	if indexExclusivity {
 		startIndex += config.WindowSize
 	}
 	glog.Info("Start index of view ", view, " will be ", startIndex)
@@ -99,10 +99,10 @@ func runRecovery(view int, commitIndex int, peerNet *msgs.PeerNet, config Config
 }
 
 // runMaster implements the Master mode
-func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, config Config, s *state) {
+func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, config ConfigAll, configMaster ConfigMaster, s *state) {
 	// setup
 	glog.Info("Starting up master in view ", view)
-	glog.Info("Master is configured to delegate replication to ", config.DelegateReplication)
+	glog.Info("Master is configured to delegate replication to ", configMaster.DelegateReplication)
 	s.masterID = config.ID
 
 	// determine next safe index
@@ -110,7 +110,7 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 
 	if !initial {
 		var success bool
-		success, startIndex = runRecovery(view, commitIndex, peerNet, config)
+		success, startIndex = runRecovery(view, commitIndex, peerNet, config, configMaster.IndexExclusivity)
 		if !success {
 			glog.Warning("Recovery failed")
 			return
@@ -120,7 +120,7 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 	coordinator := config.ID
 
 	// if delegation is enabled then store the first coordinator to ask
-	if config.DelegateReplication > 0 {
+	if configMaster.DelegateReplication > 0 {
 		coordinator = s.Failures.NextConnected(config.ID)
 	}
 	window := newReplicationWindow(startIndex, config.WindowSize)
@@ -142,15 +142,15 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		//wait for window slot
 		index := window.nextIndex()
 
-		if config.BatchInterval == 0 || config.MaxBatch == 1 {
+		if configMaster.BatchInterval == 0 || configMaster.MaxBatch == 1 {
 			glog.V(1).Info("No batching enabled")
 			// handle client requests (1 at a time)
 			//TODO: flush channel
 			reqs = []msgs.ClientRequest{forwarded.Request}
 		} else {
-			glog.V(1).Info("Ready to handle more requests. Batch every ", config.BatchInterval, " milliseconds")
+			glog.V(1).Info("Ready to handle more requests. Batch every ", configMaster.BatchInterval, " milliseconds")
 			// setup for holding requests
-			reqsAll := make([]msgs.ClientRequest, config.MaxBatch)
+			reqsAll := make([]msgs.ClientRequest, configMaster.MaxBatch)
 			reqsNum := 1
 			reqsAll[0] = forwarded.Request
 
@@ -161,11 +161,11 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 					reqsAll[reqsNum] = nextForwarded.Request
 					glog.V(1).Info("Request ", reqsNum, " is : ", nextForwarded.Request)
 					reqsNum = reqsNum + 1
-					if reqsNum == config.MaxBatch {
+					if reqsNum == configMaster.MaxBatch {
 						exit = true
 						break
 					}
-				case <-time.After(time.Millisecond * time.Duration(config.BatchInterval)):
+				case <-time.After(time.Millisecond * time.Duration(configMaster.BatchInterval)):
 					exit = true
 					break
 				}
@@ -177,7 +177,7 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		glog.V(1).Info("Request assigned index: ", index)
 
 		// if reverse delegation is enabled then assign to node who forwarded request
-		if config.DelegateReplication == -1 {
+		if configMaster.DelegateReplication == -1 {
 			coordinator = forwarded.SenderID
 		}
 
@@ -200,7 +200,7 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		}()
 
 		// rotate coordinator is nessacary
-		if config.DelegateReplication > 1 {
+		if configMaster.DelegateReplication > 1 {
 			coordinator = s.Failures.NextConnected(coordinator)
 		}
 	}

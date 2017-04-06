@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry, peerNet *msgs.PeerNet, config Config, prepare bool) bool {
+func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry, peerNet *msgs.PeerNet, config ConfigAll, prepare bool) bool {
 	// PHASE 2: prepare
 	if prepare {
 
@@ -62,7 +62,7 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 }
 
 // runCoordinator eturns true if successful
-func runCoordinator(state *state, peerNet *msgs.PeerNet, config Config) {
+func runCoordinator(state *state, peerNet *msgs.PeerNet, config ConfigAll) {
 
 	for {
 		glog.V(1).Info("Coordinator is ready to handle request")

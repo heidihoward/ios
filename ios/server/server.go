@@ -40,22 +40,29 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 	net.SetupClients(strings.Split(conf.Clients.Address[id], ":")[1], state, clientNet)
 
 	// configure consensus algorithms
-	quorum := consensus.NewQuorum(conf.Options.QuorumSystem, len(conf.Peers.Address))
 	configuration := consensus.Config{
-		id,
-		len(conf.Peers.Address),
-		conf.Options.Length,
-		conf.Options.BatchInterval,
-		conf.Options.MaxBatch,
-		conf.Options.DelegateReplication,
-		conf.Options.WindowSize,
-		conf.Options.SnapshotInterval,
-		quorum,
-		conf.Options.IndexExclusivity,
-		conf.Options.ParticipantResponse,
-		conf.Options.ParticipantRead,
-		conf.Options.ImplicitWindowCommit}
-
+		All: consensus.ConfigAll{
+			ID:         id,
+			N:          len(conf.Peers.Address),
+			WindowSize: conf.Options.WindowSize,
+			Quorum:     consensus.NewQuorum(conf.Options.QuorumSystem, len(conf.Peers.Address)),
+		},
+		Master: consensus.ConfigMaster{
+			BatchInterval:       conf.Options.BatchInterval,
+			MaxBatch:            conf.Options.MaxBatch,
+			DelegateReplication: conf.Options.DelegateReplication,
+			IndexExclusivity:    conf.Options.IndexExclusivity,
+		},
+		Participant: consensus.ConfigParticipant{
+			SnapshotInterval:     conf.Options.SnapshotInterval,
+			ImplicitWindowCommit: conf.Options.ImplicitWindowCommit,
+			LogLength:            conf.Options.Length,
+		},
+		Interfacer: consensus.ConfigInterfacer{
+			ParticipantResponse: conf.Options.ParticipantResponse,
+			ParticipantRead:     conf.Options.ParticipantRead,
+		},
+	}
 	// setup consensus algorithm
 	if !found {
 		glog.Info("Starting fresh consensus instance")

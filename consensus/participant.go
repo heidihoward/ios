@@ -7,7 +7,7 @@ import (
 
 // PROTOCOL BODY
 
-func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config) {
+func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config ConfigAll, configParticipant ConfigParticipant) {
 	glog.V(1).Info("Ready for requests")
 	for {
 
@@ -38,7 +38,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			state.Storage.PersistLogUpdate(logUpdate)
 
 			// implicit commits from window_size
-			if config.ImplicitWindowCommit {
+			if configParticipant.ImplicitWindowCommit {
 				state.Log.ImplicitCommit(config.WindowSize, state.CommitIndex)
 				// pass requests to state machine if ready
 				for state.Log.GetEntry(state.CommitIndex + 1).Committed {
@@ -63,7 +63,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 
 			// add enties to the log (in-memory)
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
-			if config.ImplicitWindowCommit {
+			if configParticipant.ImplicitWindowCommit {
 				state.Log.ImplicitCommit(config.WindowSize, state.CommitIndex)
 			}
 			//peerNet.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
@@ -88,7 +88,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			}
 
 			// check if its time for another snapshot
-			if state.LastSnapshot+config.SnapshotInterval <= state.CommitIndex {
+			if state.LastSnapshot+configParticipant.SnapshotInterval <= state.CommitIndex {
 				state.Storage.PersistSnapshot(state.CommitIndex, state.StateMachine.MakeSnapshot())
 				state.LastSnapshot = state.CommitIndex
 			}

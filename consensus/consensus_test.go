@@ -19,16 +19,28 @@ func TestInit(t *testing.T) {
 	clientNet := msgs.MakeClientNet(10)
 	store := app.New("kv-store")
 	config := Config{
-		ID:                  0,
-		N:                   3,
-		LogLength:           1000,
-		BatchInterval:       0,
-		MaxBatch:            1,
-		DelegateReplication: 0,
-		WindowSize:          1,
-		SnapshotInterval:    100,
-		Quorum:              NewQuorum("strict majority", 3),
-		IndexExclusivity:    true}
+		All: ConfigAll{
+			ID:         0,
+			N:          3,
+			WindowSize: 1,
+			Quorum:     NewQuorum("strict majority", 3),
+		},
+		Master: ConfigMaster{
+			BatchInterval:       0,
+			MaxBatch:            1,
+			DelegateReplication: 0,
+			IndexExclusivity:    true,
+		},
+		Participant: ConfigParticipant{
+			SnapshotInterval:     1000,
+			ImplicitWindowCommit: true,
+			LogLength:            10000,
+		},
+		Interfacer: ConfigInterfacer{
+			ParticipantResponse: "forward",
+			ParticipantRead:     true,
+		},
+	}
 	failure := msgs.NewFailureNotifier(3)
 	storage := msgs.MakeExternalStorage()
 	go Init(peerNet, clientNet, config, store, failure, storage)
