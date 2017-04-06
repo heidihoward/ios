@@ -39,7 +39,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 
 			// implicit commits from window_size
 			if config.ImplicitWindowCommit {
-				state.Log.ImplicitCommit(config.WindowSize,state.CommitIndex)
+				state.Log.ImplicitCommit(config.WindowSize, state.CommitIndex)
 				// pass requests to state machine if ready
 				for state.Log.GetEntry(state.CommitIndex + 1).Committed {
 					for _, request := range state.Log.GetEntry(state.CommitIndex + 1).Requests {
@@ -64,7 +64,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			// add enties to the log (in-memory)
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
 			if config.ImplicitWindowCommit {
-				state.Log.ImplicitCommit(config.WindowSize,state.CommitIndex)
+				state.Log.ImplicitCommit(config.WindowSize, state.CommitIndex)
 			}
 			//peerNet.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
 

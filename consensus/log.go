@@ -105,7 +105,7 @@ func (l *Log) GetEntry(index int) msgs.Entry {
 // if they are out-of-window and of the same view
 func (l *Log) ImplicitCommit(windowSize int, commitIndex int) {
 	view := l.GetEntry(l.LastIndex).View
-	for i, entry := range l.GetEntries(commitIndex+1,l.LastIndex-windowSize) {
+	for i, entry := range l.GetEntries(commitIndex+1, l.LastIndex-windowSize) {
 		if !entry.Committed && entry.View == view {
 			entry.Committed = true
 			l.AddEntry(i+l.AbsoluteIndex, entry)

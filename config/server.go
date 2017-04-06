@@ -18,18 +18,18 @@ type ServerConfig struct {
 		Address []string
 	}
 	Options struct {
-		Length              int    // max log size
-		BatchInterval       int    // how often to batch process request in ms, 0 means no batching
-		MaxBatch            int    // maximum requests in a batch, unused if BatchInterval=0
-		DelegateReplication int    // how many replication coordinators to delegate to when master, -1 means use reverse delegation
-		WindowSize          int    // how many requests can the master have inflight at once
-		SnapshotInterval    int    // how often to record state machine snapshots
-		QuorumSystem        string // which quorum system to use: either "strict majority", "non-strict majority", "all-in", "one-in" or "fixed:n"
-		IndexExclusivity    bool   // if enabled, Ios will assign each index to at most one request
-		ParticipantResponse string // how should non-master servers response to client requests, either "redirect" or "forward"
-		ParticipantRead     bool   // if set then non-master servers can service reads after getting backing from a read quorum. "forward mode only"
-		ImplicitWindowCommit bool  // if uncommitted request is outside of current window then commit
-		Application         string // which application should Ios serve: either "kv-store" or "dummy"
+		Length               int    // max log size
+		BatchInterval        int    // how often to batch process request in ms, 0 means no batching
+		MaxBatch             int    // maximum requests in a batch, unused if BatchInterval=0
+		DelegateReplication  int    // how many replication coordinators to delegate to when master, -1 means use reverse delegation
+		WindowSize           int    // how many requests can the master have inflight at once
+		SnapshotInterval     int    // how often to record state machine snapshots
+		QuorumSystem         string // which quorum system to use: either "strict majority", "non-strict majority", "all-in", "one-in" or "fixed:n"
+		IndexExclusivity     bool   // if enabled, Ios will assign each index to at most one request
+		ParticipantResponse  string // how should non-master servers response to client requests, either "redirect" or "forward"
+		ParticipantRead      bool   // if set then non-master servers can service reads after getting backing from a read quorum. "forward mode only"
+		ImplicitWindowCommit bool   // if uncommitted request is outside of current window then commit
+		Application          string // which application should Ios serve: either "kv-store" or "dummy"
 	}
 	Unsafe struct {
 		DumpPersistentStorage bool   // if enabled, then persistent storage is not written to a file, always set to false
