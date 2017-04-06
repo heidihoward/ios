@@ -28,6 +28,7 @@ type ServerConfig struct {
 		IndexExclusivity    bool   // if enabled, Ios will assign each index to at most one request
 		ParticipantResponse string // how should non-master servers response to client requests, either "redirect" or "forward"
 		ParticipantRead     bool   // if set then non-master servers can service reads after getting backing from a read quorum. "forward mode only"
+		ImplicitWindowCommit bool  // if uncommitted request is outside of current window then commit
 		Application         string // which application should Ios serve: either "kv-store" or "dummy"
 	}
 	Unsafe struct {

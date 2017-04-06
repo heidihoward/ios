@@ -37,7 +37,21 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries}
 			state.Storage.PersistLogUpdate(logUpdate)
 
-			// TODO: add implicit commits from window_size
+			// implicit commits from window_size
+			if config.ImplicitWindowCommit {
+				state.Log.ImplicitCommit(config.WindowSize,state.CommitIndex)
+				// pass requests to state machine if ready
+				for state.Log.GetEntry(state.CommitIndex + 1).Committed {
+					for _, request := range state.Log.GetEntry(state.CommitIndex + 1).Requests {
+						if request != noop {
+							reply := state.StateMachine.Apply(request)
+							clientNet.OutgoingResponses <- msgs.Client{request, reply}
+							glog.V(1).Info("Request Committed: ", request)
+						}
+					}
+					state.CommitIndex++
+				}
+			}
 
 			// reply to coordinator
 			reply := msgs.PrepareResponse{config.ID, true}
@@ -49,6 +63,9 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 
 			// add enties to the log (in-memory)
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
+			if config.ImplicitWindowCommit {
+				state.Log.ImplicitCommit(config.WindowSize,state.CommitIndex)
+			}
 			//peerNet.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
 
 			// pass requests to state machine if ready

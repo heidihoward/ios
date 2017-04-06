@@ -109,7 +109,7 @@ func runClientHandler(state *state, peerNet *msgs.PeerNet, clientNet *msgs.Clien
 	glog.Info("Starting client handler, in ", config.ParticipantResponse, " mode.")
 
 	//setup readonly Handling
-	readOnly := make(chan msgs.ClientRequest, 10)
+	readOnly := make(chan msgs.ClientRequest, 100)
 	go runReader(state, peerNet, clientNet, config, readOnly)
 
 	for {

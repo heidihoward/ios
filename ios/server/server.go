@@ -53,7 +53,8 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 		quorum,
 		conf.Options.IndexExclusivity,
 		conf.Options.ParticipantResponse,
-		conf.Options.ParticipantRead}
+		conf.Options.ParticipantRead,
+		conf.Options.ImplicitWindowCommit}
 
 	// setup consensus algorithm
 	if !found {
