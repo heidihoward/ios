@@ -41,6 +41,17 @@ func (s *StateMachine) ApplyRead(req msgs.ClientRequest) msgs.ClientResponse {
 		req.ClientID, req.RequestID, true, s.Store.Process(req.Request)}
 }
 
+// ApplyReads request will apply a slice of read requests and return the results. It will not cache the results.
+func (s *StateMachine) ApplyReads(reqs []msgs.ClientRequest) []msgs.ClientResponse {
+	glog.V(1).Info("Read requests has been passed to state machine by consensus algorithm")
+	responses := make([]msgs.ClientResponse, len(reqs))
+	for i := 0; i < len(reqs); i++ {
+		responses[i] = msgs.ClientResponse{
+			reqs[i].ClientID, reqs[i].RequestID, true, s.Store.Process(reqs[i].Request)}
+	}
+	return responses
+}
+
 // Check request return true and the result of the request if the request has already been applied to the state machine
 func (s *StateMachine) Check(req msgs.ClientRequest) (bool, msgs.ClientResponse) {
 	return s.Cache.check(req)

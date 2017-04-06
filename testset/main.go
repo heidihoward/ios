@@ -13,7 +13,7 @@ import (
 
 var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
 var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/test/workload.conf", "Configure file for workload")
-var clients = flag.Int("clients",1, "Number of clients to create")
+var clients = flag.Int("clients", 1, "Number of clients to create")
 
 // runClient returns when workload is finished or SubmitRequest fails
 func runClient(id int, addresses []string, timeout time.Duration, workloadConfig config.WorkloadConfig) {
@@ -48,7 +48,7 @@ func main() {
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	workloadConfig := config.ParseWorkloadConfig(*autoFile)
 
-  remaining := *clients
+	remaining := *clients
 	for id := 0; id < *clients; id++ {
 		go func(id int) {
 			runClient(id, conf.Addresses.Address, timeout, workloadConfig)
@@ -60,7 +60,7 @@ func main() {
 	}
 
 	// wait for workload to finish
-	<- finished
+	<-finished
 	glog.Info("Client set terminating")
 	glog.Flush()
 

@@ -109,7 +109,7 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 	case err := <-errCh:
 		return nil, err
 	case <-time.After(timeout):
-		return nil, errors.New("Timeout of "+timeout.String())
+		return nil, errors.New("Timeout of " + timeout.String())
 	}
 }
 
@@ -163,7 +163,7 @@ func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 	for {
 		tries++
 		if tries > len(c.servers) {
-			glog.Warning("Request ",c.requestID," is being set to force view change")
+			glog.Warning("Request ", c.requestID, " is being set to force view change")
 			req.ForceViewChange = true
 			b, err = msgs.Marshal(req)
 			if err != nil {

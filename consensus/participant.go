@@ -130,11 +130,11 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			}
 
 		case req := <-peerNet.Incoming.Requests.Check:
-			glog.V(1).Info("Check requests received at ", config.ID, ": ", req)
+			glog.V(1).Info("Check requests received at ", config.ID)
 			reply := msgs.CheckResponse{config.ID,
 				state.CommitIndex == state.Log.LastIndex,
 				state.CommitIndex,
-				state.StateMachine.ApplyRead(req.Request),
+				state.StateMachine.ApplyReads(req.Requests),
 			}
 			peerNet.OutgoingUnicast[req.SenderID].Responses.Check <- msgs.Check{req, reply}
 		}

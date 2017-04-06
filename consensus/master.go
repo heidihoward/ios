@@ -145,6 +145,7 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		if config.BatchInterval == 0 || config.MaxBatch == 1 {
 			glog.V(1).Info("No batching enabled")
 			// handle client requests (1 at a time)
+			//TODO: flush channel
 			reqs = []msgs.ClientRequest{forwarded.Request}
 		} else {
 			glog.V(1).Info("Ready to handle more requests. Batch every ", config.BatchInterval, " milliseconds")
