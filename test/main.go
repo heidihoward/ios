@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
@@ -30,9 +29,7 @@ func main() {
 
 	// parse config files
 	conf := config.ParseClientConfig(*configFile)
-	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
-
-	c := client.StartClient(*id, *statFile, conf.Addresses.Address, timeout)
+	c := client.StartClientFromConfig(*id, *statFile, conf)
 
 	// setup API
 	ioapi := generator.Generate(config.ParseWorkloadConfig(*autoFile), *consistencyCheck)

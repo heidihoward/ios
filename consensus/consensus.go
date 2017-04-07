@@ -31,7 +31,7 @@ type ConfigParticipant struct {
 
 type ConfigInterfacer struct {
 	ParticipantHandle bool // if enabled, non-master nodes can handle to client requests
-	ParticipantRead     bool   // if enabled, non-master nodes can serve reads. To enable, ParticipantHandle must also be enabled
+	ParticipantRead   bool // if enabled, non-master nodes can serve reads. To enable, ParticipantHandle must also be enabled
 }
 
 // Config describes the static configuration of the consensus algorithm

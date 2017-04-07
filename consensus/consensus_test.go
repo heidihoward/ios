@@ -38,7 +38,7 @@ func TestInit(t *testing.T) {
 		},
 		Interfacer: ConfigInterfacer{
 			ParticipantHandle: true,
-			ParticipantRead:     true,
+			ParticipantRead:   true,
 		},
 	}
 	failure := msgs.NewFailureNotifier(3)

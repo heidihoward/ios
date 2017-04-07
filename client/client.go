@@ -14,64 +14,82 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 )
 
+//TODO: write requestID to disk
+
+// Client holds the data associated with a client
 type Client struct {
-	id        int
-	requestID int //TODO: write this value to disk
-	stats     *statsFile
-	servers   []string
-	conn      net.Conn
-	rd        *bufio.Reader
-	timeout   time.Duration
-	master    int
+	id          int // ID of client, must be unique
+	requestID   int // ID of current request, starting from 1
+	stats       *statsFile
+	servers     []string // address of Ios servers
+	conn        net.Conn
+	rd          *bufio.Reader
+	timeout     time.Duration
+	backoff     time.Duration // time to wait after trying n servers when client cannot connect to Ios cluster
+	random      bool          // if enabled, client connects to servers at random instead of systematically
+	beforeForce int           // number of times a request should be submitted before client sets ForceViewChange, if -1 then will not set
+	serverID    int           // ID of the server currently/last connected to
 }
 
-func connect(addrs []string, tries int, hint int) (net.Conn, int, error) {
-	var conn net.Conn
-	var err error
+// connectRandom tries to connect to a server specified in addresses
+func connectRandom(addrs []string, backoff time.Duration) (net.Conn, int) {
+	// TODO: stop ignoring backoff parameter
+	for {
+		for tried := 0; tried < len(addrs); tried++ {
+			id := rand.Intn(len(addrs))
+			glog.V(1).Info("Trying to connect to ", addrs[id])
+			conn, err := net.Dial("tcp", addrs[id])
+			// if successful
+			if err == nil {
+				glog.Infof("Connect established to %s", addrs[id])
+				return conn, id
+			}
+			time.Sleep(backoff)
+		}
+	}
+}
 
+// connectSystematic try to establish a connection with server ID hint
+// if unsuccessful, it tries to connect to other servers sytematically, waiting for backoff after trying each server
+// once successful, connect will return the net.Conn and the ID of server connected to
+// connectSystematic may never return if it cannot connect to any server
+func connectSystematic(addrs []string, hint int, backoff time.Duration) (net.Conn, int) {
 	// reset invalid hint
 	if len(addrs) >= hint {
 		hint = 0
 	}
 
 	// first, try on to connect to the most likely leader
-	glog.V(1).Info("Trying to connect to ", addrs[hint])
-	conn, err = net.Dial("tcp", addrs[hint])
+	glog.Info("Trying to connect to ", addrs[hint])
+	conn, err := net.Dial("tcp", addrs[hint])
 	// if successful
 	if err == nil {
-		glog.V(1).Infof("Connect established to %s", addrs[hint])
-		return conn, hint, err
+		glog.Infof("Connect established to %s", addrs[hint])
+		return conn, hint
 	}
-	//if unsuccessful
-	glog.Warning(err)
+	glog.Warning(err) //if unsuccessful
 
 	// if fails, try everyone else
-	for i := range addrs {
-		for t := tries; t > 0; t-- {
+	for {
+		// TODO: start from hint instead of from ID:0
+		for i := range addrs {
 			glog.V(1).Info("Trying to connect to ", addrs[i])
 			conn, err = net.Dial("tcp", addrs[i])
 
 			// if successful
 			if err == nil {
-				glog.V(1).Infof("Connect established to %s", addrs[i])
-				return conn, i, err
+				glog.Infof("Connect established to %s", addrs[i])
+				return conn, i
 			}
 
 			//if unsuccessful
 			glog.Warning(err)
-			time.Sleep(100 * time.Millisecond)
 		}
+		time.Sleep(backoff)
 	}
-
-	// calc most likely next leader
-	hint += 1
-	if len(addrs) == hint {
-		hint = 0
-	}
-	return conn, hint, err
 }
 
-// send bytes and wait for reply, return bytes returned if succussful or error otherwise
+// dispatcher will send bytes and wait for reply, return bytes returned if succussful or error otherwise
 func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration) ([]byte, error) {
 	// check for nil connection
 	if conn == nil {
@@ -115,7 +133,8 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 
 // StartClient creates an Ios client and tries to connect to an Ios cluster
 // If ID is -1 then a random one will be generated
-func StartClient(id int, statFile string, addrs []string, timeout time.Duration) *Client {
+func StartClient(id int, statFile string, addrs []string, timeout time.Duration, backoff time.Duration, beforeForce int, random bool) *Client {
+
 	// TODO: find a better way to handle required flags
 	if id == -1 {
 		rand.Seed(time.Now().UTC().UnixNano())
@@ -129,14 +148,17 @@ func StartClient(id int, statFile string, addrs []string, timeout time.Duration)
 	stats := openStatsFile(statFile)
 
 	// connecting to server
-	conn, master, err := connect(addrs, 1, 0)
-	if err != nil {
-		glog.Fatal(err)
+	var conn net.Conn
+	var serverID int
+	if random {
+		conn, serverID = connectRandom(addrs, backoff)
+	} else {
+		conn, serverID = connectSystematic(addrs, 0, backoff)
 	}
-	rd := bufio.NewReader(conn)
-
 	glog.Info("Client is ready to start processing incoming requests")
-	return &Client{id, 1, stats, addrs, conn, rd, timeout, master}
+
+	rd := bufio.NewReader(conn)
+	return &Client{id, 1, stats, addrs, conn, rd, timeout, backoff, random, beforeForce, serverID}
 }
 
 func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
@@ -161,8 +183,7 @@ func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 
 	// dispatch request until successful
 	for {
-		tries++
-		if tries > len(c.servers) {
+		if c.beforeForce != -1 && tries > c.beforeForce {
 			glog.Warning("Request ", c.requestID, " is being set to force view change")
 			req.ForceViewChange = true
 			b, err = msgs.Marshal(req)
@@ -185,26 +206,30 @@ func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 				break
 			}
 		}
+
+		// continue if request failed
 		glog.Warning("Request ", c.requestID, " failed due to: ", err)
 
-		// try to establish a new connection
-		for {
-			if c.conn != nil {
-				err = c.conn.Close()
-				if err != nil {
-					glog.Warning(err)
-				}
+		// close connection
+		if c.conn != nil {
+			err = c.conn.Close()
+			if err != nil {
+				glog.Warning(err)
 			}
-			c.conn, c.master, err = connect(c.servers, 1, c.master+1)
-			if err == nil {
-				break
-			}
-			glog.Warning("Serious connectivity issues")
-			time.Sleep(time.Second)
 		}
-
+		// establish a new connection
+		if c.random {
+			c.conn, c.serverID = connectRandom(c.servers, c.backoff)
+		} else {
+			// next try last serverID +1 mod n
+			nextID := c.serverID + 1
+			if nextID >= len(c.servers) {
+				nextID = 0
+			}
+			c.conn, c.serverID = connectSystematic(c.servers, nextID, c.backoff)
+		}
 		c.rd = bufio.NewReader(c.conn)
-
+		tries++
 	}
 
 	//check reply is not nil
@@ -236,7 +261,15 @@ func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 func StartClientFromConfigFile(id int, statFile string, configFile string) *Client {
 	conf := config.ParseClientConfig(configFile)
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
-	return StartClient(id, statFile, conf.Addresses.Address, timeout)
+	backoff := time.Millisecond * time.Duration(conf.Parameters.Backoff)
+	return StartClient(id, statFile, conf.Addresses.Address, timeout, backoff, conf.Parameters.BeforeForce, conf.Parameters.ConnectRandom)
+}
+
+// StartClientFromConfig is the same as StartClientFromConfigFile but for config structs instead of files
+func StartClientFromConfig(id int, statFile string, conf config.Config) *Client {
+	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
+	backoff := time.Millisecond * time.Duration(conf.Parameters.Backoff)
+	return StartClient(id, statFile, conf.Addresses.Address, timeout, backoff, conf.Parameters.BeforeForce, conf.Parameters.ConnectRandom)
 }
 
 func (c *Client) StopClient() {

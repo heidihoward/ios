@@ -111,5 +111,4 @@ func (l *Log) ImplicitCommit(windowSize int, commitIndex int) {
 			l.AddEntry(i+l.AbsoluteIndex, entry)
 		}
 	}
-
 }

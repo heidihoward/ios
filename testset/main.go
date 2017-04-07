@@ -8,7 +8,6 @@ import (
 	"github.com/heidi-ann/ios/test/generator"
 	"os"
 	"strconv"
-	"time"
 )
 
 var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
@@ -16,8 +15,8 @@ var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-an
 var clients = flag.Int("clients", 1, "Number of clients to create")
 
 // runClient returns when workload is finished or SubmitRequest fails
-func runClient(id int, addresses []string, timeout time.Duration, workloadConfig config.WorkloadConfig) {
-	c := client.StartClient(-1, "latency_"+strconv.Itoa(id)+".csv", addresses, timeout)
+func runClient(id int, clientConfig config.Config, workloadConfig config.WorkloadConfig) {
+	c := client.StartClientFromConfig(-1, "latency_"+strconv.Itoa(id)+".csv", clientConfig)
 	ioapi := generator.Generate(workloadConfig, false)
 
 	for {
@@ -45,13 +44,12 @@ func main() {
 	// parse config files
 	finished := make(chan bool)
 	conf := config.ParseClientConfig(*configFile)
-	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	workloadConfig := config.ParseWorkloadConfig(*autoFile)
 
 	remaining := *clients
 	for id := 0; id < *clients; id++ {
 		go func(id int) {
-			runClient(id, conf.Addresses.Address, timeout, workloadConfig)
+			runClient(id, conf, workloadConfig)
 			remaining--
 			if remaining == 0 {
 				finished <- true

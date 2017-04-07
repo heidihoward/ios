@@ -60,7 +60,7 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 		},
 		Interfacer: consensus.ConfigInterfacer{
 			ParticipantHandle: conf.Options.ParticipantHandle,
-			ParticipantRead:     conf.Options.ParticipantRead,
+			ParticipantRead:   conf.Options.ParticipantRead,
 		},
 	}
 	// setup consensus algorithm
