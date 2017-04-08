@@ -10,8 +10,8 @@ import (
 	"strconv"
 )
 
-var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
-var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/test/workload.conf", "Configure file for workload")
+var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/client.conf", "Client configuration file")
+var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/workload.conf", "Configure file for workload")
 var clients = flag.Int("clients", 1, "Number of clients to create")
 
 // runClient returns when workload is finished or SubmitRequest fails

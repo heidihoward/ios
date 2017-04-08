@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
+var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/client.conf", "Client configuration file")
 var statFile = flag.String("stat", "latency.csv", "File to write stats to")
 var id = flag.Int("id", -1, "ID of client (must be unique) or random number will be generated")
 

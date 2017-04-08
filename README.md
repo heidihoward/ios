@@ -81,16 +81,16 @@ Note that this will only use storage local to the container instance. If you wan
 In this section, we are going to take a closer look at what is going on underneath. We will then use this information to setup a 3 server Ios cluster on your local machine and automatically generate a workload to put it to the test. PS: you might want to start by opening up a few terminal windows.
 
 #### Server configuration
-The server we ran in previous section was using the default configuration file found in [ios/example.conf](ios/example.conf). The first section of this file lists the Ios servers in the cluster and how the peers can connect to them and the second section lists how the client can connect to them. The configuration file [ios/example3.conf](ios/example3.conf) shows what this looks like for 3 servers running on localhost. The same configuration file is used for all the servers, at run time they are each given an ID (starting from 0) and use this to know which ports to listen on. The rest of the configuration file options are documented at https://godoc.org/github.com/heidi-ann/ios/config. After removing the persistent storage, start 3 Ios servers in 3 separate terminal windows as follows:
+The server we ran in previous section was using the default configuration file found in [configfiles/server.conf](configfiles/server.conf). The first section of this file lists the Ios servers in the cluster and how the peers can connect to them and the second section lists how the client can connect to them. The configuration file [configfiles/server3.conf](configfiles/server3.conf) shows what this looks like for 3 servers running on localhost. The same configuration file is used for all the servers, at run time they are each given an ID (starting from 0) and use this to know which ports to listen on. The rest of the configuration file options are documented at https://godoc.org/github.com/heidi-ann/ios/config. After removing the persistent storage, start 3 Ios servers in 3 separate terminal windows as follows:
 
 ```
-$GOPATH/bin/ios -id [ID] -config $GOPATH/src/github.com/heidi-ann/ios/ios/example3.conf -stderrthreshold=INFO
+$GOPATH/bin/ios -id [ID] -config $GOPATH/src/github.com/heidi-ann/ios/configfiles/server3.conf -stderrthreshold=INFO
 ```
 For ID 0, 1 and 2
 
 #### Client configuration
 
-Like the servers, the client we ran in the previous section was using the default configuration file found in [client/example.conf](client/example.conf). The first section lists the Ios servers in the cluster and how to connect to them. The configuration file [client/example3.conf](client/example3.conf) shows what this looks like for 3 servers currently running on localhost.
+Like the servers, the client we ran in the previous section was using the default configuration file found in [configfiles/client.conf](configfiles/client.conf). The first section lists the Ios servers in the cluster and how to connect to them. The configuration file [configfiles/client.conf](configfiles/client.conf) shows what this looks like for 3 servers currently running on localhost.
 
 We are run a client as before and interact with our 3 servers.
 ```
@@ -105,7 +105,7 @@ Typing requests into a terminal is, of course, slow and unrealistic. To help tes
 ```
 $GOPATH/bin/test -config $GOPATH/src/github.com/heidi-ann/ios/client/example3.conf -auto $GOPATH/src/github.com/heidi-ann/ios/test/workload.conf
 ```
-This client will run the workload described in [test/workload.conf](test/workload.conf) and then terminate. It will write performance metrics into a file called latency.csv. Ios currently also support a REST API mode which listens for HTTP on port 12345.
+This client will run the workload described in [configfiles/workload.conf](configfiles/workload.conf) and then terminate. It will write performance metrics into a file called latency.csv. Ios currently also support a REST API mode which listens for HTTP on port 12345.
 
 ## Contributing
 
