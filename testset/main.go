@@ -10,13 +10,14 @@ import (
 	"strconv"
 )
 
-var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/simple/client.conf", "Client configuration file")
+var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/example.conf", "Client configuration file")
 var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/simple/workload.conf", "Configure file for workload")
+var algorithmFile = flag.String("algorithm", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/simple/client.conf", "Algorithm description file") // optional flag
 var clients = flag.Int("clients", 1, "Number of clients to create")
 
 // runClient returns when workload is finished or SubmitRequest fails
-func runClient(id int, clientConfig config.Config, workloadConfig config.WorkloadConfig) {
-	c := client.StartClientFromConfig(-1, "latency_"+strconv.Itoa(id)+".csv", clientConfig)
+func runClient(id int, clientConfig config.Config, addresses []config.NetAddress, workloadConfig config.WorkloadConfig) {
+	c := client.StartClientFromConfig(-1, "latency_"+strconv.Itoa(id)+".csv", clientConfig, addresses)
 	ioapi := generator.Generate(workloadConfig, false)
 
 	for {
@@ -43,13 +44,14 @@ func main() {
 
 	// parse config files
 	finished := make(chan bool)
-	conf := config.ParseClientConfig(*configFile)
+	conf := config.ParseClientConfig(*algorithmFile)
+	addresses := config.ParseAddresses(*configFile).Clients
 	workloadConfig := config.ParseWorkloadConfig(*autoFile)
 
 	remaining := *clients
 	for id := 0; id < *clients; id++ {
 		go func(id int) {
-			runClient(id, conf, workloadConfig)
+			runClient(id, conf, addresses, workloadConfig)
 			remaining--
 			if remaining == 0 {
 				finished <- true

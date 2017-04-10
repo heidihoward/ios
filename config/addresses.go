@@ -21,6 +21,10 @@ type NetAddress struct {
   Port int
 }
 
+func (n NetAddress) ToString() string {
+  return n.Address+":"+strconv.Itoa(n.Port)
+}
+
 // Addresses describes the network configuarion of an Ios cluster.
 type Addresses struct {
 	Peers []NetAddress

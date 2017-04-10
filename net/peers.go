@@ -11,15 +11,10 @@ import (
 	"time"
 )
 
-type peer struct {
-	id      int
-	address string
-	port int
-}
 
 type peerHandler struct {
 	id       int
-	peers    []peer
+	peers    []config.NetAddress
 	failures *msgs.FailureNotifier
 	net      *msgs.PeerNet
 }
@@ -29,7 +24,7 @@ type peerHandler struct {
 func (ph *peerHandler) checkPeer() {
 	for i := range ph.peers {
 		if !ph.failures.IsConnected(i) {
-			cn, err := net.Dial("tcp", ph.peers[i].address+":"+strconv.Itoa(ph.peers[i].port))
+			cn, err := net.Dial("tcp", ph.peers[i].ToString())
 			if err == nil {
 				go ph.handlePeer(cn, true)
 			} else {
@@ -79,9 +74,9 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	// check IP address is as expected
 	// TODO: allow dynamic changes of IP
 	actualAddr := strings.Split(addr, ":")[0]
-	if ph.peers[peerID].address != actualAddr {
+	if ph.peers[peerID].Address != actualAddr {
 		glog.Fatal("Peer ID ", peerID, " has connected from an unexpected address ", actualAddr,
-			" expected ", ph.peers[peerID].address)
+			" expected ", ph.peers[peerID].Address)
 	}
 
 	glog.Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
@@ -157,14 +152,9 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 func SetupPeers(localId int, addresses []config.NetAddress, peerNet *msgs.PeerNet, fail *msgs.FailureNotifier) {
 	peerHandler := peerHandler{
 		id:       localId,
-		peers:    make([]peer, len(addresses)),
+		peers:    addresses,
 		failures: fail,
 		net:      peerNet,
-	}
-
-	for i := range addresses {
-		peerHandler.peers[i] = peer{
-			i, addresses[i].Address, addresses[i].Port}
 	}
 
 	//set up peer server

@@ -14,7 +14,7 @@ import (
 
 // command line flags
 var id = flag.Int("id", -1, "server ID [REQUIRED]")                                                                                       // required flag
-var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/iso/example.conf", "Server configuration file") // optional flag
+var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/example.conf", "Server configuration file") // optional flag
 var algorithmFile = flag.String("algorithm", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/simple/server.conf", "Algorithm description file") // optional flag
 var diskPath = flag.String("disk", "persistent_id", "Path to directory to store persistent storage")                                      // optional flag
 var peerPort = flag.Int("listen-peers", 0, "Overwrite the port specified in config file to listen for peers on")                          // optional flag

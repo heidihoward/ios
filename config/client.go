@@ -6,9 +6,6 @@ import (
 )
 
 type Config struct {
-	Addresses struct {
-		Address []string
-	}
 	Parameters struct {
 		Timeout       int
 		Backoff       int
@@ -25,9 +22,6 @@ func ParseClientConfig(filename string) Config {
 		glog.Fatalf("Failed to parse gcfg data: %s", err)
 	}
 	// checking configuation is sensible
-	if len(config.Addresses.Address) == 0 {
-		glog.Fatalf("At least one server is required")
-	}
 	if config.Parameters.Timeout <= 0 {
 		glog.Fatalf("Timeout must be >= 0")
 	}

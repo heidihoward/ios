@@ -21,7 +21,7 @@ type Client struct {
 	id          int // ID of client, must be unique
 	requestID   int // ID of current request, starting from 1
 	stats       *statsFile
-	servers     []string // address of Ios servers
+	servers     []config.NetAddress // address of Ios servers
 	conn        net.Conn
 	rd          *bufio.Reader
 	timeout     time.Duration
@@ -32,15 +32,15 @@ type Client struct {
 }
 
 // connectRandom tries to connect to a server specified in addresses
-func connectRandom(addrs []string, backoff time.Duration) (net.Conn, int) {
+func connectRandom(addrs []config.NetAddress, backoff time.Duration) (net.Conn, int) {
 	for {
 		for tried := 0; tried < len(addrs); tried++ {
 			id := rand.Intn(len(addrs))
-			glog.V(1).Info("Trying to connect to ", addrs[id])
-			conn, err := net.Dial("tcp", addrs[id])
+			glog.V(1).Info("Trying to connect to ", addrs[id].ToString())
+			conn, err := net.Dial("tcp", addrs[id].ToString())
 			// if successful
 			if err == nil {
-				glog.Infof("Connect established to %s", addrs[id])
+				glog.Infof("Connect established to %s", addrs[id].ToString())
 				return conn, id
 			}
 			time.Sleep(backoff)
@@ -52,18 +52,18 @@ func connectRandom(addrs []string, backoff time.Duration) (net.Conn, int) {
 // if unsuccessful, it tries to connect to other servers sytematically, waiting for backoff after trying each server
 // once successful, connect will return the net.Conn and the ID of server connected to
 // connectSystematic may never return if it cannot connect to any server
-func connectSystematic(addrs []string, hint int, backoff time.Duration) (net.Conn, int) {
+func connectSystematic(addrs []config.NetAddress, hint int, backoff time.Duration) (net.Conn, int) {
 	// reset invalid hint
 	if len(addrs) >= hint {
 		hint = 0
 	}
 
 	// first, try on to connect to the most likely leader
-	glog.Info("Trying to connect to ", addrs[hint])
-	conn, err := net.Dial("tcp", addrs[hint])
+	glog.Info("Trying to connect to ", addrs[hint].ToString())
+	conn, err := net.Dial("tcp", addrs[hint].ToString())
 	// if successful
 	if err == nil {
-		glog.Infof("Connect established to %s", addrs[hint])
+		glog.Infof("Connect established to %s", addrs[hint].ToString())
 		return conn, hint
 	}
 	glog.Warning(err) //if unsuccessful
@@ -72,12 +72,12 @@ func connectSystematic(addrs []string, hint int, backoff time.Duration) (net.Con
 	for {
 		// TODO: start from hint instead of from ID:0
 		for i := range addrs {
-			glog.V(1).Info("Trying to connect to ", addrs[i])
-			conn, err = net.Dial("tcp", addrs[i])
+			glog.V(1).Info("Trying to connect to ", addrs[i].ToString())
+			conn, err = net.Dial("tcp", addrs[i].ToString())
 
 			// if successful
 			if err == nil {
-				glog.Infof("Connect established to %s", addrs[i])
+				glog.Infof("Connect established to %s", addrs[i].ToString())
 				return conn, i
 			}
 
@@ -132,7 +132,7 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 
 // StartClient creates an Ios client and tries to connect to an Ios cluster
 // If ID is -1 then a random one will be generated
-func StartClient(id int, statFile string, addrs []string, timeout time.Duration, backoff time.Duration, beforeForce int, random bool) *Client {
+func StartClient(id int, statFile string, addrs []config.NetAddress, timeout time.Duration, backoff time.Duration, beforeForce int, random bool) *Client {
 
 	// TODO: find a better way to handle required flags
 	if id == -1 {
@@ -259,18 +259,19 @@ func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 
 // StartClientFromConfigFile creates an Ios client
 // If ID is -1 then a random one will be generated
-func StartClientFromConfigFile(id int, statFile string, configFile string) *Client {
+func StartClientFromConfigFile(id int, statFile string, configFile string, addressFile string) *Client {
 	conf := config.ParseClientConfig(configFile)
+	addresses := config.ParseAddresses(addressFile)
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	backoff := time.Millisecond * time.Duration(conf.Parameters.Backoff)
-	return StartClient(id, statFile, conf.Addresses.Address, timeout, backoff, conf.Parameters.BeforeForce, conf.Parameters.ConnectRandom)
+	return StartClient(id, statFile, addresses.Clients, timeout, backoff, conf.Parameters.BeforeForce, conf.Parameters.ConnectRandom)
 }
 
 // StartClientFromConfig is the same as StartClientFromConfigFile but for config structs instead of files
-func StartClientFromConfig(id int, statFile string, conf config.Config) *Client {
+func StartClientFromConfig(id int, statFile string, conf config.Config, addresses []config.NetAddress) *Client {
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	backoff := time.Millisecond * time.Duration(conf.Parameters.Backoff)
-	return StartClient(id, statFile, conf.Addresses.Address, timeout, backoff, conf.Parameters.BeforeForce, conf.Parameters.ConnectRandom)
+	return StartClient(id, statFile, addresses, timeout, backoff, conf.Parameters.BeforeForce, conf.Parameters.ConnectRandom)
 }
 
 func (c *Client) StopClient() {
