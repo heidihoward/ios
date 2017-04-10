@@ -17,14 +17,14 @@ type ServerConfig struct {
 		ImplicitWindowCommit bool   // if uncommitted request is outside of current window then commit
 	}
 	Performance struct {
-		Length               int    // max log size
-		BatchInterval        int    // how often to batch process request in ms, 0 means no batching
-		MaxBatch             int    // maximum requests in a batch, unused if BatchInterval=0
-		WindowSize           int    // how many requests can the master have inflight at once
-		SnapshotInterval     int    // how often to record state machine snapshots
+		Length           int // max log size
+		BatchInterval    int // how often to batch process request in ms, 0 means no batching
+		MaxBatch         int // maximum requests in a batch, unused if BatchInterval=0
+		WindowSize       int // how many requests can the master have inflight at once
+		SnapshotInterval int // how often to record state machine snapshots, 0 means snapshotting is disabled
 	}
 	Application struct {
-		Name          string // which application should Ios serve: either "kv-store" or "dummy"
+		Name string // which application should Ios serve: either "kv-store" or "dummy"
 	}
 	Unsafe struct {
 		DumpPersistentStorage bool   // if enabled, then persistent storage is not written to a file, always set to false
@@ -48,7 +48,7 @@ func ParseServerConfig(filename string) ServerConfig {
 	if config.Performance.MaxBatch < 0 {
 		glog.Fatal("Max batch size must be positive")
 	}
-	if config.Algorithm.DelegateReplication < -1  {
+	if config.Algorithm.DelegateReplication < -1 {
 		glog.Fatal("DelegateReplication must be within range, or -1 for reverse delegation")
 	}
 	if config.Performance.WindowSize <= 0 {

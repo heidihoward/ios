@@ -24,7 +24,7 @@ type ConfigMaster struct {
 }
 
 type ConfigParticipant struct {
-	SnapshotInterval     int  // how often to record state machine snapshots
+	SnapshotInterval     int  // how often to record state machine snapshots, 0 means snapshotting is disabled
 	ImplicitWindowCommit bool // if enabled, then commit pending out-of-window requests
 	LogLength            int  // max log size
 }

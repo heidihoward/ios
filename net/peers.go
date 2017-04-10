@@ -3,14 +3,13 @@ package net
 import (
 	"bufio"
 	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/msgs"
 	"github.com/heidi-ann/ios/config"
+	"github.com/heidi-ann/ios/msgs"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 )
-
 
 type peerHandler struct {
 	id       int
@@ -159,7 +158,7 @@ func SetupPeers(localId int, addresses []config.NetAddress, peerNet *msgs.PeerNe
 
 	//set up peer server
 	glog.Info("Starting up peer server on ", addresses[peerHandler.id].Port)
-	listeningPort := ":" +  strconv.Itoa(addresses[peerHandler.id].Port)
+	listeningPort := ":" + strconv.Itoa(addresses[peerHandler.id].Port)
 	lnPeers, err := net.Listen("tcp", listeningPort)
 	if err != nil {
 		glog.Fatal(err)

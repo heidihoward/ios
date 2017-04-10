@@ -29,7 +29,7 @@ func main() {
 	// parse config files
 	conf := config.ParseClientConfig(*algorithmFile)
 	addresses := config.ParseAddresses(*configFile)
-	c := client.StartClientFromConfig(*id, *statFile, conf,addresses.Clients)
+	c := client.StartClientFromConfig(*id, *statFile, conf, addresses.Clients)
 
 	// setup API
 	ioapi := cli.Create(conf.Parameters.Application)

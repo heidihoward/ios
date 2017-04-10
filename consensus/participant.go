@@ -88,7 +88,8 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			}
 
 			// check if its time for another snapshot
-			if state.LastSnapshot+configParticipant.SnapshotInterval <= state.CommitIndex {
+			if configParticipant.SnapshotInterval != 0 &&
+				state.LastSnapshot+configParticipant.SnapshotInterval <= state.CommitIndex {
 				state.Storage.PersistSnapshot(state.CommitIndex, state.StateMachine.MakeSnapshot())
 				state.LastSnapshot = state.CommitIndex
 			}
