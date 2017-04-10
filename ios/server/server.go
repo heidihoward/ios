@@ -12,16 +12,17 @@ import (
 )
 
 // RunIos id conf diskPath is the main entry point of Ios server
-// It does not return
-func RunIos(id int, conf config.ServerConfig, diskPath string) {
+// RunIos does not return
+func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPath string) {
 	// check ID
-	if id >= len(conf.Peers.Address) {
-		glog.Fatal("Node ID is ", id, " but is configured with a ", len(conf.Peers.Address), " node cluster")
+	n := len(addresses.Peers.Address)
+	if id >= n {
+		glog.Fatal("Node ID is ", id, " but is configured with a ", n, " node cluster")
 	}
 
 	// setup iO
 	// TODO: remove this hardcoded limit on channel size
-	peerNet := msgs.MakePeerNet(2000, len(conf.Peers.Address))
+	peerNet := msgs.MakePeerNet(2000, n)
 	clientNet := msgs.MakeClientNet(2000)
 
 	// setup persistent storage
@@ -35,17 +36,17 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 	}
 
 	// setup peers & clients
-	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))
-	net.SetupPeers(id, conf.Peers.Address, peerNet, failureDetector)
-	net.SetupClients(strings.Split(conf.Clients.Address[id], ":")[1], state, clientNet)
+	failureDetector := msgs.NewFailureNotifier(n)
+	net.SetupPeers(id, addresses.Peers.Address, peerNet, failureDetector)
+	net.SetupClients(strings.Split(addresses.Clients.Address[id], ":")[1], state, clientNet)
 
 	// configure consensus algorithms
 	configuration := consensus.Config{
 		All: consensus.ConfigAll{
 			ID:         id,
-			N:          len(conf.Peers.Address),
+			N:          n,
 			WindowSize: conf.Options.WindowSize,
-			Quorum:     consensus.NewQuorum(conf.Options.QuorumSystem, len(conf.Peers.Address)),
+			Quorum:     consensus.NewQuorum(conf.Options.QuorumSystem, n),
 		},
 		Master: consensus.ConfigMaster{
 			BatchInterval:       conf.Options.BatchInterval,

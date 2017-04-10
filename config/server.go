@@ -8,15 +8,6 @@ import (
 // ServerConfig describes the configuration options for an Ios server.
 // Example valid configuration files can be found in server/example.conf and server/example3.conf
 type ServerConfig struct {
-	// Peers holds the addresses of all Ios servers on which peers can connect to them
-	Peers struct {
-		// Address is of the form ipv4:port e.g. 127.0.0.1:8090
-		Address []string
-	}
-	// Clients holds the addresses of all Ios servers on which clients can connect to them
-	Clients struct {
-		Address []string
-	}
 	Options struct {
 		Length               int    // max log size
 		BatchInterval        int    // how often to batch process request in ms, 0 means no batching
@@ -44,10 +35,6 @@ func ParseServerConfig(filename string) ServerConfig {
 	if err != nil {
 		glog.Fatalf("Failed to parse gcfg data: %s", err)
 	}
-	// checking configuation is sensible
-	if len(config.Peers.Address) == 0 {
-		glog.Fatal("At least one server is required")
-	}
 	if config.Options.Length <= 0 {
 		glog.Fatal("Log length must be at least 1")
 	}
@@ -57,7 +44,7 @@ func ParseServerConfig(filename string) ServerConfig {
 	if config.Options.MaxBatch < 0 {
 		glog.Fatal("Max batch size must be positive")
 	}
-	if config.Options.DelegateReplication < -1 || config.Options.DelegateReplication > len(config.Peers.Address) {
+	if config.Options.DelegateReplication < -1  {
 		glog.Fatal("DelegateReplication must be within range, or -1 for reverse delegation")
 	}
 	if config.Options.WindowSize <= 0 {

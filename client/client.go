@@ -33,7 +33,6 @@ type Client struct {
 
 // connectRandom tries to connect to a server specified in addresses
 func connectRandom(addrs []string, backoff time.Duration) (net.Conn, int) {
-	// TODO: stop ignoring backoff parameter
 	for {
 		for tried := 0; tried < len(addrs); tried++ {
 			id := rand.Intn(len(addrs))
@@ -151,8 +150,10 @@ func StartClient(id int, statFile string, addrs []string, timeout time.Duration,
 	var conn net.Conn
 	var serverID int
 	if random {
+		glog.Info("Client trying to connect to servers randomly")
 		conn, serverID = connectRandom(addrs, backoff)
 	} else {
+		glog.Info("Client trying to connect to servers systematically")
 		conn, serverID = connectSystematic(addrs, 0, backoff)
 	}
 	glog.Info("Client is ready to start processing incoming requests")
