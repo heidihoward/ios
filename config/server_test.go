@@ -28,8 +28,7 @@ func TestParseSingleServerConfig(t *testing.T) {
 	assert.Equal(t, false, conf.Algorithm.IndexExclusivity)
 	assert.Equal(t, "kv-store", conf.Application.Name)
 
-	unsafe := conf.Unsafe
-	assert.False(t, unsafe.DumpPersistentStorage)
-	assert.Equal(t, "fsync", unsafe.PersistenceMode)
+	assert.False(t, conf.Unsafe.DumpPersistentStorage)
+	assert.Equal(t, "fsync", conf.Unsafe.PersistenceMode)
 
 }
