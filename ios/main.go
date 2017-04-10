@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 )
 
@@ -47,14 +46,12 @@ func main() {
 	// overwrite ports if given
 	if *peerPort != 0 {
 		glog.Info("Peer port overwritten to ", *peerPort)
-		ip := strings.Split(addresses.Peers.Address[*id], ":")[0]
-		addresses.Peers.Address[*id] = ip + ":" + strconv.Itoa(*peerPort)
+		addresses.Peers[*id].Port = *peerPort
 	}
 
 	if *clientPort != 0 {
 		glog.Info("Client port overwritten to ", *clientPort)
-		ip := strings.Split(addresses.Clients.Address[*id], ":")[0]
-		addresses.Clients.Address[*id] = ip + ":" + strconv.Itoa(*clientPort)
+		addresses.Clients[*id].Port = *clientPort
 	}
 
 	// logging

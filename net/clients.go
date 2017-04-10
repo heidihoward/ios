@@ -7,6 +7,7 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 	"io"
 	"net"
+	"strconv"
 )
 
 type clientHandler struct {
@@ -127,7 +128,7 @@ func (ch *clientHandler) handleConnection(cn net.Conn) {
 // SetupClients listen for client on the given port, it forwards their requests to the consensus algorithm and
 // then applies them to the state machine
 // SetupClients returns when setup is completed, spawning goroutines to listen for clients.
-func SetupClients(port string, app *app.StateMachine, clientNet *msgs.ClientNet) {
+func SetupClients(port int, app *app.StateMachine, clientNet *msgs.ClientNet) {
 	ch := clientHandler{
 		notify:    msgs.NewNotificator(),
 		app:       app,
@@ -137,7 +138,7 @@ func SetupClients(port string, app *app.StateMachine, clientNet *msgs.ClientNet)
 
 	// set up client server
 	glog.Info("Starting up client server on port ", port)
-	listeningPort := ":" + port
+	listeningPort := ":" + strconv.Itoa(port)
 	ln, err := net.Listen("tcp", listeningPort)
 	if err != nil {
 		glog.Fatal(err)

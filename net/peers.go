@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/msgs"
+	"github.com/heidi-ann/ios/config"
 	"net"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 type peer struct {
 	id      int
 	address string
+	port int
 }
 
 type peerHandler struct {
@@ -27,7 +29,7 @@ type peerHandler struct {
 func (ph *peerHandler) checkPeer() {
 	for i := range ph.peers {
 		if !ph.failures.IsConnected(i) {
-			cn, err := net.Dial("tcp", ph.peers[i].address)
+			cn, err := net.Dial("tcp", ph.peers[i].address+":"+strconv.Itoa(ph.peers[i].port))
 			if err == nil {
 				go ph.handlePeer(cn, true)
 			} else {
@@ -76,11 +78,10 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 
 	// check IP address is as expected
 	// TODO: allow dynamic changes of IP
-	expectedAddr := strings.Split(ph.peers[peerID].address, ":")[0]
 	actualAddr := strings.Split(addr, ":")[0]
-	if expectedAddr != actualAddr {
+	if ph.peers[peerID].address != actualAddr {
 		glog.Fatal("Peer ID ", peerID, " has connected from an unexpected address ", actualAddr,
-			" expected ", expectedAddr)
+			" expected ", ph.peers[peerID].address)
 	}
 
 	glog.Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
@@ -153,7 +154,7 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	ph.failures.NowDisconnected(peerID)
 }
 
-func SetupPeers(localId int, addresses []string, peerNet *msgs.PeerNet, fail *msgs.FailureNotifier) {
+func SetupPeers(localId int, addresses []config.NetAddress, peerNet *msgs.PeerNet, fail *msgs.FailureNotifier) {
 	peerHandler := peerHandler{
 		id:       localId,
 		peers:    make([]peer, len(addresses)),
@@ -163,13 +164,12 @@ func SetupPeers(localId int, addresses []string, peerNet *msgs.PeerNet, fail *ms
 
 	for i := range addresses {
 		peerHandler.peers[i] = peer{
-			i, addresses[i]}
+			i, addresses[i].Address, addresses[i].Port}
 	}
 
 	//set up peer server
-	glog.Info("Starting up peer server on ", addresses[peerHandler.id])
-	peerPort := strings.Split(addresses[peerHandler.id], ":")[1]
-	listeningPort := ":" + peerPort
+	glog.Info("Starting up peer server on ", addresses[peerHandler.id].Port)
+	listeningPort := ":" +  strconv.Itoa(addresses[peerHandler.id].Port)
 	lnPeers, err := net.Listen("tcp", listeningPort)
 	if err != nil {
 		glog.Fatal(err)

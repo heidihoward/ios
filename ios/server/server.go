@@ -8,14 +8,13 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 	"github.com/heidi-ann/ios/net"
 	"github.com/heidi-ann/ios/storage"
-	"strings"
 )
 
 // RunIos id conf diskPath is the main entry point of Ios server
 // RunIos does not return
 func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPath string) {
 	// check ID
-	n := len(addresses.Peers.Address)
+	n := len(addresses.Peers)
 	if id >= n {
 		glog.Fatal("Node ID is ", id, " but is configured with a ", n, " node cluster")
 	}
@@ -37,8 +36,8 @@ func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPa
 
 	// setup peers & clients
 	failureDetector := msgs.NewFailureNotifier(n)
-	net.SetupPeers(id, addresses.Peers.Address, peerNet, failureDetector)
-	net.SetupClients(strings.Split(addresses.Clients.Address[id], ":")[1], state, clientNet)
+	net.SetupPeers(id, addresses.Peers, peerNet, failureDetector)
+	net.SetupClients(addresses.Clients[id].Port, state, clientNet)
 
 	// configure consensus algorithms
 	configuration := consensus.Config{
