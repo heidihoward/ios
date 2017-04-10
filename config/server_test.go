@@ -29,7 +29,7 @@ func TestParseSingleServerConfig(t *testing.T) {
 	assert.Equal(t, 10, conf.Performance.MaxBatch)
 	assert.Equal(t, 1, conf.Performance.WindowSize)
 	assert.Equal(t, 0, conf.Performance.SnapshotInterval)
-	
+
 	assert.Equal(t, "kv-store", conf.Application.Name)
 
 	assert.False(t, conf.Unsafe.DumpPersistentStorage)

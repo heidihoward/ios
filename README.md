@@ -105,7 +105,7 @@ Typing requests into a terminal is, of course, slow and unrealistic. To help tes
 ```
 $GOPATH/bin/test -config $GOPATH/src/github.com/heidi-ann/ios/client/example3.conf -auto $GOPATH/src/github.com/heidi-ann/ios/test/workload.conf
 ```
-This client will run the workload described in [configfiles/simple/workload.conf](configfiles/simple/workload.conf) and then terminate. It will write performance metrics into a file called latency.csv. Ios currently also support a REST API mode which listens for HTTP on port 12345.
+This client will run the workload described in [test/workloads/example.conf](test/workloads/example.conf) and then terminate. It will write performance metrics into a file called latency.csv. Ios currently also support a REST API mode which listens for HTTP on port 12345.
 
 ## Contributing
 

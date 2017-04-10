@@ -11,7 +11,7 @@ import (
 )
 
 var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/example.conf", "Client configuration file")
-var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/simple/workload.conf", "Configure file for workload")
+var autoFile = flag.String("auto", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/test/workloads/example.conf", "Configure file for workload")
 var algorithmFile = flag.String("algorithm", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/simple/client.conf", "Algorithm description file") // optional flag
 var clients = flag.Int("clients", 1, "Number of clients to create")
 
