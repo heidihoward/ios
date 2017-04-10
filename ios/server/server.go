@@ -26,7 +26,7 @@ func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPa
 
 	// setup persistent storage
 	found, view, log, index, state := storage.RestoreStorage(
-		diskPath, conf.Options.Length, conf.Options.Application)
+		diskPath, conf.Performance.Length, conf.Application.Name)
 	var store msgs.Storage
 	if conf.Unsafe.DumpPersistentStorage {
 		store = msgs.MakeDummyStorage()
@@ -44,23 +44,23 @@ func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPa
 		All: consensus.ConfigAll{
 			ID:         id,
 			N:          n,
-			WindowSize: conf.Options.WindowSize,
-			Quorum:     consensus.NewQuorum(conf.Options.QuorumSystem, n),
+			WindowSize: conf.Performance.WindowSize,
+			Quorum:     consensus.NewQuorum(conf.Algorithm.QuorumSystem, n),
 		},
 		Master: consensus.ConfigMaster{
-			BatchInterval:       conf.Options.BatchInterval,
-			MaxBatch:            conf.Options.MaxBatch,
-			DelegateReplication: conf.Options.DelegateReplication,
-			IndexExclusivity:    conf.Options.IndexExclusivity,
+			BatchInterval:       conf.Performance.BatchInterval,
+			MaxBatch:            conf.Performance.MaxBatch,
+			DelegateReplication: conf.Algorithm.DelegateReplication,
+			IndexExclusivity:    conf.Algorithm.IndexExclusivity,
 		},
 		Participant: consensus.ConfigParticipant{
-			SnapshotInterval:     conf.Options.SnapshotInterval,
-			ImplicitWindowCommit: conf.Options.ImplicitWindowCommit,
-			LogLength:            conf.Options.Length,
+			SnapshotInterval:     conf.Performance.SnapshotInterval,
+			ImplicitWindowCommit: conf.Algorithm.ImplicitWindowCommit,
+			LogLength:            conf.Performance.Length,
 		},
 		Interfacer: consensus.ConfigInterfacer{
-			ParticipantHandle: conf.Options.ParticipantHandle,
-			ParticipantRead:   conf.Options.ParticipantRead,
+			ParticipantHandle: conf.Algorithm.ParticipantHandle,
+			ParticipantRead:   conf.Algorithm.ParticipantRead,
 		},
 	}
 	// setup consensus algorithm
