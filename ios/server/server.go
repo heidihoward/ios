@@ -8,25 +8,25 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 	"github.com/heidi-ann/ios/net"
 	"github.com/heidi-ann/ios/storage"
-	"strings"
 )
 
 // RunIos id conf diskPath is the main entry point of Ios server
-// It does not return
-func RunIos(id int, conf config.ServerConfig, diskPath string) {
+// RunIos does not return
+func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPath string) {
 	// check ID
-	if id >= len(conf.Peers.Address) {
-		glog.Fatal("Node ID is ", id, " but is configured with a ", len(conf.Peers.Address), " node cluster")
+	n := len(addresses.Peers)
+	if id >= n {
+		glog.Fatal("Node ID is ", id, " but is configured with a ", n, " node cluster")
 	}
 
 	// setup iO
 	// TODO: remove this hardcoded limit on channel size
-	peerNet := msgs.MakePeerNet(2000, len(conf.Peers.Address))
+	peerNet := msgs.MakePeerNet(2000, n)
 	clientNet := msgs.MakeClientNet(2000)
 
 	// setup persistent storage
 	found, view, log, index, state := storage.RestoreStorage(
-		diskPath, conf.Options.Length, conf.Options.Application)
+		diskPath, conf.Performance.Length, conf.Application.Name)
 	var store msgs.Storage
 	if conf.Unsafe.DumpPersistentStorage {
 		store = msgs.MakeDummyStorage()
@@ -35,25 +35,34 @@ func RunIos(id int, conf config.ServerConfig, diskPath string) {
 	}
 
 	// setup peers & clients
-	failureDetector := msgs.NewFailureNotifier(len(conf.Peers.Address))
-	net.SetupPeers(id, conf.Peers.Address, peerNet, failureDetector)
-	net.SetupClients(strings.Split(conf.Clients.Address[id], ":")[1], state, clientNet)
+	failureDetector := msgs.NewFailureNotifier(n)
+	net.SetupPeers(id, addresses.Peers, peerNet, failureDetector)
+	net.SetupClients(addresses.Clients[id].Port, state, clientNet)
 
 	// configure consensus algorithms
-	quorum := consensus.NewQuorum(conf.Options.QuorumSystem, len(conf.Peers.Address))
 	configuration := consensus.Config{
-		id,
-		len(conf.Peers.Address),
-		conf.Options.Length,
-		conf.Options.BatchInterval,
-		conf.Options.MaxBatch,
-		conf.Options.DelegateReplication,
-		conf.Options.WindowSize,
-		conf.Options.SnapshotInterval,
-		quorum,
-		conf.Options.IndexExclusivity,
-		conf.Options.ParticipantResponse}
-
+		All: consensus.ConfigAll{
+			ID:         id,
+			N:          n,
+			WindowSize: conf.Performance.WindowSize,
+			Quorum:     consensus.NewQuorum(conf.Algorithm.QuorumSystem, n),
+		},
+		Master: consensus.ConfigMaster{
+			BatchInterval:       conf.Performance.BatchInterval,
+			MaxBatch:            conf.Performance.MaxBatch,
+			DelegateReplication: conf.Algorithm.DelegateReplication,
+			IndexExclusivity:    conf.Algorithm.IndexExclusivity,
+		},
+		Participant: consensus.ConfigParticipant{
+			SnapshotInterval:     conf.Performance.SnapshotInterval,
+			ImplicitWindowCommit: conf.Algorithm.ImplicitWindowCommit,
+			LogLength:            conf.Performance.Length,
+		},
+		Interfacer: consensus.ConfigInterfacer{
+			ParticipantHandle: conf.Algorithm.ParticipantHandle,
+			ParticipantRead:   conf.Algorithm.ParticipantRead,
+		},
+	}
 	// setup consensus algorithm
 	if !found {
 		glog.Info("Starting fresh consensus instance")

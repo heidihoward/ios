@@ -179,6 +179,30 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		default:
 			glog.Fatal("Buffer overflow, dropping message", msg)
 		}
+	case 13:
+		var msg CheckRequest
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Warning("Cannot parse message", err)
+		}
+		glog.V(1).Info("Unmarshalled ", msg)
+		select {
+		case msgch.Requests.Check <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
+	case 14:
+		var msg Check
+		err := Unmarshal(b[1:], &msg)
+		if err != nil {
+			glog.Warning("Cannot parse message", err)
+		}
+		glog.V(1).Info("Unmarshalled ", msg)
+		select {
+		case msgch.Responses.Check <- msg:
+		default:
+			glog.Fatal("Buffer overflow, dropping message", msg)
+		}
 	default:
 		glog.Warning("Cannot parse message", string(b))
 	}
@@ -267,6 +291,18 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
 		snd := appendr(byte(12), b)
+		return snd, err
+
+	case msg := <-msgch.Requests.Check:
+		glog.V(1).Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(13), b)
+		return snd, err
+
+	case msg := <-msgch.Responses.Check:
+		glog.V(1).Info("Marshalling ", msg)
+		b, err := Marshal(msg)
+		snd := appendr(byte(14), b)
 		return snd, err
 
 	case msg := <-msgch.Requests.Forward:

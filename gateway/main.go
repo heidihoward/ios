@@ -4,16 +4,15 @@ import (
 	"flag"
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/client"
-	"github.com/heidi-ann/ios/config"
 	"github.com/heidi-ann/ios/gateway/rest"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
-var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
+var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/example.conf", "Client configuration file")
 var statFile = flag.String("stat", "latency.csv", "File to write stats to")
+var algorithmFile = flag.String("algorithm", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/simple/client.conf", "Algorithm description file") // optional flag
 var id = flag.Int("id", -1, "ID of client (must be unique) or random number will be generated")
 var port = flag.Int("port", 12345, "Port to listen for HTTP request on")
 
@@ -28,10 +27,8 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	// parse config files
-	conf := config.ParseClientConfig(*configFile)
-	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 
-	c := client.StartClient(*id, *statFile, conf.Addresses.Address, timeout)
+	c := client.StartClientFromConfigFile(*id, *statFile, *algorithmFile, *configFile)
 
 	// setup API
 	ioapi := rest.Create(12345)

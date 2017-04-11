@@ -9,11 +9,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
-var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/client/example.conf", "Client configuration file")
+var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/example.conf", "Client configuration file")
 var statFile = flag.String("stat", "latency.csv", "File to write stats to")
+var algorithmFile = flag.String("algorithm", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/simple/client.conf", "Algorithm description file") // optional flag
 var id = flag.Int("id", -1, "ID of client (must be unique) or random number will be generated")
 
 func main() {
@@ -27,10 +27,9 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	// parse config files
-	conf := config.ParseClientConfig(*configFile)
-	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
-
-	c := client.StartClient(*id, *statFile, conf.Addresses.Address, timeout)
+	conf := config.ParseClientConfig(*algorithmFile)
+	addresses := config.ParseAddresses(*configFile)
+	c := client.StartClientFromConfig(*id, *statFile, conf, addresses.Clients)
 
 	// setup API
 	ioapi := cli.Create(conf.Parameters.Application)

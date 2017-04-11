@@ -8,7 +8,7 @@ import (
 
 // returns true if successful
 // start index is inclusive and end index is exclusive
-func runRecoveryCoordinator(view int, startIndex int, endIndex int, peerNet *msgs.PeerNet, config Config) bool {
+func runRecoveryCoordinator(view int, startIndex int, endIndex int, peerNet *msgs.PeerNet, config ConfigAll) bool {
 	if startIndex == endIndex {
 		return true
 	} else if endIndex < startIndex {

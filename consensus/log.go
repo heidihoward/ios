@@ -8,6 +8,7 @@ import (
 
 // Log holds the replication log used of Ios.
 // Only indexes between AbsoluteIndex and (AbsoluteIndex + maxLength -1)  are accessible
+// Do not access LogEntries direct, always use AddEntry and AddEntries functions
 type Log struct {
 	LogEntries    []msgs.Entry // contents of log, indexed from 0 to maxLength - 1
 	LastIndex     int          // greatest absolute index in log with entry, -1 means that the log has no entries
@@ -77,6 +78,10 @@ func (l *Log) GetEntries(startIndex int, endIndex int) []msgs.Entry {
 	if startIndex < l.AbsoluteIndex || endIndex > l.AbsoluteIndex+l.maxLength-1 {
 		glog.Fatal("Trying to access log out of bounds")
 	}
+	// return no entries if range is incorrect
+	if startIndex > endIndex {
+		return []msgs.Entry{}
+	}
 	return l.LogEntries[startIndex-l.AbsoluteIndex : endIndex-l.AbsoluteIndex]
 }
 
@@ -94,4 +99,16 @@ func (l *Log) GetEntry(index int) msgs.Entry {
 		glog.Fatal("Trying to access log out of bounds")
 	}
 	return l.LogEntries[index-l.AbsoluteIndex]
+}
+
+// ImplicitCommit will marked any uncommitted entries after commitIndex as committed
+// if they are out-of-window and of the same view
+func (l *Log) ImplicitCommit(windowSize int, commitIndex int) {
+	view := l.GetEntry(l.LastIndex).View
+	for i, entry := range l.GetEntries(commitIndex+1, l.LastIndex-windowSize) {
+		if !entry.Committed && entry.View == view {
+			entry.Committed = true
+			l.AddEntry(i+l.AbsoluteIndex, entry)
+		}
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/heidi-ann/ios/client"
+	"github.com/heidi-ann/ios/config"
 )
 
 type KvClient struct {
@@ -16,8 +17,8 @@ type KvClient struct {
 
 // StartKvClient creates an Ios client and tries to connect to an Ios cluster
 // If ID is -1 then a random one will be generated
-func StartKvClient(id int, statFile string, addrs []string, timeout time.Duration) *KvClient {
-	iosClient := client.StartClient(id, statFile, addrs, timeout)
+func StartKvClient(id int, statFile string, addrs []config.NetAddress, timeout time.Duration, backoff time.Duration, beforeForce int, random bool) *KvClient {
+	iosClient := client.StartClient(id, statFile, addrs, timeout, backoff, beforeForce, random)
 	return &KvClient{iosClient}
 }
 

@@ -6,13 +6,12 @@ import (
 )
 
 type Config struct {
-	Addresses struct {
-		Address []string
-	}
 	Parameters struct {
-		Retries     int
-		Timeout     int
-		Application string
+		Timeout       int
+		Backoff       int
+		ConnectRandom bool
+		BeforeForce   int
+		Application   string
 	}
 }
 
@@ -23,14 +22,14 @@ func ParseClientConfig(filename string) Config {
 		glog.Fatalf("Failed to parse gcfg data: %s", err)
 	}
 	// checking configuation is sensible
-	if len(config.Addresses.Address) == 0 {
-		glog.Fatalf("At least one server is required")
-	}
-	if config.Parameters.Retries <= 0 {
-		glog.Fatalf("Retries must be >= 0")
-	}
 	if config.Parameters.Timeout <= 0 {
 		glog.Fatalf("Timeout must be >= 0")
+	}
+	if config.Parameters.Backoff <= 0 {
+		glog.Fatalf("Backoff must be >= 0")
+	}
+	if config.Parameters.BeforeForce < -1 {
+		glog.Fatalf("Backoff must be >= 0")
 	}
 	// TODO: check Application
 	return config

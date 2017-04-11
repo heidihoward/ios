@@ -152,6 +152,24 @@ type ForwardRequest struct {
 	Request  ClientRequest
 }
 
+// Check is used to see apply a read without the master
+type CheckRequest struct {
+	SenderID int
+	Requests []ClientRequest
+}
+
+type CheckResponse struct {
+	SenderID    int
+	Success     bool
+	CommitIndex int
+	Replies     []ClientResponse
+}
+
+type Check struct {
+	Request  CheckRequest
+	Response CheckResponse
+}
+
 type LogUpdate struct {
 	StartIndex int
 	EndIndex   int

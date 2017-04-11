@@ -9,19 +9,37 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 )
 
+type ConfigAll struct {
+	ID         int       // id of node
+	N          int       // size of cluster (nodes numbered 0 to N-1)
+	WindowSize int       // how many requests can the master have inflight at once
+	Quorum     QuorumSys // which quorum system to use
+}
+
+type ConfigMaster struct {
+	BatchInterval       int  // how often to batch process request in ms, 0 means no batching
+	MaxBatch            int  // maximum requests in a batch, unused if BatchInterval=0
+	DelegateReplication int  // how many replication coordinators to delegate to when master
+	IndexExclusivity    bool // if enabled, Ios will assign each index to at most one request
+}
+
+type ConfigParticipant struct {
+	SnapshotInterval     int  // how often to record state machine snapshots, 0 means snapshotting is disabled
+	ImplicitWindowCommit bool // if enabled, then commit pending out-of-window requests
+	LogLength            int  // max log size
+}
+
+type ConfigInterfacer struct {
+	ParticipantHandle bool // if enabled, non-master nodes can handle to client requests
+	ParticipantRead   bool // if enabled, non-master nodes can serve reads. To enable, ParticipantHandle must also be enabled
+}
+
 // Config describes the static configuration of the consensus algorithm
 type Config struct {
-	ID                  int       // id of node
-	N                   int       // size of cluster (nodes numbered 0 to N-1)
-	LogLength           int       // max log size
-	BatchInterval       int       // how often to batch process request in ms, 0 means no batching
-	MaxBatch            int       // maximum requests in a batch, unused if BatchInterval=0
-	DelegateReplication int       // how many replication coordinators to delegate to when master
-	WindowSize          int       // how many requests can the master have inflight at once
-	SnapshotInterval    int       // how often to record state machine snapshots
-	Quorum              QuorumSys // which quorum system to use
-	IndexExclusivity    bool      // if enabled, Ios will assign each index to at most one request
-	ParticipantResponse string    // how should non-master nodes response to client requests
+	All         ConfigAll
+	Master      ConfigMaster
+	Participant ConfigParticipant
+	Interfacer  ConfigInterfacer
 }
 
 // state describes the current state of the consensus algorithm
@@ -45,10 +63,10 @@ var noop = msgs.ClientRequest{-1, -1, false, false, "noop"}
 func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *app.StateMachine, fail *msgs.FailureNotifier, storage msgs.Storage) {
 
 	// setup
-	glog.Infof("Starting node ID:%d of %d", config.ID, config.N)
+	glog.Infof("Starting node ID:%d of %d", config.All.ID, config.All.N)
 	state := state{
 		View:         0,
-		Log:          NewLog(config.LogLength),
+		Log:          NewLog(config.Participant.LogLength),
 		CommitIndex:  -1,
 		masterID:     0,
 		LastSnapshot: 0,
@@ -61,11 +79,11 @@ func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *
 	storage.PersistView(0)
 
 	// operator as normal node
-	glog.Info("Starting participant module, ID ", config.ID)
-	go runCoordinator(&state, peerNet, config)
-	go monitorMaster(&state, peerNet, config, true)
-	go runClientHandler(&state, peerNet, clientNet, config)
-	runParticipant(&state, peerNet, clientNet, config)
+	glog.Info("Starting participant module, ID ", config.All.ID)
+	go runCoordinator(&state, peerNet, config.All)
+	go monitorMaster(&state, peerNet, config.All, config.Master, true)
+	go runClientHandler(&state, peerNet, clientNet, config.All, config.Interfacer)
+	runParticipant(&state, peerNet, clientNet, config.All, config.Participant)
 
 }
 
@@ -74,14 +92,14 @@ func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *
 // It will not return until the application is terminated.
 func Recover(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, view int, log *Log, app *app.StateMachine, snapshotIndex int, fail *msgs.FailureNotifier, storage msgs.Storage) {
 	// setup
-	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.ID, config.N, log.LastIndex)
+	glog.Infof("Restarting node %d of %d with recovered log of length %d", config.All.ID, config.All.N, log.LastIndex)
 
 	// restore previous state
 	state := state{
 		View:         view,
 		Log:          log,
 		CommitIndex:  snapshotIndex,
-		masterID:     mod(view, config.N),
+		masterID:     mod(view, config.All.N),
 		LastSnapshot: snapshotIndex,
 		StateMachine: app,
 		Failures:     fail,
@@ -106,9 +124,9 @@ func Recover(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, vi
 	//  do not start leader without view change
 
 	// operator as normal node
-	glog.Info("Starting participant module, ID ", config.ID)
-	go runCoordinator(&state, peerNet, config)
-	go monitorMaster(&state, peerNet, config, false)
-	go runClientHandler(&state, peerNet, clientNet, config)
-	runParticipant(&state, peerNet, clientNet, config)
+	glog.Info("Starting participant module, ID ", config.All.ID)
+	go runCoordinator(&state, peerNet, config.All)
+	go monitorMaster(&state, peerNet, config.All, config.Master, false)
+	go runClientHandler(&state, peerNet, clientNet, config.All, config.Interfacer)
+	runParticipant(&state, peerNet, clientNet, config.All, config.Participant)
 }

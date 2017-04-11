@@ -5,3 +5,4 @@ docker rm node0
 docker rm node1
 docker rm node2
 docker rm client
+docker network rm ios

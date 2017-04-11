@@ -9,16 +9,16 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 )
 
 // command line flags
-var id = flag.Int("id", -1, "server ID [REQUIRED]")                                                                                       // required flag
-var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/ios/example.conf", "Server configuration file") // optional flag
-var diskPath = flag.String("disk", "persistent_id", "Path to directory to store persistent storage")                                      // optional flag
-var peerPort = flag.Int("listen-peers", 0, "Overwrite the port specified in config file to listen for peers on")                          // optional flag
-var clientPort = flag.Int("listen-clients", 0, "Overwrite the port specified in config file to listen for clients on")                    // optional flag
+var id = flag.Int("id", -1, "server ID [REQUIRED]")                                                                                                            // required flag
+var configFile = flag.String("config", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/example.conf", "Server configuration file")                          // optional flag
+var algorithmFile = flag.String("algorithm", os.Getenv("GOPATH")+"/src/github.com/heidi-ann/ios/configfiles/simple/server.conf", "Algorithm description file") // optional flag
+var diskPath = flag.String("disk", "persistent_id", "Path to directory to store persistent storage")                                                           // optional flag
+var peerPort = flag.Int("listen-peers", 0, "Overwrite the port specified in config file to listen for peers on")                                               // optional flag
+var clientPort = flag.Int("listen-clients", 0, "Overwrite the port specified in config file to listen for clients on")                                         // optional flag
 
 // entry point of server executable
 func main() {
@@ -27,12 +27,13 @@ func main() {
 	defer glog.Flush()
 
 	// check go path is set
-	if *configFile == "/src/github.com/heidi-ann/ios/ios/example.conf" {
-		glog.Fatal("GOPATH not set")
+	if os.Getenv("GOPATH") == "" {
+		glog.Fatal("GOPATH not set, please set GOPATH and try again")
 	}
 
-	// parse configuration file
-	conf := config.ParseServerConfig(*configFile)
+	// parse configuration files
+	conf := config.ParseServerConfig(*algorithmFile)
+	addresses := config.ParseAddresses(*configFile)
 	if *id == -1 {
 		glog.Fatal("ID is required")
 	}
@@ -45,14 +46,12 @@ func main() {
 	// overwrite ports if given
 	if *peerPort != 0 {
 		glog.Info("Peer port overwritten to ", *peerPort)
-		ip := strings.Split(conf.Peers.Address[*id], ":")[0]
-		conf.Peers.Address[*id] = ip + ":" + strconv.Itoa(*peerPort)
+		addresses.Peers[*id].Port = *peerPort
 	}
 
 	if *clientPort != 0 {
 		glog.Info("Client port overwritten to ", *clientPort)
-		ip := strings.Split(conf.Clients.Address[*id], ":")[0]
-		conf.Clients.Address[*id] = ip + ":" + strconv.Itoa(*clientPort)
+		addresses.Clients[*id].Port = *clientPort
 	}
 
 	// logging
@@ -60,7 +59,7 @@ func main() {
 	defer glog.Warning("Shutting down server ", *id)
 
 	// start Ios server
-	go server.RunIos(*id, conf, disk)
+	go server.RunIos(*id, conf, addresses, disk)
 
 	// waiting for exit
 	// always flush (whatever happens)

@@ -7,7 +7,8 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 )
 
-func runSimulator(nodes int) ([]*msgs.PeerNet, []*msgs.ClientNet, []*msgs.FailureNotifier) {
+func runSimulator(config consensus.Config) ([]*msgs.PeerNet, []*msgs.ClientNet, []*msgs.FailureNotifier) {
+	nodes := config.All.N
 	peerNets := make([]*msgs.PeerNet, nodes)
 	clientNets := make([]*msgs.ClientNet, nodes)
 	failures := make([]*msgs.FailureNotifier, nodes)
@@ -18,17 +19,7 @@ func runSimulator(nodes int) ([]*msgs.PeerNet, []*msgs.ClientNet, []*msgs.Failur
 		clientNet := msgs.MakeClientNet(10)
 		fail := msgs.NewFailureNotifier(nodes)
 		storage := msgs.MakeDummyStorage()
-		config := consensus.Config{
-			ID:                  id,
-			N:                   nodes,
-			LogLength:           1000,
-			BatchInterval:       0,
-			MaxBatch:            1,
-			DelegateReplication: 0,
-			WindowSize:          1,
-			SnapshotInterval:    100,
-			Quorum:              consensus.NewQuorum("strict majority", 3),
-			IndexExclusivity:    true}
+		config.All.ID = id
 		go consensus.Init(peerNet, clientNet, config, app, fail, storage)
 		peerNets[id] = peerNet
 		clientNets[id] = clientNet

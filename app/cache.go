@@ -34,7 +34,7 @@ func (c *Cache) check(req msgs.ClientRequest) (bool, msgs.ClientResponse) {
 
 func (c *Cache) add(res msgs.ClientResponse) {
 	c.Lock()
-	if c.m[res.ClientID].RequestID != 0 && c.m[res.ClientID].RequestID+1 != res.RequestID {
+	if c.m[res.ClientID].RequestID != 0 && c.m[res.ClientID].RequestID > res.RequestID {
 		glog.Fatal("Requests must be added to request cache in order, expected ", c.m[res.ClientID].RequestID+1,
 			" but received ", res.RequestID)
 	}

@@ -22,7 +22,7 @@ func checkFormatSize(t *testing.T, req string, keySize int, valueSize int) {
 
 func checkGenerateConfig(t *testing.T, conf config.WorkloadConfig) {
 	kv := services.StartService("kv-store")
-	gen := Generate(conf)
+	gen := Generate(conf, true)
 
 	for i := 0; i < conf.Config.Requests; i++ {
 		str, _, ok := gen.Next()

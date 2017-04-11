@@ -7,7 +7,7 @@ import (
 
 // PROTOCOL BODY
 
-func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config) {
+func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config ConfigAll, configParticipant ConfigParticipant) {
 	glog.V(1).Info("Ready for requests")
 	for {
 
@@ -37,7 +37,21 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries}
 			state.Storage.PersistLogUpdate(logUpdate)
 
-			// TODO: add implicit commits from window_size
+			// implicit commits from window_size
+			if configParticipant.ImplicitWindowCommit {
+				state.Log.ImplicitCommit(config.WindowSize, state.CommitIndex)
+				// pass requests to state machine if ready
+				for state.Log.GetEntry(state.CommitIndex + 1).Committed {
+					for _, request := range state.Log.GetEntry(state.CommitIndex + 1).Requests {
+						if request != noop {
+							reply := state.StateMachine.Apply(request)
+							clientNet.OutgoingResponses <- msgs.Client{request, reply}
+							glog.V(1).Info("Request Committed: ", request)
+						}
+					}
+					state.CommitIndex++
+				}
+			}
 
 			// reply to coordinator
 			reply := msgs.PrepareResponse{config.ID, true}
@@ -49,6 +63,9 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 
 			// add enties to the log (in-memory)
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
+			if configParticipant.ImplicitWindowCommit {
+				state.Log.ImplicitCommit(config.WindowSize, state.CommitIndex)
+			}
 			//peerNet.LogPersist <- msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries, false}
 
 			// pass requests to state machine if ready
@@ -71,7 +88,8 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			}
 
 			// check if its time for another snapshot
-			if state.LastSnapshot+config.SnapshotInterval <= state.CommitIndex {
+			if configParticipant.SnapshotInterval != 0 &&
+				state.LastSnapshot+configParticipant.SnapshotInterval <= state.CommitIndex {
 				state.Storage.PersistSnapshot(state.CommitIndex, state.StateMachine.MakeSnapshot())
 				state.LastSnapshot = state.CommitIndex
 			}
@@ -128,6 +146,15 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 				reply := msgs.CommitRequest{config.ID, false, req.StartIndex, state.CommitIndex, state.Log.GetEntries(req.StartIndex, state.CommitIndex)}
 				peerNet.OutgoingUnicast[req.SenderID].Requests.Commit <- reply
 			}
+
+		case req := <-peerNet.Incoming.Requests.Check:
+			glog.V(1).Info("Check requests received at ", config.ID)
+			reply := msgs.CheckResponse{config.ID,
+				state.CommitIndex == state.Log.LastIndex,
+				state.CommitIndex,
+				state.StateMachine.ApplyReads(req.Requests),
+			}
+			peerNet.OutgoingUnicast[req.SenderID].Responses.Check <- msgs.Check{req, reply}
 		}
 	}
 }

@@ -35,5 +35,8 @@ func (n *Notificator) Subscribe(request ClientRequest) ClientResponse {
 }
 
 func (n *Notificator) IsSubscribed(request ClientRequest) bool {
-	return (n.subscribed[request] != nil)
+	n.mutex.RLock()
+	result := n.subscribed[request] != nil
+	n.mutex.RUnlock()
+	return result
 }
