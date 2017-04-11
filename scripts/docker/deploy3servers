@@ -2,4 +2,4 @@ docker network create ios --driver=bridge --subnet=192.168.1.0/16
 docker run -d --ip=192.168.1.1 --net=ios --name node0 ios -id 0 -config src/github.com/heidi-ann/ios/scripts/docker/example3.conf
 docker run -d --ip=192.168.1.2 --net=ios --name node1 ios -id 1 -config src/github.com/heidi-ann/ios/scripts/docker/example3.conf
 docker run -d --ip=192.168.1.3 --net=ios --name node2 ios -id 2 -config src/github.com/heidi-ann/ios/scripts/docker/example3.conf
-docker run --net=ios --name client --entrypoint clientcli ios -config src/github.com/heidi-ann/ios/scripts/docker/example3.conf --stderrthreshold=INFO
+docker run --net=ios --name client --entrypoint test ios -config src/github.com/heidi-ann/ios/scripts/docker/example3.conf --stderrthreshold=INFO
