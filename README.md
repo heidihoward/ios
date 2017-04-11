@@ -60,19 +60,23 @@ When you would like to start a fresh server instance, use ``rm persistent*.temp`
 
 ## Building in Docker
 
-Alternatively you can build and run in docker. Make sure Docker is installed and running, then clone this repository.
+Alternatively, you can build and run in Ios using [Docker](https://www.docker.com/). Make sure Docker is installed and running, then clone this repository and cd into it.
 
-Build an image named 'ios' using the command
+Build an image named 'ios' using the following command
 
 ```
 docker build -t ios .
 ```
-
-You can then run server instances in docker passing configuration through directly (be sure to expose the ports from the container). E.g:
+You should now be able to run ```docker images``` and see the Ios image you just created. If you run, ```docker ps``` you will see that no docker containers are currently running, start a simple 1 node Ios cluster as follows:
 
 ```
-docker run -p 8080:8080 ios -id 0
+docker run --name ios-server -d ios -id 0
 ```
+Running ```docker ps``` we can now see that is Ios server is running. We can test this by communicate with it using an Ios command line client:
+```
+docker run --net=container:ios-server -it --name ios-client --entrypoint clientcli ios
+```
+
 
 Note that this will only use storage local to the container instance. If you want persistence/recoverability for instances you will need to store persistence logs on a mounted data volume
 
