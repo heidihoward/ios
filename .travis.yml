@@ -17,6 +17,7 @@ script:
 - scripts/coverage --coveralls
 - $GOPATH/bin/local-test
 - $GOPATH/src/github.com/heidi-ann/ios/scripts/docker/deploy3servers
+- $GOPATH/src/github.com/heidi-ann/ios/scripts/docker/stop3servers
 - $GOPATH/src/github.com/heidi-ann/ios/scripts/docker/deploycluster
 env:
   global:
