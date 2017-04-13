@@ -29,7 +29,7 @@ func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientRespons
 	}
 }
 
-func TestrunSimulator(t *testing.T) {
+func TestRunSimulator(t *testing.T) {
 	flag.Parse()
 	defer glog.Flush()
 

@@ -5,8 +5,8 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 )
 
-// PROTOCOL BODY
 
+// PROTOCOL BODY
 func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config ConfigAll, configParticipant ConfigParticipant) {
 	glog.V(1).Info("Ready for requests")
 	for {

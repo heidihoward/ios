@@ -19,7 +19,7 @@ var clients = flag.Int("clients", 1, "Number of clients to create")
 func runClient(id int, clientConfig config.Config, addresses []config.NetAddress, workloadConfig config.WorkloadConfig) {
 	c := client.StartClientFromConfig(-1, "latency_"+strconv.Itoa(id)+".csv", clientConfig, addresses)
 	ioapi := generator.Generate(workloadConfig, false)
-	hist := openHistoryFile("history_"+strconv.Itoa(id)+".csv")
+	hist := openHistoryFile("history_" + strconv.Itoa(id) + ".csv")
 	for {
 		// get next command
 		text, read, ok := ioapi.Next()
