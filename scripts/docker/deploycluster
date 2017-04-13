@@ -1,0 +1,3 @@
+docker-compose up &
+$GOPATH/bin/test -config=$GOPATH/src/github.com/heidi-ann/ios/example3.conf
+docker-compose down
