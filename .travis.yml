@@ -17,6 +17,7 @@ script:
 - scripts/coverage --coveralls
 - $GOPATH/bin/local-test
 - $GOPATH/src/github.com/heidi-ann/ios/scripts/docker/deploy3servers
+- $GOPATH/src/github.com/heidi-ann/ios/scripts/docker/deploycluster
 env:
   global:
     secure: cwwrH596UWLt1d8GHFb7BAt9BttJx8pIMwTglowQCsySjScC7Jqfofp/yYETC01Oe+cBYfhePopqkX++VpJI4dReWwPryoyXAoGsVWAa36Q/IW1BRb01o0awaGGP1BHfg7TwlgHlRgAOJJ+JRXfA0q42O+xrxFwVEiGrrFJkdyUiiVxrtORTGDSmJr63iFyCr+0SZmQbgo7eBeVQlaL9QpOlhfYrQY4C+lPUx+DhVVNo5iHIb1kWTBnXtuWHqX2DG7BnLR35HqIyvBgkrJf3SG+k4fbnIvOUdfbPeM0v5K9O4SRQHC1Iuj4ZniKJpyESJIrivERUfKo8uZWHEi3LSpib+zMF3Lr/NIN32Echi7p6Akfs7K8DwIXrkWgkiYvNYrwunA+4jr6BFYa6B/pKpAsbH5QY1K0d/s+ZR3TtASBN0bcUb5oWHBfCJO4xAyDzVw9b0n24g1oARWTpen+4/TzTaVDUleBZV8v6JNUoLGU0nWKG2gwyjvRJJf58OPdx3mmhuCq4+AzNuHKpZjjZrKFzihiVBRtOf/8vcwBXezu0SWCETRg/ykXTG4mJFc3iOHOrR6VaMs8YPUARS6raVXp0pkRUactvxLS/U6y29mCZuXiem1ejjKyCLsnnHdh+sswONeoRfGOifko0SKqOp4hhIffLp4Q92yDTLYdhCfA=

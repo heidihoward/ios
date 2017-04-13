@@ -1,0 +1,32 @@
+version: "3"
+networks:
+  testnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.1.0/16
+services:
+  node0:
+    image: ios
+    ports:
+      - 8080:8080
+    entrypoint: ["ios","-listen-peers=8090","-listen-clients=8080","-id=0","-config=src/github.com/heidi-ann/ios/scripts/docker/example3.conf","-logtostderr=true"]
+    networks:
+      testnet:
+        ipv4_address: 192.168.1.1
+  node1:
+    image: ios
+    ports:
+      - 8081:8080
+    entrypoint: ios -id 1 -listen-peers 8090 -listen-clients 8080 -config src/github.com/heidi-ann/ios/scripts/docker/example3.conf -logtostderr=true
+    networks:
+      testnet:
+        ipv4_address: 192.168.1.2
+  node2:
+    image: ios
+    ports:
+      - 8082:8080
+    entrypoint: ios -id 2 -listen-peers 8090 -listen-clients 8080 -config src/github.com/heidi-ann/ios/scripts/docker/example3.conf -logtostderr=true
+    networks:
+      testnet:
+        ipv4_address: 192.168.1.3
