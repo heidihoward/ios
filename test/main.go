@@ -29,10 +29,20 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	// parse config files
-	c := client.StartClientFromConfigFile(*id, *statFile, *algorithmFile, *configFile)
+	c, err := client.StartClientFromConfigFile(*id, *statFile, *algorithmFile, *configFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
 	// setup API
-	ioapi := generator.Generate(config.ParseWorkloadConfig(*autoFile), *consistencyCheck)
+	workload, err := config.ParseWorkloadConfig(*autoFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	if err = config.CheckWorkloadConfig(workload); err != nil {
+		glog.Fatal(err)
+	}
+	ioapi := generator.Generate(workload, *consistencyCheck)
 
 	go func() {
 		for {
@@ -43,8 +53,8 @@ func main() {
 				break
 			}
 			// pass to ios client
-			success, reply := c.SubmitRequest(text, read)
-			if !success {
+			reply, err := c.SubmitRequest(text, read)
+			if err != nil {
 				finish <- true
 				break
 			}

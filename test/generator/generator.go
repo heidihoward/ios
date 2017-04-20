@@ -32,12 +32,12 @@ func randStringBytes(n int) string {
 }
 
 // Generate creates a workload generator with the specific configuration.
-func Generate(config config.WorkloadConfig, consistencyCheck bool) *Generator {
-	keys := make([]string, config.Config.Keys)
+func Generate(config config.ConfigAuto, consistencyCheck bool) *Generator {
+	keys := make([]string, config.Keys)
 	for i := range keys {
-		keys[i] = randStringBytes(config.Config.KeySize)
+		keys[i] = randStringBytes(config.KeySize)
 	}
-	return &Generator{config.Config, keys, services.StartService("kv-store"), "", consistencyCheck}
+	return &Generator{config, keys, services.StartService("kv-store"), "", consistencyCheck}
 }
 
 // Next return the next request in the workload or false if no more are available.

@@ -21,7 +21,8 @@ func TestOpenWriteAheadFile(t *testing.T) {
 
 	//create file
 	testFile := dir + "/test.temp"
-	wal := openWriteAheadFile(testFile, "fsync", 2560)
+	wal,err := openWriteAheadFile(testFile, "fsync", 2560)
+	assert.Nil(err)
 	actualBytes, err := ioutil.ReadFile(testFile)
 	assert.Nil(err)
 	// TODO; check file is expected size (maybe system dependant)
@@ -34,7 +35,8 @@ func TestOpenWriteAheadFile(t *testing.T) {
 	for size := 1; size < 100; size += 10 {
 		expectedBytes := make([]byte, size)
 		rand.Read(expectedBytes)
-		wal.writeAhead(expectedBytes)
+		err = wal.writeAhead(expectedBytes)
+		assert.Nil(err)
 		actualBytes, err = ioutil.ReadFile(testFile)
 		assert.Nil(err)
 		assert.Equal(expectedBytes, actualBytes[start:start+size], "Bytes read are not same as written")
@@ -58,7 +60,7 @@ func TestOpenWriteAheadFile(t *testing.T) {
 	// for size := 1; size < 100; size += 10 {
 	// 	expectedBytes := make([]byte, size)
 	// 	rand.Read(expectedBytes)
-	// 	walf.writeAhead(expectedBytes)
+	// 	err = walf.writeAhead(expectedBytes)
 	// 	actualBytes, err = ioutil.ReadFile(testFile)
 	// 	assert.Nil(err)
 	// 	assert.Equal(expectedBytes, actualBytes[start:start+size], "Bytes read are not same as written")

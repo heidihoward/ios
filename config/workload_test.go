@@ -3,12 +3,16 @@ package config
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TestParseAuto calls ParseAuto for the example configuration file
 func TestParseAuto(t *testing.T) {
-	ParseWorkloadConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/test/workloads/example.conf")
-	ParseWorkloadConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/test/workloads/balanced.conf")
-	ParseWorkloadConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/test/workloads/read-heavy.conf")
-	ParseWorkloadConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/test/workloads/write-heavy.conf")
+	files := []string{"example.conf","balanced.conf","read-heavy.conf","write-heavy.conf"}
+	for _, file := range files {
+		workload, err := ParseWorkloadConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/test/workloads/"+file)
+		assert.Nil(t,err)
+		assert.Nil(t,CheckWorkloadConfig(workload))
+	}
 }

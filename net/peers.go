@@ -2,13 +2,15 @@ package net
 
 import (
 	"bufio"
-	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/config"
-	"github.com/heidi-ann/ios/msgs"
 	"net"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/heidi-ann/ios/config"
+	"github.com/heidi-ann/ios/msgs"
+
+	"github.com/golang/glog"
 )
 
 type peerHandler struct {
@@ -33,6 +35,7 @@ func (ph *peerHandler) checkPeer() {
 	}
 }
 
+// handlePeer handles a peer connection until closed
 func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	addr := cn.RemoteAddr().String()
 	if init {
@@ -60,22 +63,18 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	}
 
 	// check ID is expected
-	if peerID < 0 {
-		glog.Fatal("Unexpected peer ID ", peerID, " ID must be > 0")
+	if peerID < 0 || peerID >= len(ph.peers) || peerID == ph.id  {
+		glog.Warning("Unexpected peer ID ", peerID)
+		return
 	}
-	if peerID >= len(ph.peers) {
-		glog.Fatal("Unexpected peer ID ", peerID, " IDs within this cluster should be between 0 and ", len(ph.peers))
-	}
-	if peerID == ph.id {
-		glog.Fatal("Unexpected peer ID ", peerID, " I seem to be talking to myself")
-	}
-
+	
 	// check IP address is as expected
 	// TODO: allow dynamic changes of IP
 	actualAddr := strings.Split(addr, ":")[0]
 	if ph.peers[peerID].Address != actualAddr {
-		glog.Fatal("Peer ID ", peerID, " has connected from an unexpected address ", actualAddr,
+		glog.Warning("Peer ID ", peerID, " has connected from an unexpected address ", actualAddr,
 			" expected ", ph.peers[peerID].Address)
+		return
 	}
 
 	glog.Infof("Ready to handle traffic from peer %d at %s ", peerID, addr)
@@ -148,7 +147,9 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	ph.failures.NowDisconnected(peerID)
 }
 
-func SetupPeers(localId int, addresses []config.NetAddress, peerNet *msgs.PeerNet, fail *msgs.FailureNotifier) {
+// SetupPeers is an async function to handle/start peer connections
+// TODO: switch to sync function
+func SetupPeers(localId int, addresses []config.NetAddress, peerNet *msgs.PeerNet, fail *msgs.FailureNotifier) error {
 	peerHandler := peerHandler{
 		id:       localId,
 		peers:    addresses,
@@ -161,7 +162,8 @@ func SetupPeers(localId int, addresses []config.NetAddress, peerNet *msgs.PeerNe
 	listeningPort := ":" + strconv.Itoa(addresses[peerHandler.id].Port)
 	lnPeers, err := net.Listen("tcp", listeningPort)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Info("Unable to start listen for peers")
+		return err
 	}
 
 	// handle local peer (without sending network traffic)
@@ -187,4 +189,6 @@ func SetupPeers(localId int, addresses []config.NetAddress, peerNet *msgs.PeerNe
 			time.Sleep(500 * time.Millisecond)
 		}
 	}()
+
+	return nil
 }

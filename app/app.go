@@ -58,20 +58,13 @@ func (s *StateMachine) Check(req msgs.ClientRequest) (bool, msgs.ClientResponse)
 }
 
 // MakeSnapshot serializes a state machine into bytes
-func (s *StateMachine) MakeSnapshot() []byte {
-	b, err := json.Marshal(s)
-	if err != nil {
-		glog.Fatal("Unable to snapshot state machine: ", err)
-	}
-	return b
+func (s *StateMachine) MakeSnapshot() ([]byte, error) {
+	return json.Marshal(s)
 }
 
 // RestoreSnapshot deserializes bytes into a state machine
-func RestoreSnapshot(snap []byte, appConfig string) *StateMachine {
+func RestoreSnapshot(snap []byte, appConfig string) (*StateMachine, error) {
 	sm := New(appConfig)
 	err := json.Unmarshal(snap, sm)
-	if err != nil {
-		glog.Fatal("Unable to restore from snapshot: ", err)
-	}
-	return sm
+	return sm, err
 }

@@ -1,5 +1,4 @@
 // +build ignore
-
 package client
 
 import (
@@ -17,7 +16,7 @@ func TestStartClient(t *testing.T) {
 	//Create temp directories
 	dirClient, err := ioutil.TempDir("", "IosStartClientTests")
 	if err != nil {
-		glog.Fatal(err)
+		t.Fatal(err)
 	}
 	defer os.RemoveAll(dirClient)
 
@@ -26,7 +25,7 @@ func TestStartClient(t *testing.T) {
 	for id := 0; id <= 2; id++ {
 		dirServer, err := ioutil.TempDir("", "IosStartClientTests")
 		if err != nil {
-			glog.Fatal(err)
+			t.Fatal(err)
 		}
 		defer os.RemoveAll(dirServer)
 		go server.RunIos(id, config.ParseServerConfig(serverConfigFile), dirServer)
@@ -38,27 +37,32 @@ func TestStartClient(t *testing.T) {
 	client := StartClientFromConfigFile(1, dirClient+"/latency.csv", clientConfigFile)
 
 	//submit requests
-	success, reply := client.SubmitRequest("update A 1")
+	success, reply, err := client.SubmitRequest("update A 1")
+	assert.Nil(err)
 	assert.True(success, "Request not successful")
 	assert.Equal("OK", reply, "Response not as expected")
 
-	success, reply = client.SubmitRequest("get A")
+	success, reply, err = client.SubmitRequest("get A")
+	assert.Nil(err)
 	assert.True(success, "Request not successful")
 	assert.Equal("1", reply, "Response not as expected")
 
 	client2 := StartClientFromConfigFile(2, dirClient+"/latency2.csv", clientConfigFile)
 
 	//submit requests to new client
-	success, reply = client2.SubmitRequest("get A")
+	success, reply, err = client2.SubmitRequest("get A")
+	assert.Nil(err)
 	assert.True(success, "Request not successful")
 	assert.Equal("1", reply, "Response not as expected")
 
-	success, reply = client2.SubmitRequest("update B 2")
+	success, reply, err = client2.SubmitRequest("update B 2")
+	assert.Nil(err)
 	assert.True(success, "Request not successful")
 	assert.Equal("OK", reply, "Response not as expected")
 
 	//check original client is still ok
-	success, reply = client.SubmitRequest("get B")
+	success, reply, err = client.SubmitRequest("get B")
+	assert.Nil(err)
 	assert.True(success, "Request not successful")
 	assert.Equal("2", reply, "Response not as expected")
 

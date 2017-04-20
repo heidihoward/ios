@@ -38,7 +38,8 @@ func TestPersistentStorage(t *testing.T) {
 	restoreStorageEmpty(t, dir)
 
 	//check file creation
-	fs := MakeFileStorage(dir, "fsync")
+	fs, err := MakeFileStorage(dir, "fsync")
+	assert.Nil(err)
 	restoreStorageEmpty(t, dir)
 
 	//verify files were created in directory
@@ -55,18 +56,22 @@ func TestPersistentStorage(t *testing.T) {
 
 	//verfiy that view storage works
 	viewFile := dir + "/view.temp"
-	found, view := restoreView(viewFile)
+	found, view, err := restoreView(viewFile)
+	assert.Nil(err)
 	assert.False(found, "Unexpected view found")
 	for v := 0; v < 5; v++ {
-		fs.PersistView(v)
-		found, view = restoreView(viewFile)
+		err = fs.PersistView(v)
+		assert.Nil(err)
+		found, view, err = restoreView(viewFile)
+		assert.Nil(err)
 		assert.True(found, "Missing view in ", viewFile)
 		assert.Equal(v, view, "Incorrect view")
 	}
 
 	//verfiy that log storage works
 	logFile := dir + "/log.temp"
-	found, log := restoreLog(logFile, 100, -1)
+	found, log, err := restoreLog(logFile, 100, -1)
+	assert.Nil(err)
 	assert.False(found, "Unexpected log found")
 
 	req1 := msgs.ClientRequest{
@@ -91,30 +96,41 @@ func TestPersistentStorage(t *testing.T) {
 		EndIndex:   1,
 		Entries:    []msgs.Entry{entry1}}
 
-	fs.PersistLogUpdate(up1)
-	found, log = restoreLog(logFile, 100, -1)
+	err = fs.PersistLogUpdate(up1)
+	assert.Nil(err)
+	found, log, err = restoreLog(logFile, 100, -1)
+	assert.Nil(err)
 	assert.True(found, "Log expected but is missing")
 	assert.Equal(entry1, log.GetEntry(0), "Log entry not as expected")
 
 	//verify that snapshot storage works
 	snapFile := dir + "/snapshot.temp"
-	found, index, actualSm := restoreSnapshot(snapFile, "kv-store")
+	found, index, actualSm, err := restoreSnapshot(snapFile, "kv-store")
+	assert.Nil(err)
 	assert.False(found, "Unexpected log found")
 	assert.Equal(-1, index, "Unexpected index")
 	assert.Equal(app.New("kv-store"), actualSm, "Unexpected kv store")
 
 	sm := app.New("kv-store")
 	sm.Apply(req1)
-	fs.PersistSnapshot(0, sm.MakeSnapshot())
-	found, index, actualSm = restoreSnapshot(snapFile, "kv-store")
+	snap, err := sm.MakeSnapshot()
+	assert.Nil(err)
+	err = fs.PersistSnapshot(0, snap)
+	assert.Nil(err)
+	found, index, actualSm, err = restoreSnapshot(snapFile, "kv-store")
+	assert.Nil(err)
 	assert.True(found, "Unexpected log missing")
 	assert.Equal(0, index, "Unexpected index")
 	assert.Equal(sm, actualSm, "Missing kv store")
 
 	// try 2nd snapshot
 	sm.Apply(req2)
-	fs.PersistSnapshot(1, sm.MakeSnapshot())
-	found, index, actualSm = restoreSnapshot(snapFile, "kv-store")
+	snap, err = sm.MakeSnapshot()
+	assert.Nil(err)
+	err = fs.PersistSnapshot(1, snap)
+	assert.Nil(err)
+	found, index, actualSm, err = restoreSnapshot(snapFile, "kv-store")
+	assert.Nil(err)
 	assert.True(found, "Unexpected log missing")
 	assert.Equal(1, index, "Unexpected index")
 	assert.Equal(sm, actualSm, "Missing kv store")

@@ -3,10 +3,12 @@
 package storage
 
 import (
-	"github.com/golang/glog"
+	"errors"
 	"os"
 	"syscall"
 	"time"
+
+	"github.com/golang/glog"
 )
 
 type wal struct {
@@ -14,62 +16,65 @@ type wal struct {
 	mode string
 }
 
-func openWriteAheadFile(filename string, mode string, size int) wal {
-	var file int
+func openWriteAheadFile(filename string, mode string, size int) (wal, error) {
+	var WAL wal
+	WAL.mode = mode
 	var err error
+
 	switch mode {
 	case "osync":
-		file, err = syscall.Open(filename, syscall.O_SYNC|os.O_WRONLY|os.O_CREATE, 0666)
+		WAL.fd, err = syscall.Open(filename, syscall.O_SYNC|os.O_WRONLY|os.O_CREATE, 0666)
 	case "dsync":
-		file, err = syscall.Open(filename, syscall.O_DSYNC|os.O_WRONLY|os.O_CREATE, 0666)
+		WAL.fd, err = syscall.Open(filename, syscall.O_DSYNC|os.O_WRONLY|os.O_CREATE, 0666)
 	case "direct":
-		file, err = syscall.Open(filename, syscall.O_DIRECT|os.O_WRONLY|os.O_CREATE, 0666)
+		WAL.fd, err = syscall.Open(filename, syscall.O_DIRECT|os.O_WRONLY|os.O_CREATE, 0666)
 	case "none", "fsync":
-		file, err = syscall.Open(filename, os.O_WRONLY|os.O_CREATE, 0666)
+		WAL.fd, err = syscall.Open(filename, os.O_WRONLY|os.O_CREATE, 0666)
 	default:
-		glog.Fatal("PersistenceMode not reconised")
+		return WAL, errors.New("PersistenceMode not reconised")
 	}
 	if err != nil {
-		glog.Fatal(err)
+		return WAL, errors.New(err)
 	}
 	glog.Info("Opened file: ", filename)
 	start, err := syscall.Seek(file, 0, 2)
 	if err != nil {
-		glog.Fatal(err)
+		return WAL, errors.New(err)
 	}
 
 	glog.Info("Starting file pointer ", start)
 	err = syscall.Fallocate(file, 0, 0, int64(size)) // 64MB
 	if err != nil {
-		glog.Fatal(err)
+		return WAL, errors.New(err)
 	}
-	return wal{file, mode}
+	return wal{file, mode}, nil
 }
 
-func (w wal) writeAhead(bytes []byte) {
+func (w wal) writeAhead(bytes []byte) error {
 	startTime := time.Now()
 	n, err := syscall.Write(w.fd, bytes)
 	if err != nil {
-		glog.Fatal(err)
+		return errors.New(err)
 	}
 	if n != len(bytes) {
-		glog.Fatal("Short write")
+		return errors.New("Short write")
 	}
 	delim := []byte("\n")
 	n2, err := syscall.Write(w.fd, delim)
 	if err != nil {
-		glog.Fatal(err)
+		return errors.New(err)
 	}
 	if n2 != len(delim) {
-		glog.Fatal("Short write")
+		return errors.New("Short write")
 	}
 	glog.V(1).Info(n+n2, " bytes written to persistent log in ", time.Since(startTime).String())
 	if w.mode == "fsync" || w.mode == "direct" {
 		err = syscall.Fdatasync(w.fd)
 		if err != nil {
-			glog.Fatal(err)
+			greturn errors.Newerr)
 		}
 		glog.V(1).Info(n+n2, " bytes synced to persistent log in ", time.Since(startTime).String())
 	}
 	slowDiskWarning(startTime, n+n2)
+	return nil
 }

@@ -53,7 +53,7 @@ func (c *Cache) MarshalJSON() ([]byte, error) {
 	}
 	b, err := json.Marshal(strMap)
 	if err != nil {
-		glog.Fatal("Unable to snapshot request cache: ", err)
+		glog.Warning("Unable to snapshot request cache: ", err)
 	}
 	c.Unlock()
 	return b, err
@@ -64,14 +64,16 @@ func (c *Cache) UnmarshalJSON(snap []byte) error {
 	var strMap map[string]msgs.ClientResponse
 	err := json.Unmarshal(snap, &strMap)
 	if err != nil {
-		glog.Fatal("Unable to restore from snapshot: ", err)
+		glog.Warning("Unable to restore from snapshot: ", err)
+		return err
 	}
 	// convert to int map
 	c.m = map[int]msgs.ClientResponse{}
 	for k, v := range strMap {
 		i, err := strconv.Atoi(k)
 		if err != nil {
-			glog.Fatal("Unable to restore from snapshot: ", err)
+			glog.Warning("Unable to restore from snapshot: ", err)
+			return err
 		}
 		c.m[i] = v
 	}

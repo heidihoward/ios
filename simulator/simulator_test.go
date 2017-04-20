@@ -8,6 +8,7 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 	"testing"
 	"time"
+	"github.com/stretchr/testify/assert"
 )
 
 func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientResponse, clientNets []*msgs.ClientNet, masterID int) {
@@ -17,12 +18,8 @@ func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientRespons
 	for id := range clientNets {
 		select {
 		case response := <-(clientNets[id]).OutgoingResponses:
-			if req != response.Request {
-				t.Error("Expected ", reply, " Received ", response)
-			}
-			if reply != response.Response {
-				t.Error("Expected ", reply, " Received ", response)
-			}
+			assert.Equal(t, req, response.Request)
+			assert.Equal(t, reply, response.Response)
 		case <-time.After(time.Second):
 			t.Error("Participant not responding")
 		}
@@ -33,13 +30,15 @@ func TestRunSimulator(t *testing.T) {
 	flag.Parse()
 	defer glog.Flush()
 
+  quorum, err := consensus.NewQuorum("strict majority", 3)
+	assert.Nil(t, err)
 	// create a system of 3 nodes
 	config := consensus.Config{
 		All: consensus.ConfigAll{
 			ID:         0,
 			N:          3,
 			WindowSize: 1,
-			Quorum:     consensus.NewQuorum("strict majority", 3),
+			Quorum:     quorum,
 		},
 		Master: consensus.ConfigMaster{
 			BatchInterval:       0,

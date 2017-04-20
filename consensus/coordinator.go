@@ -20,7 +20,7 @@ func doCoordination(view int, startIndex int, endIndex int, entries []msgs.Entry
 		peerNet.OutgoingBroadcast.Requests.Prepare <- prepare
 
 		// collect responses
-		glog.V(1).Info("Waiting for ", config.Quorum.ReplicateSize, " prepare responses")
+		glog.V(1).Info("Waiting for ", config.Quorum.ReplicationSize, " prepare responses")
 		for replied := make([]bool, config.N); !config.Quorum.checkReplicationQuorum(replied); {
 			msg := <-peerNet.Incoming.Responses.Prepare
 			// check msg replies to the msg we just sent

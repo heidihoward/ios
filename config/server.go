@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+
 	"github.com/golang/glog"
 	"gopkg.in/gcfg.v1"
 )
@@ -32,31 +34,38 @@ type ServerConfig struct {
 	}
 }
 
-// ParseServerConfig filename will parse the given file and return a ServerConfig object containing its data
-func ParseServerConfig(filename string) ServerConfig {
+// CheckServerConfig checks wheather a given configuration is sensible
+func CheckServerConfig(config ServerConfig) error {
+	if config.Performance.Length <= 0 {
+		return errors.New("Log length must be at least 1")
+	}
+	if config.Performance.BatchInterval < 0 {
+		return errors.New("Batch interval must be positive")
+	}
+	if config.Performance.MaxBatch < 0 {
+		return errors.New("Max batch size must be positive")
+	}
+	if config.Algorithm.DelegateReplication < -1 {
+		return errors.New("DelegateReplication must be within range, or -1 for reverse delegation")
+	}
+	if config.Performance.WindowSize <= 0 {
+		return errors.New("Window Size must be greater than one")
+	}
+	if config.Application.Name != "kv-store" && config.Application.Name != "dummy" {
+		return errors.New("Application must be either kv-store or dummy")
+	}
+	// TODO: check QuorumSystem
+	return nil
+}
+
+// ParseServerConfig filename will parse the given file and return a ServerConfig struct containing its data
+// Callers usually then pass result to CheckServerConfig
+func ParseServerConfig(filename string) (ServerConfig, error) {
 	var config ServerConfig
 	err := gcfg.ReadFileInto(&config, filename)
 	if err != nil {
-		glog.Fatalf("Failed to parse gcfg data: %s", err)
+		glog.Warning("Unable to parse server configuration file")
+		return config, err
 	}
-	if config.Performance.Length <= 0 {
-		glog.Fatal("Log length must be at least 1")
-	}
-	if config.Performance.BatchInterval < 0 {
-		glog.Fatal("Batch interval must be positive")
-	}
-	if config.Performance.MaxBatch < 0 {
-		glog.Fatal("Max batch size must be positive")
-	}
-	if config.Algorithm.DelegateReplication < -1 {
-		glog.Fatal("DelegateReplication must be within range, or -1 for reverse delegation")
-	}
-	if config.Performance.WindowSize <= 0 {
-		glog.Fatal("Window Size must be greater than one")
-	}
-	if config.Application.Name != "kv-store" && config.Application.Name != "dummy" {
-		glog.Fatal("Application must be either kv-store or dummy but is ", config.Application.Name)
-	}
-	// TODO: check QuorumSystem
-	return config
+	return config, nil
 }

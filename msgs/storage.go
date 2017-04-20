@@ -5,9 +5,9 @@ import (
 )
 
 type Storage interface {
-	PersistView(view int)
-	PersistLogUpdate(logUpdate LogUpdate)
-	PersistSnapshot(index int, snap []byte)
+	PersistView(view int) error
+	PersistLogUpdate(logUpdate LogUpdate) error
+	PersistSnapshot(index int, snap []byte) error
 }
 
 type ExternalStorage struct {
@@ -27,18 +27,21 @@ func MakeExternalStorage() *ExternalStorage {
 	return &s
 }
 
-func (s *ExternalStorage) PersistView(view int) {
+func (s *ExternalStorage) PersistView(view int) error {
 	s.ViewPersist <- view
 	<-s.ViewPersistFsync
+	return nil
 }
 
-func (s *ExternalStorage) PersistLogUpdate(logUpdate LogUpdate) {
+func (s *ExternalStorage) PersistLogUpdate(logUpdate LogUpdate) error {
 	s.LogPersist <- logUpdate
 	<-s.LogPersistFsync
+	return nil
 }
 
-func (s *ExternalStorage) PersistSnapshot(index int, snap []byte) {
+func (s *ExternalStorage) PersistSnapshot(index int, snap []byte) error {
 	// TODO: complete stub
+	return nil
 }
 
 type DummyStorage struct{}
@@ -47,14 +50,17 @@ func MakeDummyStorage() *DummyStorage {
 	return &DummyStorage{}
 }
 
-func (_ *DummyStorage) PersistView(view int) {
+func (_ *DummyStorage) PersistView(view int) error {
 	glog.V(1).Info("Updating view to ", view)
+	return nil
 }
 
-func (_ *DummyStorage) PersistLogUpdate(log LogUpdate) {
+func (_ *DummyStorage) PersistLogUpdate(log LogUpdate) error {
 	glog.V(1).Info("Updating log with ", log)
+	return nil
 }
 
-func (_ *DummyStorage) PersistSnapshot(index int, snap []byte) {
+func (_ *DummyStorage) PersistSnapshot(index int, snap []byte) error {
 	glog.V(1).Info("Updating snap with ", index, snap)
+	return nil
 }

@@ -2,12 +2,15 @@ package consensus
 
 import (
 	"flag"
-	"github.com/golang/glog"
-	"github.com/heidi-ann/ios/app"
-	"github.com/heidi-ann/ios/msgs"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/heidi-ann/ios/app"
+	"github.com/heidi-ann/ios/msgs"
+
+	"github.com/golang/glog"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInit(t *testing.T) {
@@ -18,12 +21,14 @@ func TestInit(t *testing.T) {
 	peerNet := msgs.MakePeerNet(10, 3)
 	clientNet := msgs.MakeClientNet(10)
 	store := app.New("kv-store")
+	quorum, err := NewQuorum("strict majority", 3)
+	assert.Nil(t,err)
 	config := Config{
 		All: ConfigAll{
 			ID:         0,
 			N:          3,
 			WindowSize: 1,
-			Quorum:     NewQuorum("strict majority", 3),
+			Quorum:    quorum,
 		},
 		Master: ConfigMaster{
 			BatchInterval:       0,

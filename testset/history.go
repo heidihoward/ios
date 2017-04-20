@@ -15,14 +15,14 @@ type historyFile struct {
 	request   string
 }
 
-func openHistoryFile(filename string) *historyFile {
+func openHistoryFile(filename string) (*historyFile, error) {
 	glog.Info("Opening file: ", filename)
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
-		glog.Fatal(err)
+		return nil, err
 	}
 	writer := csv.NewWriter(file)
-	return &historyFile{writer, time.Now(), ""}
+	return &historyFile{writer, time.Now(), ""}, nil
 }
 
 func (sf *historyFile) startRequest(request string) {
@@ -30,15 +30,12 @@ func (sf *historyFile) startRequest(request string) {
 	sf.startTime = time.Now()
 }
 
-func (sf *historyFile) stopRequest(response string) {
-	err := sf.w.Write([]string{
+func (sf *historyFile) stopRequest(response string) error {
+	return sf.w.Write([]string{
 		strconv.FormatInt(sf.startTime.UnixNano(), 10),
 		strconv.FormatInt(time.Now().UnixNano(), 10),
 		sf.request,
 		response})
-	if err != nil {
-		glog.Fatal(err)
-	}
 }
 
 func (sf *historyFile) closeHistoryFile() {
