@@ -71,7 +71,7 @@ func (w wal) writeAhead(bytes []byte) error {
 	if w.mode == "fsync" || w.mode == "direct" {
 		err = syscall.Fdatasync(w.fd)
 		if err != nil {
-			greturn errors.Newerr)
+			return errors.New(err)
 		}
 		glog.V(1).Info(n+n2, " bytes synced to persistent log in ", time.Since(startTime).String())
 	}
