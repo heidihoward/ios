@@ -34,18 +34,18 @@ func openWriteAheadFile(filename string, mode string, size int) (wal, error) {
 		return WAL, errors.New("PersistenceMode not reconised")
 	}
 	if err != nil {
-		return WAL, errors.New(err)
+		return WAL, err
 	}
 	glog.Info("Opened file: ", filename)
-	start, err := syscall.Seek(file, 0, 2)
+	start, err := syscall.Seek(WAL.fd, 0, 2)
 	if err != nil {
-		return WAL, errors.New(err)
+		return WAL, err
 	}
 
 	glog.Info("Starting file pointer ", start)
-	err = syscall.Fallocate(file, 0, 0, int64(size)) // 64MB
+	err = syscall.Fallocate(WAL.fd, 0, 0, int64(size)) // 64MB
 	if err != nil {
-		return WAL, errors.New(err)
+		return WAL, err
 	}
 	return wal{file, mode}, nil
 }
@@ -54,7 +54,7 @@ func (w wal) writeAhead(bytes []byte) error {
 	startTime := time.Now()
 	n, err := syscall.Write(w.fd, bytes)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 	if n != len(bytes) {
 		return errors.New("Short write")
@@ -62,7 +62,7 @@ func (w wal) writeAhead(bytes []byte) error {
 	delim := []byte("\n")
 	n2, err := syscall.Write(w.fd, delim)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 	if n2 != len(delim) {
 		return errors.New("Short write")
@@ -71,7 +71,7 @@ func (w wal) writeAhead(bytes []byte) error {
 	if w.mode == "fsync" || w.mode == "direct" {
 		err = syscall.Fdatasync(w.fd)
 		if err != nil {
-			return errors.New(err)
+			return err
 		}
 		glog.V(1).Info(n+n2, " bytes synced to persistent log in ", time.Since(startTime).String())
 	}
