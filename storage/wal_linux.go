@@ -47,7 +47,7 @@ func openWriteAheadFile(filename string, mode string, size int) (wal, error) {
 	if err != nil {
 		return WAL, err
 	}
-	return wal{file, mode}, nil
+	return WAL, nil
 }
 
 func (w wal) writeAhead(bytes []byte) error {
