@@ -39,8 +39,10 @@ func TestApply(t *testing.T) {
 	assert.Equal(actualResponseB, expectedResponse1, "Unexpected response")
 
 	// check snapshotting
-	snap := sm.MakeSnapshot()
-	smRestored := RestoreSnapshot(snap, "kv-store")
+	snap, err := sm.MakeSnapshot()
+	assert.Nil(err)
+	smRestored, err := RestoreSnapshot(snap, "kv-store")
+	assert.Nil(err)
 	found, res = smRestored.Check(request1)
 	assert.True(found, "Unexpected cache miss for ", request1)
 	assert.Equal(res, expectedResponse1, "Cache did not return expected result")

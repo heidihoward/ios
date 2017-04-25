@@ -16,10 +16,16 @@ var algorithmFile = flag.String("algorithm", os.Getenv("GOPATH")+"/src/github.co
 var clients = flag.Int("clients", 1, "Number of clients to create")
 
 // runClient returns when workload is finished or SubmitRequest fails
-func runClient(id int, clientConfig config.Config, addresses []config.NetAddress, workloadConfig config.WorkloadConfig) {
-	c := client.StartClientFromConfig(-1, "latency_"+strconv.Itoa(id)+".csv", clientConfig, addresses)
-	ioapi := generator.Generate(workloadConfig, false)
-	hist := openHistoryFile("history_" + strconv.Itoa(id) + ".csv")
+func runClient(id int, clientConfig config.Config, addresses []config.NetAddress, workload config.ConfigAuto) {
+	c, err := client.StartClientFromConfig(-1, "latency_"+strconv.Itoa(id)+".csv", clientConfig, addresses)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	ioapi := generator.Generate(workload, false)
+	hist, err := openHistoryFile("history_" + strconv.Itoa(id) + ".csv")
+	if err != nil {
+		glog.Fatal(err)
+	}
 	for {
 		// get next command
 		text, read, ok := ioapi.Next()
@@ -28,12 +34,15 @@ func runClient(id int, clientConfig config.Config, addresses []config.NetAddress
 		}
 		// pass to ios client
 		hist.startRequest(text)
-		success, reply := c.SubmitRequest(text, read)
-		if !success {
+		reply, err := c.SubmitRequest(text, read)
+		if err != nil {
 			break
 		}
 		// notify API of result
-		hist.stopRequest(reply)
+		err = hist.stopRequest(reply)
+		if err != nil {
+			glog.Fatal(err)
+		}
 		ioapi.Return(reply)
 	}
 	c.StopClient()
@@ -46,14 +55,23 @@ func main() {
 
 	// parse config files
 	finished := make(chan bool)
-	conf := config.ParseClientConfig(*algorithmFile)
-	addresses := config.ParseAddresses(*configFile).Clients
-	workloadConfig := config.ParseWorkloadConfig(*autoFile)
+	conf, err := config.ParseClientConfig(*algorithmFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	addresses, err := config.ParseAddresses(*configFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	workloadConfig, err := config.ParseWorkloadConfig(*autoFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
 	remaining := *clients
 	for id := 0; id < *clients; id++ {
 		go func(id int) {
-			runClient(id, conf, addresses, workloadConfig)
+			runClient(id, conf, addresses.Clients, workloadConfig)
 			remaining--
 			if remaining == 0 {
 				finished <- true

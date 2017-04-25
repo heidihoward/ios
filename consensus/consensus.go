@@ -76,7 +76,10 @@ func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *
 
 	// write initial term to persistent storage
 	// TODO: if not master then we need not wait until view has been fsynced
-	storage.PersistView(0)
+	err := storage.PersistView(0)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.All.ID)

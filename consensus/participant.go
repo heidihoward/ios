@@ -27,7 +27,10 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				state.Storage.PersistView(state.View)
+				err := state.Storage.PersistView(state.View)
+				if err != nil {
+					glog.Fatal(err)
+				}
 				state.masterID = mod(state.View, config.N)
 			}
 
@@ -35,7 +38,10 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			state.Log.AddEntries(req.StartIndex, req.EndIndex, req.Entries)
 			// add entries to the log (persistent Storage)
 			logUpdate := msgs.LogUpdate{req.StartIndex, req.EndIndex, req.Entries}
-			state.Storage.PersistLogUpdate(logUpdate)
+			err := state.Storage.PersistLogUpdate(logUpdate)
+			if err != nil {
+				glog.Fatal(err)
+			}
 
 			// implicit commits from window_size
 			if configParticipant.ImplicitWindowCommit {
@@ -90,7 +96,14 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			// check if its time for another snapshot
 			if configParticipant.SnapshotInterval != 0 &&
 				state.LastSnapshot+configParticipant.SnapshotInterval <= state.CommitIndex {
-				state.Storage.PersistSnapshot(state.CommitIndex, state.StateMachine.MakeSnapshot())
+				snap, err := state.StateMachine.MakeSnapshot()
+				if err != nil {
+					glog.Fatal(err)
+				}
+				err = state.Storage.PersistSnapshot(state.CommitIndex, snap)
+				if err != nil {
+					glog.Fatal(err)
+				}
 				state.LastSnapshot = state.CommitIndex
 			}
 
@@ -112,7 +125,10 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				state.Storage.PersistView(state.View)
+				err := state.Storage.PersistView(state.View)
+				if err != nil {
+					glog.Fatal(err)
+				}
 				state.masterID = mod(state.View, config.N)
 			}
 
@@ -133,7 +149,10 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 			if req.View > state.View {
 				glog.Warning("Participant is behind")
 				state.View = req.View
-				state.Storage.PersistView(state.View)
+				err := state.Storage.PersistView(state.View)
+				if err != nil{
+					glog.Fatal(err)
+				}
 				state.masterID = mod(state.View, config.N)
 			}
 

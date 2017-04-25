@@ -32,8 +32,14 @@ func main() {
 	}
 
 	// parse configuration files
-	conf := config.ParseServerConfig(*algorithmFile)
-	addresses := config.ParseAddresses(*configFile)
+	conf, err := config.ParseServerConfig(*algorithmFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	addresses, err := config.ParseAddresses(*configFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
 	if *id == -1 {
 		glog.Fatal("ID is required")
 	}
@@ -59,7 +65,12 @@ func main() {
 	defer glog.Warning("Shutting down server ", *id)
 
 	// start Ios server
-	go server.RunIos(*id, conf, addresses, disk)
+	go func() {
+		err := server.RunIos(*id, conf, addresses, disk)
+		if err != nil {
+			glog.Fatal(err)
+		}
+	}()
 
 	// waiting for exit
 	// always flush (whatever happens)

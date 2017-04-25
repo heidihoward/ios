@@ -12,29 +12,34 @@ import (
 
 type Interative bufio.Reader
 
-func Create(app string) *Interative {
+func CreateInteractiveTerminal(app string) *Interative {
 	fmt.Printf("Starting Ios %s client in interactive mode.\n", app)
 	fmt.Print(services.GetInteractiveText(app))
 	return (*Interative)(bufio.NewReader(os.Stdin))
 
 }
 
-func (i *Interative) Next() (string, bool, bool) {
+func (i *Interative) FetchTerminalInput() (string, bool, bool) {
 	b := (*bufio.Reader)(i)
-	fmt.Print("Enter command: ")
-	text, err := b.ReadString('\n')
-	if err != nil {
-		glog.Fatal(err)
+	for {
+		fmt.Print("Enter command: ")
+		text, err := b.ReadString('\n')
+		if err != nil {
+			glog.Fatal(err)
+		}
+		text = strings.Trim(text, "\n")
+		text = strings.Trim(text, "\r")
+		glog.V(1).Info("User entered", text)
+		ok, read := services.Parse("kv-store", text)
+		if ok {
+			return text, read, true
+		} else {
+			fmt.Print("Invalid command\n")
+		}
 	}
-	text = strings.Trim(text, "\n")
-	text = strings.Trim(text, "\r")
-	glog.V(1).Info("User entered", text)
-	// TODO: remove hack
-	_, read := services.Parse("kv-store", text)
-	return text, read, true
 }
 
-func (_ *Interative) Return(str string) {
+func (_ *Interative) ReturnToTerminal(str string) {
 	// , time time.Duration  "request took ", time
 	fmt.Print(str + "\n")
 }

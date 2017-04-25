@@ -2,6 +2,8 @@
 package server
 
 import (
+	"errors"
+
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/config"
 	"github.com/heidi-ann/ios/consensus"
@@ -11,12 +13,17 @@ import (
 )
 
 // RunIos id conf diskPath is the main entry point of Ios server
-// RunIos does not return
-func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPath string) {
+// RunIos does not return until an error is detected during setup
+func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPath string) error {
 	// check ID
 	n := len(addresses.Peers)
 	if id >= n {
-		glog.Fatal("Node ID is ", id, " but is configured with a ", n, " node cluster")
+		return errors.New("Invalid node ID")
+	}
+
+	// check config
+	if err := config.CheckServerConfig(conf); err != nil {
+		return err
 	}
 
 	// setup iO
@@ -31,21 +38,33 @@ func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPa
 	if conf.Unsafe.DumpPersistentStorage {
 		store = msgs.MakeDummyStorage()
 	} else {
-		store = storage.MakeFileStorage(diskPath, conf.Unsafe.PersistenceMode)
+		var err error
+		store, err = storage.MakeFileStorage(diskPath, conf.Unsafe.PersistenceMode)
+		if err != nil {
+			return err
+		}
 	}
 
 	// setup peers & clients
 	failureDetector := msgs.NewFailureNotifier(n)
-	net.SetupPeers(id, addresses.Peers, peerNet, failureDetector)
-	net.SetupClients(addresses.Clients[id].Port, state, clientNet)
+	if err := net.SetupPeers(id, addresses.Peers, peerNet, failureDetector); err != nil {
+		return err
+	}
+	if err := net.SetupClients(addresses.Clients[id].Port, state, clientNet); err != nil {
+		return err
+	}
 
+	quorum, err := consensus.NewQuorum(conf.Algorithm.QuorumSystem, n)
+	if err != nil {
+		return err
+	}
 	// configure consensus algorithms
 	configuration := consensus.Config{
 		All: consensus.ConfigAll{
 			ID:         id,
 			N:          n,
 			WindowSize: conf.Performance.WindowSize,
-			Quorum:     consensus.NewQuorum(conf.Algorithm.QuorumSystem, n),
+			Quorum:     quorum,
 		},
 		Master: consensus.ConfigMaster{
 			BatchInterval:       conf.Performance.BatchInterval,
@@ -71,4 +90,5 @@ func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPa
 		glog.Info("Restoring consensus instance")
 		consensus.Recover(peerNet, clientNet, configuration, view, log, state, index, failureDetector, store)
 	}
+ return nil
 }

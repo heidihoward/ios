@@ -9,7 +9,8 @@ import (
 
 // TestParseAddresses calls ParseAddresses for the single server example config file
 func TestParseParseAddresses(t *testing.T) {
-	conf := ParseAddresses(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/ios/example.conf")
+	conf, err := ParseAddresses(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/ios/example.conf")
+	assert.Nil(t, err)
 
 	assert.Equal(t, 1, len(conf.Clients))
 	assert.Equal(t, "127.0.0.1", conf.Clients[0].Address)
@@ -22,8 +23,9 @@ func TestParseParseAddresses(t *testing.T) {
 
 // TestParseAddresses3 calls ParseAddresses for the 3 server example config file
 func TestParseParseAddresses3(t *testing.T) {
-	conf := ParseAddresses(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/ios/example3.conf")
-
+	conf, err := ParseAddresses(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/ios/example3.conf")
+	assert.Nil(t, err)
+	
 	assert.Equal(t, 3, len(conf.Clients))
 	for i := 0; i < 3; i++ {
 		assert.Equal(t, "127.0.0.1", conf.Clients[i].Address)

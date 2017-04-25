@@ -27,29 +27,38 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	// parse config files
-	conf := config.ParseClientConfig(*algorithmFile)
-	addresses := config.ParseAddresses(*configFile)
-	c := client.StartClientFromConfig(*id, *statFile, conf, addresses.Clients)
+	conf, err := config.ParseClientConfig(*algorithmFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	addresses, err := config.ParseAddresses(*configFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	c, err := client.StartClientFromConfig(*id, *statFile, conf, addresses.Clients)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
 	// setup API
-	ioapi := cli.Create(conf.Parameters.Application)
+	terminal := cli.CreateInteractiveTerminal(conf.Parameters.Application)
 
 	go func() {
 		for {
 			// get next command
-			text, read, ok := ioapi.Next()
+			text, read, ok := terminal.FetchTerminalInput()
 			if !ok {
 				finish <- true
 				break
 			}
 			// pass to ios client
-			success, reply := c.SubmitRequest(text, read)
-			if !success {
+			reply, err := c.SubmitRequest(text, read)
+			if err != nil {
 				finish <- true
 				break
 			}
 			// notify API of result
-			ioapi.Return(reply)
+			terminal.ReturnToTerminal(reply)
 
 		}
 	}()

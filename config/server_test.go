@@ -8,14 +8,24 @@ import (
 )
 
 func TestParseServerConfig(t *testing.T) {
-	ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/configfiles/delegated/server.conf")
-	ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/configfiles/fpaxos/server.conf")
-	ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/configfiles/simple/server.conf")
+	conf, err := ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/configfiles/delegated/server.conf")
+	assert.Nil(t, err)
+	assert.Nil(t, CheckServerConfig(conf))
+
+	conf, err = ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/configfiles/fpaxos/server.conf")
+	assert.Nil(t, err)
+	assert.Nil(t, CheckServerConfig(conf))
+
+	conf, err = ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/configfiles/simple/server.conf")
+	assert.Nil(t, err)
+	assert.Nil(t, CheckServerConfig(conf))
 }
 
 // TestParseServerConfig calls ParseServerConfig for the two example configuration files
 func TestParseSingleServerConfig(t *testing.T) {
-	conf := ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/configfiles/simple/server.conf")
+	conf, err := ParseServerConfig(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/configfiles/simple/server.conf")
+	assert.Nil(t, err)
+	assert.Nil(t, CheckServerConfig(conf))
 
 	assert.Equal(t, 0, conf.Algorithm.DelegateReplication)
 	assert.Equal(t, "strict majority", conf.Algorithm.QuorumSystem)

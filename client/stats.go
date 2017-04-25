@@ -15,14 +15,14 @@ type statsFile struct {
 	requestID int
 }
 
-func openStatsFile(filename string) *statsFile {
+func openStatsFile(filename string) (*statsFile, error) {
 	glog.Info("Opening file: ", filename)
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
-		glog.Fatal(err)
+		return nil, err
 	}
 	writer := csv.NewWriter(file)
-	return &statsFile{writer, time.Now(), 1}
+	return &statsFile{writer, time.Now(), 1}, nil
 }
 
 func (sf *statsFile) startRequest(requestID int) {
@@ -30,17 +30,14 @@ func (sf *statsFile) startRequest(requestID int) {
 	sf.startTime = time.Now()
 }
 
-func (sf *statsFile) stopRequest(tries int, readonly bool) {
+func (sf *statsFile) stopRequest(tries int, readonly bool) error {
 	latency := strconv.FormatInt(time.Since(sf.startTime).Nanoseconds(), 10)
-	err := sf.w.Write([]string{
+	return sf.w.Write([]string{
 		strconv.FormatInt(sf.startTime.UnixNano(), 10),
 		strconv.Itoa(sf.requestID),
 		latency,
 		strconv.Itoa(tries),
 		strconv.FormatBool(readonly)})
-	if err != nil {
-		glog.Fatal(err)
-	}
 }
 
 func (sf *statsFile) closeStatsFile() {

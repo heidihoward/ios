@@ -13,7 +13,7 @@ type wal struct {
 	mode string
 }
 
-func openWriteAheadFile(filename string, mode string, _ int) wal {
+func openWriteAheadFile(filename string, mode string, _ int) (wal, error) {
 	var file *os.File
 	switch mode {
 	case "none", "fsync":
@@ -24,10 +24,10 @@ func openWriteAheadFile(filename string, mode string, _ int) wal {
 	default:
 		glog.Fatal("PersistenceMode not recognised, only fsync and none are avalible on darwin")
 	}
-	return wal{file, mode}
+	return wal{file, mode}, nil
 }
 
-func (w wal) writeAhead(bytes []byte) {
+func (w wal) writeAhead(bytes []byte) error {
 	// write bytes
 	startTime := time.Now()
 	n, err := w.file.Write(bytes)
@@ -48,4 +48,5 @@ func (w wal) writeAhead(bytes []byte) {
 		glog.V(1).Info(n+n2, " bytes synced to persistent log in ", time.Since(startTime).String())
 	}
 	slowDiskWarning(startTime, n+n2)
+	return nil
 }

@@ -132,7 +132,7 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 
 // StartClient creates an Ios client and tries to connect to an Ios cluster
 // If ID is -1 then a random one will be generated
-func StartClient(id int, statFile string, addrs []config.NetAddress, timeout time.Duration, backoff time.Duration, beforeForce int, random bool) *Client {
+func StartClient(id int, statFile string, addrs []config.NetAddress, timeout time.Duration, backoff time.Duration, beforeForce int, random bool) (*Client, error) {
 
 	// TODO: find a better way to handle required flags
 	if id == -1 {
@@ -144,7 +144,10 @@ func StartClient(id int, statFile string, addrs []config.NetAddress, timeout tim
 	glog.Info("Starting up client ", id)
 
 	// set up stats collection
-	stats := openStatsFile(statFile)
+	stats, err := openStatsFile(statFile)
+	if err != nil {
+		return nil, err
+	}
 
 	// connecting to server
 	var conn net.Conn
@@ -159,10 +162,10 @@ func StartClient(id int, statFile string, addrs []config.NetAddress, timeout tim
 	glog.Info("Client is ready to start processing incoming requests")
 
 	rd := bufio.NewReader(conn)
-	return &Client{id, 1, stats, addrs, conn, rd, timeout, backoff, random, beforeForce, serverID}
+	return &Client{id, 1, stats, addrs, conn, rd, timeout, backoff, random, beforeForce, serverID}, nil
 }
 
-func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
+func (c *Client) SubmitRequest(text string, readonly bool) (string, error) {
 	glog.V(1).Info("Request ", c.requestID, " is: ", text)
 
 	// prepare request
@@ -174,7 +177,8 @@ func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 		Request:         text}
 	b, err := msgs.Marshal(req)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Warning(err)
+		return "", err
 	}
 	glog.V(1).Info(string(b))
 
@@ -189,7 +193,8 @@ func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 			req.ForceViewChange = true
 			b, err = msgs.Marshal(req)
 			if err != nil {
-				glog.Fatal(err)
+				glog.Warning(err)
+				return "", err
 			}
 		}
 
@@ -235,40 +240,50 @@ func (c *Client) SubmitRequest(text string, readonly bool) (bool, string) {
 
 	//check reply is not nil
 	if *reply == (msgs.ClientResponse{}) {
-		glog.Fatal("Response is nil")
+		return "", errors.New("Response is nil")
 	}
 
 	//check reply is as expected
 	if reply.ClientID != c.id {
-		glog.Fatal("Response received has wrong ClientID: expected ",
-			c.id, " ,received ", reply.ClientID)
+		return "", errors.New("Response received has wrong ClientID")
 	}
 	if reply.RequestID != c.requestID {
-		glog.Fatal("Response received has wrong RequestID: expected ",
-			c.requestID, " ,received ", reply.RequestID)
+		return "", errors.New("Response received has wrong RequestID")
 	}
 	if !reply.Success {
-		glog.Fatal("Response marked as unsuccessful but not retried")
+		return "", errors.New("Response marked as unsuccessful but not retried")
 	}
 
 	// write to latency to log
-	c.stats.stopRequest(tries, readonly)
+	err = c.stats.stopRequest(tries, readonly)
 	c.requestID++
-	return true, reply.Response
+	return reply.Response, err
 }
 
 // StartClientFromConfigFile creates an Ios client
 // If ID is -1 then a random one will be generated
-func StartClientFromConfigFile(id int, statFile string, configFile string, addressFile string) *Client {
-	conf := config.ParseClientConfig(configFile)
-	addresses := config.ParseAddresses(addressFile)
+func StartClientFromConfigFile(id int, statFile string, configFile string, addressFile string) (*Client, error) {
+	conf, err := config.ParseClientConfig(configFile)
+	if err != nil {
+		return nil, err
+	}
+	if err := config.CheckConfig(conf); err != nil {
+		return nil, err
+	}
+	addresses, err := config.ParseAddresses(addressFile)
+	if err != nil {
+		return nil, err
+	}
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	backoff := time.Millisecond * time.Duration(conf.Parameters.Backoff)
 	return StartClient(id, statFile, addresses.Clients, timeout, backoff, conf.Parameters.BeforeForce, conf.Parameters.ConnectRandom)
 }
 
 // StartClientFromConfig is the same as StartClientFromConfigFile but for config structs instead of files
-func StartClientFromConfig(id int, statFile string, conf config.Config, addresses []config.NetAddress) *Client {
+func StartClientFromConfig(id int, statFile string, conf config.Config, addresses []config.NetAddress) (*Client, error) {
+	if err := config.CheckConfig(conf); err != nil {
+		return nil, err
+	}
 	timeout := time.Millisecond * time.Duration(conf.Parameters.Timeout)
 	backoff := time.Millisecond * time.Duration(conf.Parameters.Backoff)
 	return StartClient(id, statFile, addresses, timeout, backoff, conf.Parameters.BeforeForce, conf.Parameters.ConnectRandom)

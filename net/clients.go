@@ -128,7 +128,7 @@ func (ch *clientHandler) handleConnection(cn net.Conn) {
 // SetupClients listen for client on the given port, it forwards their requests to the consensus algorithm and
 // then applies them to the state machine
 // SetupClients returns when setup is completed, spawning goroutines to listen for clients.
-func SetupClients(port int, app *app.StateMachine, clientNet *msgs.ClientNet) {
+func SetupClients(port int, app *app.StateMachine, clientNet *msgs.ClientNet) error {
 	ch := clientHandler{
 		notify:    msgs.NewNotificator(),
 		app:       app,
@@ -141,7 +141,8 @@ func SetupClients(port int, app *app.StateMachine, clientNet *msgs.ClientNet) {
 	listeningPort := ":" + strconv.Itoa(port)
 	ln, err := net.Listen("tcp", listeningPort)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Warning("Unable to listen for clients", err)
+		return err
 	}
 
 	// handle for incoming clients
@@ -155,4 +156,5 @@ func SetupClients(port int, app *app.StateMachine, clientNet *msgs.ClientNet) {
 		}
 	}()
 
+	return nil
 }

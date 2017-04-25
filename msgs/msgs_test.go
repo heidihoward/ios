@@ -82,7 +82,7 @@ func TestPeerNet(t *testing.T) {
 			if reply.Response != prepareRes {
 				t.Error(reply)
 			}
-		case <-time.After(time.Millisecond):
+		case <-time.After(10 * time.Millisecond):
 			t.Error("Nodes ", id, " didn't receive broadcasted message")
 		}
 	}

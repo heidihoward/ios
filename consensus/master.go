@@ -17,7 +17,10 @@ func monitorMaster(s *state, peerNet *msgs.PeerNet, config ConfigAll, configMast
 	// if only node, start master
 	if config.N == 1 {
 		s.View++
-		s.Storage.PersistView(s.View)
+		err := s.Storage.PersistView(s.View)
+		if err != nil {
+			glog.Fatal(err)
+		}
 		s.masterID = config.ID
 		runMaster(s.View, s.CommitIndex, false, peerNet, config, configMaster, s)
 	}
@@ -32,7 +35,10 @@ func monitorMaster(s *state, peerNet *msgs.PeerNet, config ConfigAll, configMast
 			if nextMaster == config.ID {
 				s.View++
 				glog.V(1).Info("Starting new master in view ", s.View, " at ", config.ID)
-				s.Storage.PersistView(s.View)
+				err := s.Storage.PersistView(s.View)
+				if err != nil {
+					glog.Fatal(err)
+				}
 				s.masterID = nextMaster
 				runMaster(s.View, s.CommitIndex, false, peerNet, config, configMaster, s)
 			}
@@ -42,7 +48,10 @@ func monitorMaster(s *state, peerNet *msgs.PeerNet, config ConfigAll, configMast
 			if req.Request.ForceViewChange {
 				glog.Warning("Forcing view change")
 				s.View = next(s.View, config.ID, config.N)
-				s.Storage.PersistView(s.View)
+				err := s.Storage.PersistView(s.View)
+				if err != nil {
+					glog.Fatal(err)
+				}
 				s.masterID = config.ID
 				req.Request.ForceViewChange = false
 				peerNet.Incoming.Requests.Forward <- req
