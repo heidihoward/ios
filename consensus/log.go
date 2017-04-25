@@ -18,7 +18,7 @@ type Log struct {
 
 // check protocol invariant
 func (l *Log) checkInvariants(index int, nxtEntry msgs.Entry) {
-	prevEntry := l.LogEntries[index]
+	prevEntry := l.LogEntries[index-l.AbsoluteIndex]
 	// if no entry, then no problem
 	if reflect.DeepEqual(prevEntry, msgs.Entry{}) {
 		return
