@@ -67,7 +67,7 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 		glog.Warning("Unexpected peer ID ", peerID)
 		return
 	}
-	
+
 	// check IP address is as expected
 	// TODO: allow dynamic changes of IP
 	actualAddr := strings.Split(addr, ":")[0]
@@ -96,7 +96,10 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 				break
 			}
 			glog.V(1).Infof("Read from peer %d: ", peerID, string(text))
-			ph.net.Incoming.BytesToProtoMsg(text)
+			err = ph.net.Incoming.BytesToProtoMsg(text)
+			if err != nil (
+				glog.Warning(err)
+			)
 
 		}
 	}()
