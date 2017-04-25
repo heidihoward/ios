@@ -1,6 +1,8 @@
 package msgs
 
 import (
+	"errors"
+
 	"encoding/json"
 	"github.com/golang/glog"
 )
@@ -15,19 +17,18 @@ func Unmarshal(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
-func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
+func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 	if len(b) == 0 {
-		glog.Warning("Empty message received")
-		return
+		return errors.New("Empty message received")
 	}
-
 	glog.V(1).Info("Received ", string(b))
+
 	switch int(b[0]) {
 	case 1:
 		var msg PrepareRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -39,7 +40,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg CommitRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -51,7 +52,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg Prepare
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -63,7 +64,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg Commit
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -75,7 +76,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg NewViewRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -87,7 +88,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg NewView
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -99,7 +100,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg CoordinateRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -111,7 +112,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg Coordinate
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -123,7 +124,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg QueryRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -135,7 +136,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg Query
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -147,31 +148,31 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg ForwardRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Requests.Forward <- msg:
 		default:
-			glog.Fatal("Buffer overflow, dropping message", msg)
+			glog.Fatal("Buffer overflow, dropping message ", msg)
 		}
 	case 11:
 		var msg CopyRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
 		case msgch.Requests.Copy <- msg:
 		default:
-			glog.Fatal("Buffer overflow, dropping message", msg)
+			glog.Fatal("Buffer overflow, dropping message ", msg)
 		}
 	case 12:
 		var msg Copy
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -183,7 +184,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg CheckRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -195,7 +196,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 		var msg Check
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			glog.Warning("Cannot parse message", err)
+			return err
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -204,8 +205,9 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) {
 			glog.Fatal("Buffer overflow, dropping message", msg)
 		}
 	default:
-		glog.Warning("Cannot parse message", string(b))
+		return errors.New("Cannot parse message label")
 	}
+	return nil
 }
 
 // append a byte at the start of a byte array
