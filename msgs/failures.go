@@ -68,7 +68,7 @@ func (f *FailureNotifier) NowConnected(id int) error {
 func (f *FailureNotifier) NowDisconnected(id int) {
 	f.mutex.Lock()
 	if !f.up[id] {
-		glog.Fatal("Possible multiple connections to one peer")
+		glog.Warning("Possible multiple connections to one peer")
 	}
 	f.up[id] = false
 	f.subscribed[id] <- true
