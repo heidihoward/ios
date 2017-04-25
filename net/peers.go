@@ -52,10 +52,24 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	writer := bufio.NewWriter(cn)
 
 	// exchange peer ID's via handshake
-	_, _ = writer.WriteString(strconv.Itoa(ph.id) + "\n")
-	_ = writer.Flush()
-	text, _ := reader.ReadString('\n')
+	shake := strconv.Itoa(ph.id) + "\n"
+	n, err := writer.WriteString(shake)
+	if err != nil {
+		glog.Warning(err)
+	}
+	if n != len(shake) {
+		glog.Warning("Short write")
+	}
+	err = writer.Flush()
+	if err != nil {
+		glog.Warning(err)
+	}
+	text, err := reader.ReadString('\n')
+	if err != nil {
+		glog.Warning(err)
+	}
 	glog.V(1).Info("Received ", text)
+
 	peerID, err := strconv.Atoi(strings.Trim(text, "\n"))
 	if err != nil {
 		glog.Warning(err)
