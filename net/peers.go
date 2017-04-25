@@ -81,7 +81,6 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	err = ph.failures.NowConnected(peerID)
 	if err != nil {
 		glog.Warning(err)
-		return
 	}
 
 	closeErr := make(chan error)
