@@ -145,7 +145,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		default:
 			glog.Fatal("Buffer overflow, dropping message", msg)
 		}
-	case 10:
+	case 15:
 		var msg ForwardRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
@@ -311,7 +311,7 @@ func (msgch *ProtoMsgs) ProtoMsgToBytes() ([]byte, error) {
 	case msg := <-msgch.Requests.Forward:
 		glog.V(1).Info("Marshalling ", msg)
 		b, err := Marshal(msg)
-		snd := appendr(byte(10), b)
+		snd := appendr(byte(15), b)
 		return snd, err
 
 	}
