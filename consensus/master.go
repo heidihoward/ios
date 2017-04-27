@@ -154,8 +154,34 @@ func runMaster(view int, commitIndex int, initial bool, peerNet *msgs.PeerNet, c
 		if configMaster.BatchInterval == 0 || configMaster.MaxBatch == 1 {
 			glog.V(1).Info("No batching enabled")
 			// handle client requests (1 at a time)
-			//TODO: flush channel
-			reqs = []msgs.ClientRequest{forwarded.Request}
+			// setup for holding requests
+			reqsAll := make([]msgs.ClientRequest, configMaster.MaxBatch)
+			reqsNum := 1
+			reqsAll[0] = forwarded.Request
+			exit := false
+
+			if configMaster.MaxBatch == 1 {
+				exit = true
+			}
+
+			for exit == false {
+				select {
+				case nextForwarded := <-peerNet.Incoming.Requests.Forward:
+					reqsAll[reqsNum] = nextForwarded.Request
+					glog.V(1).Info("Request ", reqsNum, " is : ", nextForwarded.Request)
+					reqsNum = reqsNum + 1
+					if reqsNum == configMaster.MaxBatch {
+						exit = true
+						break
+					}
+				default:
+					exit = true
+					break
+				}
+			}
+			// this batch is ready
+			glog.V(1).Info("Starting to replicate ", reqsNum, " requests")
+			reqs = reqsAll[:reqsNum]
 		} else {
 			glog.V(1).Info("Ready to handle more requests. Batch every ", configMaster.BatchInterval, " milliseconds")
 			// setup for holding requests
