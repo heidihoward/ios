@@ -132,7 +132,7 @@ func runClientHandler(state *state, peerNet *msgs.PeerNet, clientNet *msgs.Clien
 					glog.V(1).Info("Request received by master server ", req)
 					peerNet.OutgoingUnicast[state.masterID].Requests.Forward <- msgs.ForwardRequest{config.ID, state.View, req}
 				} else {
-					glog.V(1).Info("Request received by non-master server and redirect enabled", req)
+					glog.Info("Request received by non-master server and redirect enabled", req)
 					clientNet.OutgoingRequestsFailed <- req
 				}
 			}

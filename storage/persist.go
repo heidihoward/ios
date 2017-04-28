@@ -29,12 +29,12 @@ func MakeFileStorage(diskPath string, persistenceMode string) (*FileStorage, err
 		return nil, err
 	}
 	logFilename := diskPath + "/log.temp"
-	logFile, err := openWriteAheadFile(logFilename, persistenceMode, 64*1000*1000)
+	logFile, err := openWriteAheadFile(logFilename, persistenceMode, 4*1000*1000)
 	if err != nil {
 		return nil, err
 	}
 	snapFilename := diskPath + "/snapshot.temp"
-	snapFile, err := openWriteAheadFile(snapFilename, persistenceMode, 64*1000*1000)
+	snapFile, err := openWriteAheadFile(snapFilename, persistenceMode, 4*1000*1000)
 	if err != nil {
 		return nil, err
 	}
