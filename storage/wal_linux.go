@@ -43,7 +43,7 @@ func openWriteAheadFile(filename string, mode string, size int) (wal, error) {
 	}
 
 	glog.Info("Starting file pointer ", start)
-	err = syscall.Fallocate(WAL.fd, 0, 0, int64(size)) // 64MB
+	err = syscall.Fallocate(WAL.fd, 0, 0, int64(size))
 	if err != nil {
 		return WAL, err
 	}
@@ -52,11 +52,12 @@ func openWriteAheadFile(filename string, mode string, size int) (wal, error) {
 
 func (w wal) writeAhead(bytes []byte) error {
 	startTime := time.Now()
-	n, err := syscall.Write(w.fd, bytes)
+	// TODO: remove hack
+	n, err := syscall.Write(w.fd, bytes[:10])
 	if err != nil {
 		return err
 	}
-	if n != len(bytes) {
+	if n != 10 {
 		return errors.New("Short write")
 	}
 	delim := []byte("\n")
