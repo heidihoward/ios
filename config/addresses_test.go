@@ -25,7 +25,7 @@ func TestParseParseAddresses(t *testing.T) {
 func TestParseParseAddresses3(t *testing.T) {
 	conf, err := ParseAddresses(os.Getenv("GOPATH") + "/src/github.com/heidi-ann/ios/ios/example3.conf")
 	assert.Nil(t, err)
-	
+
 	assert.Equal(t, 3, len(conf.Clients))
 	for i := 0; i < 3; i++ {
 		assert.Equal(t, "127.0.0.1", conf.Clients[i].Address)

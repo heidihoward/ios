@@ -77,7 +77,7 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 	}
 
 	// check ID is expected
-	if peerID < 0 || peerID >= len(ph.peers) || peerID == ph.id  {
+	if peerID < 0 || peerID >= len(ph.peers) || peerID == ph.id {
 		glog.Warning("Unexpected peer ID ", peerID)
 		return
 	}

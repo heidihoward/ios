@@ -23,6 +23,11 @@ type ConfigMaster struct {
 	IndexExclusivity    bool // if enabled, Ios will assign each index to at most one request
 }
 
+type ConfigCoordinator struct {
+	ExplicitCommit      bool // if enabled, Ios coordinators will send commit messages to all after replication
+	ThriftyQuorum       bool // if enabled, Ios coordinations will send writes to only a quorum (instead of broadcast)
+}
+
 type ConfigParticipant struct {
 	SnapshotInterval     int  // how often to record state machine snapshots, 0 means snapshotting is disabled
 	ImplicitWindowCommit bool // if enabled, then commit pending out-of-window requests
@@ -38,6 +43,7 @@ type ConfigInterfacer struct {
 type Config struct {
 	All         ConfigAll
 	Master      ConfigMaster
+	Coordinator ConfigCoordinator
 	Participant ConfigParticipant
 	Interfacer  ConfigInterfacer
 }
@@ -83,7 +89,7 @@ func Init(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, app *
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.All.ID)
-	go runCoordinator(&state, peerNet, config.All)
+	go runCoordinator(&state, peerNet, config.All, config.Coordinator)
 	go monitorMaster(&state, peerNet, config.All, config.Master, true)
 	go runClientHandler(&state, peerNet, clientNet, config.All, config.Interfacer)
 	runParticipant(&state, peerNet, clientNet, config.All, config.Participant)
@@ -128,7 +134,7 @@ func Recover(peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config Config, vi
 
 	// operator as normal node
 	glog.Info("Starting participant module, ID ", config.All.ID)
-	go runCoordinator(&state, peerNet, config.All)
+	go runCoordinator(&state, peerNet, config.All, config.Coordinator)
 	go monitorMaster(&state, peerNet, config.All, config.Master, false)
 	go runClientHandler(&state, peerNet, clientNet, config.All, config.Interfacer)
 	runParticipant(&state, peerNet, clientNet, config.All, config.Participant)

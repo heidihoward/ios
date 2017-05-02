@@ -9,8 +9,8 @@ import (
 // QuorumSys offers basic suport for various of quorum systems
 // currently only "counting systems" are supported
 type QuorumSys struct {
-	Name          string
-	RecoverySize  int
+	Name            string
+	RecoverySize    int
 	ReplicationSize int
 }
 
@@ -58,6 +58,16 @@ func (q QuorumSys) checkReplicationQuorum(nodes []bool) bool {
 	}
 	// check if responses are sufficient
 	return count >= q.ReplicationSize
+}
+
+
+func (q QuorumSys) getReplicationQuourm(id int, n int) []int {
+	quorum := make([]int, q.ReplicationSize)
+	// TODO: consider replacing with random quorums
+	for i := 0; i < q.ReplicationSize; i++ {
+		quorum[i] = mod(i+id,n)
+	}
+	return quorum
 }
 
 func (q QuorumSys) checkRecoveryQuorum(nodes []bool) bool {

@@ -22,13 +22,13 @@ func TestInit(t *testing.T) {
 	clientNet := msgs.MakeClientNet(10)
 	store := app.New("kv-store")
 	quorum, err := NewQuorum("strict majority", 3)
-	assert.Nil(t,err)
+	assert.Nil(t, err)
 	config := Config{
 		All: ConfigAll{
 			ID:         0,
 			N:          3,
 			WindowSize: 1,
-			Quorum:    quorum,
+			Quorum:     quorum,
 		},
 		Master: ConfigMaster{
 			BatchInterval:       0,

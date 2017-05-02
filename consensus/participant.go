@@ -5,7 +5,6 @@ import (
 	"github.com/heidi-ann/ios/msgs"
 )
 
-
 // PROTOCOL BODY
 func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientNet, config ConfigAll, configParticipant ConfigParticipant) {
 	glog.V(1).Info("Ready for requests")
@@ -150,7 +149,7 @@ func runParticipant(state *state, peerNet *msgs.PeerNet, clientNet *msgs.ClientN
 				glog.Warning("Participant is behind")
 				state.View = req.View
 				err := state.Storage.PersistView(state.View)
-				if err != nil{
+				if err != nil {
 					glog.Fatal(err)
 				}
 				state.masterID = mod(state.View, config.N)

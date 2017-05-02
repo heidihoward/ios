@@ -21,7 +21,7 @@ func TestOpenWriteAheadFile(t *testing.T) {
 
 	//create file
 	testFile := dir + "/test.temp"
-	wal,err := openWriteAheadFile(testFile, "fsync", 2560)
+	wal, err := openWriteAheadFile(testFile, "fsync", 2560)
 	assert.Nil(err)
 	actualBytes, err := ioutil.ReadFile(testFile)
 	assert.Nil(err)

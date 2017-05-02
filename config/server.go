@@ -17,6 +17,8 @@ type ServerConfig struct {
 		ParticipantHandle    bool   // if enabled, non-master servers will handle/forward client requests, otherwise they will redirect clients
 		ParticipantRead      bool   // if set then non-master servers can service reads after getting backing from a read quorum. "forward mode only"
 		ImplicitWindowCommit bool   // if uncommitted request is outside of current window then commit
+		ExplicitCommit       bool   // if enabled, Ios coordinators will send commit messages to all after replication
+		ThriftyQuorum        bool   // if enabled, coordinators will send writes to quorum only instead of broadcasting
 	}
 	Performance struct {
 		Length           int // max log size

@@ -29,7 +29,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg PrepareRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal PrepareRequest due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal PrepareRequest due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -41,7 +41,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg CommitRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal CommitRequest due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal CommitRequest due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -53,7 +53,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg Prepare
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal Prepare due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal Prepare due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -65,7 +65,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg Commit
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal Commit due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal Commit due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -77,7 +77,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg NewViewRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal NewViewRequest due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal NewViewRequest due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -89,7 +89,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg NewView
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal NewView due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal NewView due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -101,7 +101,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg CoordinateRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal CoordinateRequest due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal CoordinateRequest due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -113,7 +113,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg Coordinate
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal Coordinate due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal Coordinate due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -125,7 +125,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg QueryRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal QueryRequest due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal QueryRequest due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -137,7 +137,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg Query
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal Query due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal Query due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -149,7 +149,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg ForwardRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal ForwardRequest due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal ForwardRequest due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -161,7 +161,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg CopyRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal CopyRequest due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal CopyRequest due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -173,7 +173,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg Copy
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal Copy due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal Copy due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -185,7 +185,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg CheckRequest
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal CheckRequest due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal CheckRequest due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {
@@ -197,7 +197,7 @@ func (msgch *ProtoMsgs) BytesToProtoMsg(b []byte) error {
 		var msg Check
 		err := Unmarshal(b[1:], &msg)
 		if err != nil {
-			return fmt.Errorf("Cannot unmarshal Check due to: %v",err)
+			return fmt.Errorf("Cannot unmarshal Check due to: %v", err)
 		}
 		glog.V(1).Info("Unmarshalled ", msg)
 		select {

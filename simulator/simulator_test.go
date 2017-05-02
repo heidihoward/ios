@@ -6,9 +6,9 @@ import (
 	"github.com/heidi-ann/ios/app"
 	"github.com/heidi-ann/ios/consensus"
 	"github.com/heidi-ann/ios/msgs"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-	"github.com/stretchr/testify/assert"
 )
 
 func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientResponse, clientNets []*msgs.ClientNet, masterID int) {
@@ -30,7 +30,7 @@ func TestRunSimulator(t *testing.T) {
 	flag.Parse()
 	defer glog.Flush()
 
-  quorum, err := consensus.NewQuorum("strict majority", 3)
+	quorum, err := consensus.NewQuorum("strict majority", 3)
 	assert.Nil(t, err)
 	// create a system of 3 nodes
 	config := consensus.Config{

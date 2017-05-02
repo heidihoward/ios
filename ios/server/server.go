@@ -72,6 +72,10 @@ func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPa
 			DelegateReplication: conf.Algorithm.DelegateReplication,
 			IndexExclusivity:    conf.Algorithm.IndexExclusivity,
 		},
+		Coordinator: consensus.ConfigCoordinator{
+			ExplicitCommit:      conf.Algorithm.ExplicitCommit,
+			ThriftyQuorum:       conf.Algorithm.ThriftyQuorum,
+		},
 		Participant: consensus.ConfigParticipant{
 			SnapshotInterval:     conf.Performance.SnapshotInterval,
 			ImplicitWindowCommit: conf.Algorithm.ImplicitWindowCommit,
@@ -90,5 +94,5 @@ func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPa
 		glog.Info("Restoring consensus instance")
 		consensus.Recover(peerNet, clientNet, configuration, view, log, state, index, failureDetector, store)
 	}
- return nil
+	return nil
 }

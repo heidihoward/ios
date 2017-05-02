@@ -28,7 +28,7 @@ func CheckWorkloadConfig(config ConfigAuto) error {
 		return errors.New("Reads must be a percentage")
 	}
 	if config.Reads < 0 || config.Interval < 0 || config.KeySize < 0 ||
-		 config.ValueSize < 0 || config.Requests < 0 || config.Keys < 0 {
+		config.ValueSize < 0 || config.Requests < 0 || config.Keys < 0 {
 		return errors.New("Workload parameter must be a postive integers")
 	}
 	return nil

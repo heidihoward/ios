@@ -1,9 +1,9 @@
 package config
 
 import (
+	"errors"
 	"github.com/golang/glog"
 	"gopkg.in/gcfg.v1"
-	"errors"
 )
 
 type Config struct {
@@ -17,7 +17,7 @@ type Config struct {
 }
 
 // CheckConfig checks wheather a given configuration is sensible
-func CheckConfig(config Config)	error {
+func CheckConfig(config Config) error {
 	if config.Parameters.Timeout <= 0 {
 		return errors.New("Timeout must be >= 0")
 	}
