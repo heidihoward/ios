@@ -114,6 +114,7 @@ func main() {
 			strconv.FormatFloat(requestThroughput, 'f', 0, 64),
 			strconv.FormatFloat(byteThroughput, 'f', 0, 64),
 		})
+		writer.Flush()
 		glog.Info("Client set terminating after completing ", requestsCompleted," requests at ",requestThroughput," [reqs/sec]")
 	}
 
