@@ -20,7 +20,7 @@ import (
 type Client struct {
 	id          int // ID of client, must be unique
 	requestID   int // ID of current request, starting from 1
-	stats       *statsFile
+	stats       *statsFile // handler for stats collection, maybe nil
 	servers     []config.NetAddress // address of Ios servers
 	conn        net.Conn
 	rd          *bufio.Reader
@@ -132,7 +132,7 @@ func dispatcher(b []byte, conn net.Conn, r *bufio.Reader, timeout time.Duration)
 
 // StartClient creates an Ios client and tries to connect to an Ios cluster
 // If ID is -1 then a random one will be generated
-func StartClient(id int, statFile string, addrs []config.NetAddress, timeout time.Duration, backoff time.Duration, beforeForce int, random bool) (*Client, error) {
+func StartClient(id int, statsFilename string, addrs []config.NetAddress, timeout time.Duration, backoff time.Duration, beforeForce int, random bool) (*Client, error) {
 
 	// TODO: find a better way to handle required flags
 	if id == -1 {
@@ -144,9 +144,13 @@ func StartClient(id int, statFile string, addrs []config.NetAddress, timeout tim
 	glog.Info("Starting up client ", id)
 
 	// set up stats collection
-	stats, err := openStatsFile(statFile)
-	if err != nil {
-		return nil, err
+	var stats *statsFile
+	var err error
+	if statsFilename != "" {
+		stats, err = openStatsFile(statsFilename)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// connecting to server
@@ -182,7 +186,9 @@ func (c *Client) SubmitRequest(text string, readonly bool) (string, error) {
 	}
 	glog.V(1).Info(string(b))
 
-	c.stats.startRequest(c.requestID)
+	if c.stats != nil {
+			c.stats.startRequest(c.requestID)
+	}
 	tries := 0
 	var reply *msgs.ClientResponse
 
@@ -254,8 +260,10 @@ func (c *Client) SubmitRequest(text string, readonly bool) (string, error) {
 		return "", errors.New("Response marked as unsuccessful but not retried")
 	}
 
-	// write to latency to log
-	err = c.stats.stopRequest(tries, readonly)
+	if c.stats != nil {
+		// write to latency to log
+		err = c.stats.stopRequest(tries, readonly)
+	}
 	c.requestID++
 	return reply.Response, err
 }
@@ -292,7 +300,9 @@ func StartClientFromConfig(id int, statFile string, conf config.Config, addresse
 func (c *Client) StopClient() {
 	glog.Info("Shutting down client ", c.id)
 	// close stats file
-	c.stats.closeStatsFile()
+	if c.stats != nil {
+		c.stats.closeStatsFile()
+	}
 	// close connection
 	if c.conn != nil {
 		c.conn.Close()
