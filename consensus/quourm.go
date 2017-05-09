@@ -60,12 +60,11 @@ func (q QuorumSys) checkReplicationQuorum(nodes []bool) bool {
 	return count >= q.ReplicationSize
 }
 
-
 func (q QuorumSys) getReplicationQuourm(id int, n int) []int {
 	quorum := make([]int, q.ReplicationSize)
 	// TODO: consider replacing with random quorums
 	for i := 0; i < q.ReplicationSize; i++ {
-		quorum[i] = mod(i+id,n)
+		quorum[i] = mod(i+id, n)
 	}
 	return quorum
 }

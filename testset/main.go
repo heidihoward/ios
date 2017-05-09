@@ -4,8 +4,8 @@ import (
 	"encoding/csv"
 	"flag"
 	"os"
-	"time"
 	"strconv"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/heidi-ann/ios/client"
@@ -105,8 +105,8 @@ func main() {
 
 		// wait for workload to finish
 		<-finished
-		totalTime := time.Since(startTime).Seconds() // time in secs
-		requestThroughput :=  float64(requestsCompleted) / totalTime // throughput in req/sec
+		totalTime := time.Since(startTime).Seconds()                 // time in secs
+		requestThroughput := float64(requestsCompleted) / totalTime  // throughput in req/sec
 		byteThroughput := float64(8*bytesCommitted/1000) / totalTime // throughput in Kbps
 		writer.Write([]string{
 			strconv.Itoa(clients),
@@ -115,7 +115,7 @@ func main() {
 			strconv.FormatFloat(byteThroughput, 'f', 0, 64),
 		})
 		writer.Flush()
-		glog.Info("Client set terminating after completing ", requestsCompleted," requests at ",requestThroughput," [reqs/sec]")
+		glog.Info("Client set terminating after completing ", requestsCompleted, " requests at ", requestThroughput, " [reqs/sec]")
 	}
 
 	// finish up

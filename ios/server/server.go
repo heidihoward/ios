@@ -73,8 +73,8 @@ func RunIos(id int, conf config.ServerConfig, addresses config.Addresses, diskPa
 			IndexExclusivity:    conf.Algorithm.IndexExclusivity,
 		},
 		Coordinator: consensus.ConfigCoordinator{
-			ExplicitCommit:      conf.Algorithm.ExplicitCommit,
-			ThriftyQuorum:       conf.Algorithm.ThriftyQuorum,
+			ExplicitCommit: conf.Algorithm.ExplicitCommit,
+			ThriftyQuorum:  conf.Algorithm.ThriftyQuorum,
 		},
 		Participant: consensus.ConfigParticipant{
 			SnapshotInterval:     conf.Performance.SnapshotInterval,

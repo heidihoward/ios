@@ -18,9 +18,9 @@ import (
 
 // Client holds the data associated with a client
 type Client struct {
-	id          int // ID of client, must be unique
-	requestID   int // ID of current request, starting from 1
-	stats       *statsFile // handler for stats collection, maybe nil
+	id          int                 // ID of client, must be unique
+	requestID   int                 // ID of current request, starting from 1
+	stats       *statsFile          // handler for stats collection, maybe nil
 	servers     []config.NetAddress // address of Ios servers
 	conn        net.Conn
 	rd          *bufio.Reader
@@ -187,7 +187,7 @@ func (c *Client) SubmitRequest(text string, readonly bool) (string, error) {
 	glog.V(1).Info(string(b))
 
 	if c.stats != nil {
-			c.stats.startRequest(c.requestID)
+		c.stats.startRequest(c.requestID)
 	}
 	tries := 0
 	var reply *msgs.ClientResponse

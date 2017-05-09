@@ -24,8 +24,8 @@ type ConfigMaster struct {
 }
 
 type ConfigCoordinator struct {
-	ExplicitCommit      bool // if enabled, Ios coordinators will send commit messages to all after replication
-	ThriftyQuorum       bool // if enabled, Ios coordinations will send writes to only a quorum (instead of broadcast)
+	ExplicitCommit bool // if enabled, Ios coordinators will send commit messages to all after replication
+	ThriftyQuorum  bool // if enabled, Ios coordinations will send writes to only a quorum (instead of broadcast)
 }
 
 type ConfigParticipant struct {

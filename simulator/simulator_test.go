@@ -7,6 +7,7 @@ import (
 	"github.com/heidi-ann/ios/consensus"
 	"github.com/heidi-ann/ios/msgs"
 	"github.com/stretchr/testify/assert"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -15,14 +16,12 @@ func checkRequest(t *testing.T, req msgs.ClientRequest, reply msgs.ClientRespons
 	// send request direct to master
 	clientNets[masterID].IncomingRequests <- req
 
-	for id := range clientNets {
-		select {
-		case response := <-(clientNets[id]).OutgoingResponses:
-			assert.Equal(t, req, response.Request)
-			assert.Equal(t, reply, response.Response)
-		case <-time.After(time.Second):
-			t.Error("Participant not responding")
-		}
+	select {
+	case response := <-(clientNets[masterID]).OutgoingResponses:
+		assert.Equal(t, req, response.Request)
+		assert.Equal(t, reply, response.Response)
+	case <-time.After(time.Second):
+		assert.Fail(t, "Participant not responding", strconv.Itoa(masterID))
 	}
 }
 
@@ -46,14 +45,18 @@ func TestRunSimulator(t *testing.T) {
 			DelegateReplication: 0,
 			IndexExclusivity:    true,
 		},
+		Coordinator: consensus.ConfigCoordinator{
+			ExplicitCommit: true,
+			ThriftyQuorum:  false,
+		},
 		Participant: consensus.ConfigParticipant{
 			SnapshotInterval:     1000,
-			ImplicitWindowCommit: true,
+			ImplicitWindowCommit: false,
 			LogLength:            10000,
 		},
 		Interfacer: consensus.ConfigInterfacer{
-			ParticipantHandle: true,
-			ParticipantRead:   true,
+			ParticipantHandle: false,
+			ParticipantRead:   false,
 		},
 	}
 
@@ -70,6 +73,7 @@ func TestRunSimulator(t *testing.T) {
 		ClientID:        200,
 		RequestID:       1,
 		ForceViewChange: false,
+		ReadOnly:        false,
 		Request:         "update A 3"}
 
 	checkRequest(t, request1, app.Apply(request1), clientNets, 0)
@@ -78,6 +82,7 @@ func TestRunSimulator(t *testing.T) {
 		ClientID:        200,
 		RequestID:       2,
 		ForceViewChange: false,
+		ReadOnly:        false,
 		Request:         "get A"}
 
 	checkRequest(t, request2, app.Apply(request2), clientNets, 0)
@@ -86,6 +91,7 @@ func TestRunSimulator(t *testing.T) {
 		ClientID:        400,
 		RequestID:       1,
 		ForceViewChange: false,
+		ReadOnly:        false,
 		Request:         "get C"}
 
 	checkRequest(t, request3, app.Apply(request3), clientNets, 0)
@@ -98,11 +104,12 @@ func TestRunSimulator(t *testing.T) {
 		ClientID:        400,
 		RequestID:       2,
 		ForceViewChange: false,
+		ReadOnly:        false,
 		Request:         "get A"}
 
 	checkRequest(t, request4, app.Apply(request4), clientNets, 0)
 
-	//check 2nd failure by notifying node 2 that node 1 has failed
+	// check 2nd failure by notifying node 2 that node 1 has failed
 	// failures[2].NowConnected(1)
 	// failures[2].NowDisconnected(1)
 
@@ -110,8 +117,18 @@ func TestRunSimulator(t *testing.T) {
 		ClientID:        400,
 		RequestID:       3,
 		ForceViewChange: false,
+		ReadOnly:        false,
 		Request:         "update B 3"}
 
 	checkRequest(t, request5, app.Apply(request5), clientNets, 0)
+
+	request6 := msgs.ClientRequest{
+		ClientID:        400,
+		RequestID:       4,
+		ForceViewChange: false,
+		ReadOnly:        false,
+		Request:         "get B"}
+
+	checkRequest(t, request6, app.Apply(request6), clientNets, 0)
 
 }
