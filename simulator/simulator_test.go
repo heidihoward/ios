@@ -53,7 +53,7 @@ func TestRunSimulator(t *testing.T) {
 		},
 		Interfacer: consensus.ConfigInterfacer{
 			ParticipantHandle: true,
-			ParticipantRead:   true,
+			ParticipantRead:   false,
 		},
 	}
 

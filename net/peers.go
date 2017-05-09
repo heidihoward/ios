@@ -97,9 +97,9 @@ func (ph *peerHandler) handlePeer(cn net.Conn, init bool) {
 			}
 			glog.V(1).Infof("Read from peer %d: ", peerID, string(text))
 			err = ph.net.Incoming.BytesToProtoMsg(text)
-			if err != nil (
+			if err != nil {
 				glog.Warning(err)
-			)
+			}
 
 		}
 	}()
