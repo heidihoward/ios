@@ -53,11 +53,11 @@ func openWriteAheadFile(filename string, mode string, size int) (wal, error) {
 func (w wal) writeAhead(bytes []byte) error {
 	startTime := time.Now()
 	// TODO: remove hack
-	n, err := syscall.Write(w.fd, bytes[:10])
+	n, err := syscall.Write(w.fd, bytes)
 	if err != nil {
 		return err
 	}
-	if n != 10 {
+	if n != len(bytes) {
 		return errors.New("Short write")
 	}
 	delim := []byte("\n")
