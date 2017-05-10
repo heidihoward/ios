@@ -30,8 +30,9 @@ func (n *Notificator) Subscribe(request ClientRequest) ClientResponse {
 	if n.subscribed[request] == nil {
 		n.subscribed[request] = make(chan ClientResponse)
 	}
+	response := n.subscribed[request]
 	n.mutex.Unlock()
-	return <-n.subscribed[request]
+	return <-response
 }
 
 func (n *Notificator) IsSubscribed(request ClientRequest) bool {
